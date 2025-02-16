@@ -26,6 +26,8 @@ void handleCommand(GameState& state, const string& command)
 
     if (command == "uci") handleUCI();
 
+    else throw invalid_argument("[CLI]: unknown command");
+
     } catch (const exception& e) {
         cout << e.what() << endl;
     }

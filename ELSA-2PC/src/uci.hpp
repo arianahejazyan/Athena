@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include "gamestate.hpp"
+#include "utility.hpp"
 
 using namespace std;
 namespace ELSA
@@ -24,7 +25,11 @@ void handleCommand(GameState& state, const string& command)
 
     try {
 
-    if (command == "uci") handleUCI();
+    if (command == "uci")
+        handleUCI();
+
+    else if (command == "display" || command == "d")
+        printGameState(state);
 
     else throw invalid_argument("[CLI]: unknown command");
 

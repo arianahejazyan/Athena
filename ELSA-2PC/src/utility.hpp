@@ -97,6 +97,25 @@ void initGameState(GameState& state)
     initGameState(state, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
+void printGameState(const GameState& state)
+{
+    cout << "    a b c d e f g h\n";
+    cout << "  +-----------------+\n";
+
+    for (int rank = 7; rank >= 0; --rank)
+    {
+        cout << rank + 1 << " | ";
+
+        for (int file = 0; file < 8; ++file)
+            cout << PIECE2ASCII[state.mailbox[makeSquare(rank, file)]] << " ";
+
+        cout << "| " << rank + 1 << "\n";
+    }
+
+    cout << "  +-----------------+\n";
+    cout << "    a b c d e f g h\n\n";
+}
+
 }; // namespace
 
 #endif

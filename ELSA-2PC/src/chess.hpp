@@ -32,6 +32,8 @@ enum Player : u8 {white, black};
 
 constexpr u32 BOARD_SIZE = 64;
 constexpr u32 PIECE_SIZE = 13;
+constexpr u32 RANK_SIZE  = 8;
+constexpr u32 FILE_SIZE  = 8;
 
 }; // namespace
 

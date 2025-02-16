@@ -3,6 +3,7 @@
 
 #include "gamestate.hpp"
 #include "uci.hpp"
+#include "utility.hpp"
 
 using namespace std;
 using namespace ELSA;
@@ -10,6 +11,8 @@ using namespace ELSA;
 int main(int argc, char* argv[])
 {
     GameState state;
+
+    initGameState(state);
     
     string command;
     while (getline(cin, command) && command != "quit") handleCommand(state, command);

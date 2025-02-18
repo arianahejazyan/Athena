@@ -1,9 +1,12 @@
-#ifndef MAIN_HPP
-#define MAIN_HPP
+#ifndef MAIN_CC
+#define MAIN_CC
 
-#include "gamestate.hpp"
-#include "uci.hpp"
-#include "utility.hpp"
+#include <iostream>
+#include <sstream>
+#include "gamestate.h"
+#include "uci.h"
+#include "utility.h"
+#include "zobrist.h"
 
 using namespace std;
 using namespace ELSA;
@@ -12,7 +15,9 @@ int main(int argc, char* argv[])
 {
     GameState state;
 
-    initGameState(state);
+    initZobrist();
+
+    initGameState(state, startpos);
     
     string command;
     while (getline(cin, command) && command != "quit") handleCommand(state, command);

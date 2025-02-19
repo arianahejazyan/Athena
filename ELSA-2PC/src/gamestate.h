@@ -52,7 +52,7 @@ struct List
 
             else head = head->next;
 
-            head->data.clone(old);
+            head->data.clone(old->data);
         }
 
         void restore() {
@@ -64,7 +64,7 @@ struct Info
 {
     u64 hash;
     CastlingRights castle;
-    PieceType captured;
+    Piece captured;
     Player turn;
     Square epsq;
     int halfmove;

@@ -7,7 +7,13 @@ namespace ELSA
 
 void Info::clone(const Info& other)
 {
+    turn = other.turn;
+    epsq = other.epsq;
     hash = other.hash;
+    castle = other.castle;
+    captured = other.captured;
+    halfmove = other.halfmove;
+    fullmove = other.fullmove;
 }
 
 Info& GameState::stateInfo() const
@@ -21,8 +27,8 @@ void GameState::resetGameState()
 
     Info& si = stateInfo();
 
-    si.captured = NO_PIECE_TYPE;
-    si.castle = (CastlingRights)0u;
+    si.captured = NO_PIECE;
+    si.castle = NO_CASTLING;
     si.epsq = OFFBOARD;
     si.fullmove = 0;
     si.halfmove = 0;
@@ -48,59 +54,47 @@ u64 GameState::occ(const Player player) const {
 
 void GameState::setPiece(Square sq, Piece piece)
 {
-    PieceType type = getPieceType(piece);
-    Player player = getPlayer(piece);
-
     mailbox[sq] = piece;
 
-    bitboard[type] |= BB(sq);
-    occupied[player] |= BB(sq);
+    bitboard[getPieceType(piece)] |= BB(sq);
+    occupied[getPlayer(piece)]    |= BB(sq);
 }
 
 void GameState::popPiece(Square sq)
 {
-    PieceType type = getPieceType(mailbox[sq]);
-    Player player = getPlayer(mailbox[sq]);
-
     mailbox[sq] = NO_PIECE;
 
-    bitboard[type] ^= BB(sq);
-    occupied[player] ^= BB(sq);
+    bitboard[getPieceType(mailbox[sq])] ^= BB(sq);
+    occupied[getPlayer(mailbox[sq])]    ^= BB(sq);
 }
 
 void GameState::makemove(const Move move)
 {
-    // Square source = move.source();
-    // Square target = move.target();
-    // Square nature = move.nature();
+    Square source = move.source();
+    Square target = move.target();
+    Square nature = move.nature();
 
-    // make & copy new info 
-    // info.clone();
+    info.clone();
 
-    // state info
-    // Info& si = info.head();
+    auto& si = info.node();
 
-    // PieceType type = mailbox[source];
-    // PieceType take = mailbox[target];
+    Piece type = mailbox[source];
+    Piece take = mailbox[target];
 
-    // si.hash ^= ZobristTurn;
+    si.hash ^= ZobristTurn;
 
-    // mailbox[source] = none;
-    // mailbox[target] = type;
+    if (take != NO_PIECE)
+    {
+        popPiece(target);
 
-    // occupied[type] ^= (1ull << source);
-    // occupied[type] ^= (1ull << target);
+        si.hash ^= Zobrist[target][take];
+    }
 
-    // si.hash ^= ZOBRIST[source][type];
-    // si.hash ^= ZOBRIST[target][type];
+    setPiece(target, type);
+    popPiece(source);
 
-    // if (take)
-    // {
-    //     occupied[take] ^= BB(target);
-    //     si.hash ^= ZOBRIST[target][take];
-    // }
+    si.hash ^= Zobrist[source][type] ^ Zobrist[target][type];
 
-    // if (nature == SIMPLE) return;
 
     // else if (nature == CASTLE)
     // {
@@ -128,29 +122,27 @@ void GameState::makemove(const Move move)
     // {
 
     // }
+
+    si.turn = si.turn == WHITE ? BLACK : WHITE;
 }
 
 void GameState::undomove(const Move move)
 {
-    // Square source = move.source();
-    // Square target = move.target();
-    // Square nature = move.nature();
+    Square source = move.source();
+    Square target = move.target();
+    Square nature = move.nature();
     
-    // // retreive previous info 
-    // info.restore();
+    info.restore();
 
-    // // state info
-    // Info& si = info.head();
+    auto si = info.node();
 
-    // PieceType type = mailbox[target];
-    // PieceType take = si.captured;
+    Piece type = mailbox[target];
+    Piece take = si.captured;
 
-    // mailbox[source] = type;
-    // mailbox[target] = take;
+    setPiece(source, type);
+    popPiece(target);
 
-    // occupied[type] ^= (1ull << source);
-    // occupied[type] ^= (1ull << target);
-    // occupied[take] ^= (1ull << target);
+    if (take != NO_PIECE) setPiece(target, take);
 }
 
 }; // namespace

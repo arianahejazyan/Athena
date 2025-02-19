@@ -7,12 +7,12 @@ Move::Move(Square from, Square to, u16 nature): encoded((from << 10) | (to << 4)
 
 Square Move::source() const
 {
-    return static_cast<Square>((encoded >> 10) & 3u);
+    return static_cast<Square>((encoded >> 10) & 0x3fu);
 }
 
 Square Move::target() const
 {
-    return static_cast<Square>((encoded >> 4) & 3u);
+    return static_cast<Square>((encoded >> 4) & 0x3fu);
 }
 
 Square Move::nature() const

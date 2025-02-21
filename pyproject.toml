@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aetos"
+version = "0.0.0"
+description = "Robust open-source UCI-compatible chess engine for 2 and 4 player chess."
+readme = "README.md"
+requires-python = ">=3.7"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Ariana Hejazyan", email = "arianahejazyan@gmail.com" }
+]
+urls = { "Homepage" = "https://github.com/arianahejazyan/aetos" }

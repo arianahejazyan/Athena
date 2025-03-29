@@ -1,17 +1,19 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
-#include <string>
-#include "gamestate.h"
+#include <sstream>
+#include "fen.h"
+#include "position.h"
 
-using namespace std;
-
-namespace ELSA
+namespace Talia
 {
+    
+std::string formatNumber(uint64_t num);
 
-void initGameState(GameState& state, const string fen);
-void printGameState(const GameState& state);
+std::vector<std::string> splitString(const std::string& input);
 
-}; // namespace
+void printPosition(const Position& pos);
+
+} // namespace
 
 #endif

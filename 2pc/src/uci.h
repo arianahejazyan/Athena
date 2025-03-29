@@ -1,19 +1,20 @@
 #ifndef UCI_H
 #define UCI_H
 
-#include <string>
-#include "gamestate.h"
+#include <iostream>
+#include <sstream>
+#include "fen.h"
+#include "position.h"
 
-using namespace std;
-
-namespace ELSA
+namespace Talia
 {
 
-const string startpos("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-
 void handleUCI();
-void handleCommand(GameState& state, const string& command);
+void handleIsReady();
+void handlePosition(Position& pos, const std::vector<std::string> args);
 
-}; // namespace
+[[nodiscard]] std::string moveToUCI(const Move move) noexcept;
+
+} // namespace
 
 #endif

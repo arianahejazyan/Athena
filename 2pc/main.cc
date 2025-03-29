@@ -1,11 +1,9 @@
 #include "commandline.h"
 
-using namespace talia;
-
 int main(int argc, char* argv[])
 {
-    CommandLine commandline;
-    commandline.run();
+    Talia::CommandLine cli;
+    cli.run();
  
     return 0;
 }

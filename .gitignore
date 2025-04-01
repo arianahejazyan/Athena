@@ -5,3 +5,6 @@ dist
 __pycache__
 venv
 .pypirc
+notes.txt
+build
+debug

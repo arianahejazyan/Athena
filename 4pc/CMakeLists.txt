@@ -1,10 +1,18 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.14)
 
-project(Talia C CXX)
+project(Talia-4PC LANGUAGES C CXX)
 
-enable_testing()
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_subdirectory(engine)
-add_subdirectory(chess)
-add_subdirectory(tests)
-add_subdirectory(utility)
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=native -flto")
+
+include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/src/slide)
+
+file(GLOB_RECURSE SRC_FILES 
+    ${PROJECT_SOURCE_DIR}/src/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/slide/*.cpp
+)
+
+add_executable(main main.cc ${SRC_FILES})

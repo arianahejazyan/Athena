@@ -57,25 +57,4 @@ void handlePosition(Position& pos, const std::vector<std::string> args)
 //     // }
 }
 
-[[nodiscard]] std::string moveToUCI(const Move move) noexcept
-{
-    std::string uci_move;
-
-    const auto source = move.source();
-    const auto target = move.target();
-    const auto nature = move.nature();
-
-    uci_move += ('a' + (fileSQ(source)));
-    uci_move += ('1' + (rankSQ(source)));
-    uci_move += ('a' + (fileSQ(target)));
-    uci_move += ('1' + (rankSQ(target)));
-
-    if (nature == FLAG_QUEEN)  uci_move += 'q';
-    if (nature == FLAG_ROOK)   uci_move += 'r';
-    if (nature == FLAG_BISHOP) uci_move += 'b';
-    if (nature == FLAG_KNIGHT) uci_move += 'n';
-
-    return uci_move;
-}
-
 } // namespace

@@ -13,8 +13,6 @@ void handleUCI();
 void handleIsReady();
 void handlePosition(Position& pos, const std::vector<std::string> args);
 
-[[nodiscard]] std::string moveToUCI(const Move move) noexcept;
-
 } // namespace
 
 #endif

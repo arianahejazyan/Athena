@@ -1,4 +1,0 @@
-recursive-include aetos/assets *
-
-include README.md
-include LICENSE

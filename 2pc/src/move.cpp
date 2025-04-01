@@ -1,23 +1,29 @@
 #include "move.h"
+#include "bitboard.h"
 
-namespace ELSA
+namespace Talia
 {
 
-Move::Move(Square from, Square to, u16 nature): encoded((from << 10) | (to << 4) | nature) {}
-
-Square Move::source() const
+[[nodiscard]] std::string Move::toUCI() const noexcept
 {
-    return static_cast<Square>((encoded >> 10) & 0x3fu);
+    std::string uci_move;
+
+    uci_move += ('a' + (fileSQ(source())));
+    uci_move += ('1' + (rankSQ(source())));
+    uci_move += ('a' + (fileSQ(target())));
+    uci_move += ('1' + (rankSQ(target())));
+
+    switch (nature())
+    {
+        case FLAG_QUEEN:  uci_move += 'q'; break;
+        case FLAG_ROOK:   uci_move += 'r'; break;
+        case FLAG_BISHOP: uci_move += 'b'; break;
+        case FLAG_KNIGHT: uci_move += 'n'; break;
+    
+        default: break;
+    }
+
+    return uci_move;
 }
 
-Square Move::target() const
-{
-    return static_cast<Square>((encoded >> 4) & 0x3fu);
-}
-
-Square Move::nature() const
-{
-    return static_cast<Square>(encoded & 0xfu);
-}
-
-}; // namespace
+} // namespace

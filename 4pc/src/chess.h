@@ -6,7 +6,7 @@
 
 using namespace std;
 
-namespace talia
+namespace Talia
 {
 
 enum class Square : uint8_t

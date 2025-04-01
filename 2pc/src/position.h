@@ -26,9 +26,7 @@ struct Position
         Color turn;
         int size;
 
-        Position(): size(0)
-        {
-        }
+        Position(): size(0) {}
 
         ~Position() = default;
 

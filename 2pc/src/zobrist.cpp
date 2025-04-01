@@ -1,28 +1,22 @@
-#include "chess.h"
-#include "random.h"
-#include "zobrist.h"
+// #ifndef RANDOM_H
+// #define RANDOM_H
 
-namespace ELSA
-{
+// #include "types.h"
 
-u64 Zobrist[SQUARE_NB][PIECE_NB];
-u64 ZobristEnpass[FILE_NB];
-u64 ZobristCastle[CASTLING_RIGHT_NB];
-u64 ZobristTurn;
+// namespace Talia
+// {
 
-void initZobrist()
-{
-    for (int piece = W_PAWN; piece <= B_KING; ++piece)
-        for (int sq = A1; sq <= H8; ++sq)
-            Zobrist[sq][piece] = xorshift64();
+// constexpr u64 seed = 6093652183137414463;
 
-    for (int f = 0; f < FILE_NB; f++)
-        ZobristEnpass[f] = xorshift64();
+// [[nodiscard]] consteval u64 xorshift64(u64 seed) noexcept
+// {
+//     seed ^= seed >> 12;
+//     seed ^= seed << 25;
+//     seed ^= seed >> 27;
 
-    for (int cr = 0; cr < CASTLING_RIGHT_NB; cr++)
-        ZobristCastle[cr] = xorshift64();
+//     return seed * 2685821657736338717ull;
+// }
 
-    ZobristTurn = xorshift64();
-}
+// } // namespace
 
-}; // namespace
+// #endif

@@ -35,7 +35,7 @@ void CommandLine::handleMakemove(std::vector<std::string>& args)
 
         int idx = -1;
         for (int i = 0; i < size; ++i)
-            if (moveToUCI(moves[i]) == moveUci) idx = i;
+            if (moves[i].toUCI() == moveUci) idx = i;
 
         if (idx == -1)
             throw std::invalid_argument("[MAKEMOVE]: illegal move '" + moveUci + "'");

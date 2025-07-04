@@ -12,7 +12,7 @@
 </div>
 
 ## Table of Contents
-*coming soon ...*
+- [Credits](#credits)
 
 ## Overview
 *coming soon ...*
@@ -22,3 +22,7 @@
 
 ## Contribute
 *coming soon ...*
+
+## Credits
+
+- This project uses the [CLI11](https://github.com/CLIUtils/CLI11) library for command-line parsing. ([BSD-3-Clause License](licenses/CLI11/LICENSE))

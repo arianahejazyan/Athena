@@ -1,15 +1,11 @@
 .vscode
-build
+**/build/
 dist
 *egg-info
 __pycache__
 venv
 .pypirc
 notes.txt
-build
 debug
 docs
-todo
-2pc
-4pc
-**/assets
+.DS_Store

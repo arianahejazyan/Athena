@@ -1,11 +1,4 @@
 .vscode
 **/build/
-dist
-*egg-info
-__pycache__
-venv
-.pypirc
-notes.txt
-debug
-docs
 .DS_Store
+todo

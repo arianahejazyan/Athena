@@ -12,27 +12,23 @@
 </div>
 
 ## Table of Contents
-- [Getting Started](#getting-started)
-- [Credits](#credits)
+- [Installation](#installation)
+- [credits](#credits)
 
 
-## Getting Started
-Clone the Repository
+## Installation
+Clone the repository
 
 ```bash
-git clone https://github.com/arianahejazyan/Athena.git && cd athena 
+git clone https://github.com/arianahejazyan/Athena.git && cd Athena/athena 
 ```
-Create a Build Directory and Compile
+Create a build directory and compile
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build
 ```
-Once built, you can run the Athena executable:
+Once built, you can run the Athena cli:
 ```bash
 cd build && ./athena
-```
-Or run the tests:
-```bash
-cd build && ctest
 ```
 
 ## Credits

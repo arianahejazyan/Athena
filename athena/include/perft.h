@@ -1,5 +1,4 @@
-#ifndef PERFT_H
-#define PERFT_h
+#pragma once
 
 #include "position.h"
 
@@ -42,5 +41,3 @@ class Record
 void runPerftTests(Position& pos, int depth, bool full, bool split, bool cumulative);
 
 } // namespace athena
-
-#endif // #ifndef PERFT_H

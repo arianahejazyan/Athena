@@ -20,7 +20,7 @@ std::string formatInt(uint64_t num)
     return numStr;
 }
 
-void perft(Position& pos, Record& rc, int depth, bool full = false) noexcept
+void perft(Position& pos, Record& rc, int depth, bool full = false)
 {
     const GameState& gs = pos.states.back();
 

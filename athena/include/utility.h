@@ -222,10 +222,9 @@ inline void print(const BitBoard& bb)
     std::cout << "\n\n";
 }
 
-inline void print(const Position& pos)
+inline void print(const Position& pos, bool print_fen, bool use_ascii_pieces)
 {
     const GameState& gs = pos.states.back();
-
     constexpr int BOARD_SIZE = 16;
 
     std::cout << "\n     ";
@@ -243,16 +242,33 @@ inline void print(const Position& pos)
             Piece piece = pc.piece();
             Color color = pc.color();
 
-            char ch = ' ';
+            std::string sqStr;
+
             switch (piece) {
-                case Piece::Empty:  ch = '.'; break;
-                case Piece::Stone:  ch = 'x'; break;
-                case Piece::Pawn:   ch = 'P'; break;
-                case Piece::Knight: ch = 'N'; break;
-                case Piece::Bishop: ch = 'B'; break;
-                case Piece::Rook:   ch = 'R'; break;
-                case Piece::Queen:  ch = 'Q'; break;
-                case Piece::King:   ch = 'K'; break;
+                case Piece::Empty:
+                    sqStr = "\033[2m.\033[0m"; // Dim dot always
+                    break;
+                case Piece::Stone:
+                    sqStr = "x";
+                    break;
+                case Piece::Pawn:
+                    sqStr = use_ascii_pieces ? "P" : "\u2659"; // ♙
+                    break;
+                case Piece::Knight:
+                    sqStr = use_ascii_pieces ? "N" : "\u2658"; // ♘
+                    break;
+                case Piece::Bishop:
+                    sqStr = use_ascii_pieces ? "B" : "\u2657"; // ♗
+                    break;
+                case Piece::Rook:
+                    sqStr = use_ascii_pieces ? "R" : "\u2656"; // ♖
+                    break;
+                case Piece::Queen:
+                    sqStr = use_ascii_pieces ? "Q" : "\u2655"; // ♕
+                    break;
+                case Piece::King:
+                    sqStr = use_ascii_pieces ? "K" : "\u2654"; // ♔
+                    break;
             }
 
             std::string colorCode;
@@ -264,7 +280,7 @@ inline void print(const Position& pos)
                 default:            colorCode = "";         break;
             }
 
-            std::cout << colorCode << ch << "\033[0m  ";
+            std::cout << colorCode << sqStr << "\033[0m  ";
         }
 
         std::cout << "| " << (rank + 1) << "\n";
@@ -278,19 +294,16 @@ inline void print(const Position& pos)
     std::cout << std::endl;
 
     constexpr int KEY_WIDTH = 12;
-
     std::cout << std::endl;
 
-    // Print Turn
+    // Turn
     std::cout << std::left << std::setw(KEY_WIDTH) << "Turn:";
-
-    switch (gs.turn)
-    {
-        case Red:    std::cout << "\033[1;31mRed\033[0m";    break;
-        case Blue:   std::cout << "\033[1;34mBlue\033[0m";   break;
+    switch (gs.turn) {
+        case Red:    std::cout << "\033[1;31mRed\033[0m"; break;
+        case Blue:   std::cout << "\033[1;34mBlue\033[0m"; break;
         case Yellow: std::cout << "\033[1;33mYellow\033[0m"; break;
-        case Green:  std::cout << "\033[1;32mGreen\033[0m";  break;
-        default:     std::cout << "unknown";                 break;
+        case Green:  std::cout << "\033[1;32mGreen\033[0m"; break;
+        default:     std::cout << "unknown"; break;
     }
     std::cout << std::endl;
 
@@ -304,18 +317,19 @@ inline void print(const Position& pos)
     std::cout << std::left << std::setw(KEY_WIDTH) << "KingSide:" << toString(gs.castle, pos.setup, KingSide) << std::endl;
     std::cout << std::left << std::setw(KEY_WIDTH) << "QueenSide:" << toString(gs.castle, pos.setup, QueenSide) << std::endl;
 
-    // Enpassant
+    // En Passant
     std::cout << std::left << std::setw(KEY_WIDTH) << "Enpassant:";
-    for (auto color : COLORS)
-    {
+    for (auto color : COLORS) {
         std::cout << toString(gs.enpass[color]);
         if (color != Green) std::cout << ",";
     }
     std::cout << std::endl;
 
     // FEN
-    std::cout << std::left << std::setw(KEY_WIDTH) << "FEN:" << toString(pos) << std::endl << std::endl;
+    if (print_fen)
+        std::cout << std::left << std::setw(KEY_WIDTH) << "FEN:" << toString(pos) << std::endl << std::endl;
 }
+
 
 } // namespace athena
 

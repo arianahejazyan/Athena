@@ -43,6 +43,9 @@ Welcome to our growing list of four-player chess engines and tools! Here, you’
     <td style="padding: 8px; vertical-align: top;">
       Athena (<a href="https://github.com/arianahejazyan/Athena" target="_blank">GitHub</a>, <a href="https://www.chess.com/member/teamathena1" target="_blank">Chess.com</a>)
     </td>
+    <td style="padding: 8px; vertical-align: top;">
+      Samaritan (<a href="https://github.com/Moxile/Samaritan" target="_blank">GitHub</a>)
+    </td>
   </tr>
 </table>
 

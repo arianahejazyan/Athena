@@ -40,10 +40,12 @@ Welcome to our growing list of four-player chess engines and tools! Here, you’
 
 ###  Engines 
 
-
-| Athena ([GitHub](https://github.com/arianahejazyan/Athena), [Chess.com](https://www.chess.com/member/teamathena1)) | Samaritan ([GitHub](https://github.com/Moxile/Samaritan)) |   |
-|--------------|------------------------------|----------------------|
-
+<table align="center">
+  <tr>
+    <td>Athena (<a href="https://github.com/arianahejazyan/Athena" target="_blank">GitHub</a>, <a href="https://www.chess.com/member/teamathena1" target="_blank">Chess.com</a>)</td>
+    <td>Samaritan (<a href="https://github.com/Moxile/Samaritan" target="_blank">GitHub</a>)</td>
+  </tr>
+</table>
 
 ### Tools
 - Colosseum ([GitHub](https://github.com/arianahejazyan/Colosseum)) [GUI and tournamant manager]

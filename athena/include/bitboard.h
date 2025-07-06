@@ -1,5 +1,4 @@
-#ifndef BITBOARD_H
-#define BITBOARD_H
+#pragma once
 
 #include "chess.h"
 
@@ -438,5 +437,3 @@ constexpr auto HOMERANK = []() consteval
 }();
 
 } // namespace athena
-
-#endif // #ifndef BITBOARD_H

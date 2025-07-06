@@ -55,7 +55,7 @@ inline auto genSliderMoves(const Position& pos, Move* moves, auto sliders, auto 
     {
         auto dest = PIECE_ATTACK[piece][source] & allowed;
         for (auto target: dest)
-            if (!static_cast<bool>(between(source, target, piece) & pos.board.everyone())) 
+            if ((between(source, target, piece) & pos.board.everyone()).empty()) 
                 *(moves++) = Move(source, target, Slider, flag); 
     }
     return moves;

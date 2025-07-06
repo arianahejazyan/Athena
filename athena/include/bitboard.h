@@ -162,6 +162,10 @@ class BitBoard
             return chunks[0] | chunks[1] | chunks[2] | chunks[3];
         }
 
+        constexpr inline bool empty() const noexcept {
+            return (chunks[0] | chunks[1] | chunks[2] | chunks[3]) == 0;
+        }
+
         inline BitBoard shift(Shift s) const noexcept;
 
         constexpr uint64_t& chunk(int idx) noexcept { return chunks[idx]; }

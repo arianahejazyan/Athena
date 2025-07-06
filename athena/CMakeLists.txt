@@ -34,18 +34,27 @@ target_compile_options(athena PRIVATE
     $<$<CONFIG:Debug>:-O0 -g>
 )
 
-# Enable testing and fetch GoogleTest
-include(FetchContent)
+# Enable testing
 enable_testing()
 
-# GoogleTest (version stable)
-FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG        release-1.14.0
-)
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+include(FetchContent)
+
+# Try to find system-installed GTest first
+find_package(GTest QUIET)
+
+if (NOT GTest_FOUND)
+    message(STATUS "GTest not found, fetching with FetchContent...")
+
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG        v1.14.0
+    )
+    FetchContent_MakeAvailable(googletest)
+
+else()
+    message(STATUS "Found system-installed GTest")
+endif()
 
 # Test executable
 add_executable(test_movegen tests/test_movegen.cc ${SRC_FILES})

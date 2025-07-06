@@ -13,6 +13,9 @@
 
 ## Table of Contents
 - [Installation](#installation)
+- [4PC engines and tools](#4pc-engines--tools)
+  - engines
+  - tools
 - [credits](#credits)
 
 
@@ -26,10 +29,26 @@ Create a build directory and compile
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build
 ```
-Once built, you can run the Athena cli:
+Once built, you can run the Athena cli
 ```bash
 cd build && ./athena
 ```
+
+## 4PC Engines & Tools
+
+Welcome to our growing list of four-player chess engines and tools! Here, you’ll find links to their GitHub repositories and Chess.com profiles, making it easy to explore and connect with others who share your passion. If you’ve developed a four-player chess engine, we warmly invite you to add it to this list. Sharing your work not only helps others get to know your engine and find it easily but also supports the growth of the four-player chess community. 
+###  Engines 
+<table style="border-collapse: collapse; width: 100%;">
+  <tr>
+    <td style="padding: 8px; vertical-align: top;">
+      Athena (<a href="https://github.com/arianahejazyan/Athena" target="_blank">GitHub</a>, <a href="https://www.chess.com/member/teamathena1" target="_blank">Chess.com</a>)
+    </td>
+  </tr>
+</table>
+
+### Tools
+- Colosseum ([GitHub](https://github.com/arianahejazyan/Colosseum)) [GUI and tournamant manager]
+
 
 ## Credits
 

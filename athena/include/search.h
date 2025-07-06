@@ -1,9 +1,5 @@
-#ifndef SEARCH_H
-#define SEARCH_H
-
+#pragma once
 namespace athena
 {
 
 } // namespace athena
-
-#endif // #ifndef SEARCH_H

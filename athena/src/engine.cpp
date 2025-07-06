@@ -56,8 +56,9 @@ Engine::Engine() : pos()
     auto* printCommand = app.add_subcommand("print", "Print current position")
     ->callback([this]() { handlePrint(); });
 
-    auto* configCommand =  app.add_subcommand("config", "Show current configuration")
-    ->callback([this]() { handleConfig();  });
+    printCommand->add_flag("-c,--config", print_config, "Show current engine configuration");
+    printCommand->add_flag("-f,--fen", print_fen, "Print position in FEN format");
+    printCommand->add_flag("-a,--ascii", print_ascii_pieces, "Print board as ASCII layout");
 }
 
 void Engine::launch()
@@ -86,9 +87,15 @@ void Engine::execute(int argc, const char* argv[])
     {
         app.clear();
 
+        // 
         perft_full = false;
         perft_split = false;
         perft_cumulative = false;
+
+        //
+        print_config = false;
+        print_fen = false;
+        print_ascii_pieces = false;
         
         app.parse(argc, argv);
     } 
@@ -204,13 +211,16 @@ void Engine::handlePerft() {
     runPerftTests(pos, perft_depth, perft_full, perft_split, perft_cumulative);
 }
 
-void Engine::handlePrint() {
-    print(pos);
-}
-
-void Engine::handleConfig()
+void Engine::handlePrint()
 {
-    std::cout << "info string debug " << (debug ? "on" : "off") << std::endl;
+    print(pos, print_fen, print_ascii_pieces);
+
+    if (print_config)
+    {
+        std::cout << std::endl;
+        std::cout << "configurations: "  << std::endl;
+        std::cout << "debug " << (debug ? "on" : "off") << std::endl;
+    }
 }
 
 } // namespace athena

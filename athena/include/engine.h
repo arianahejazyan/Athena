@@ -32,6 +32,11 @@ class Engine
         bool perft_split;
         bool perft_cumulative;
 
+        // Print options
+        bool print_config = false;
+        bool print_fen = false;
+        bool print_ascii_pieces = false;
+
         // UCI commands
         void handleUCI();
         void handleIsReady();
@@ -45,7 +50,7 @@ class Engine
         // Other commands
         void handlePerft();
         void handlePrint();
-        void handleConfig();
+        // void handleConfig();
         
     public:
 

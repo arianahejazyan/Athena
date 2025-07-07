@@ -58,7 +58,7 @@ Welcome to our growing list of four-player chess engines and tools! Here, you’
 ## Licenses
 
 > [!NOTE]
-> The license texts included in the `licenses/` folder are snapshots as of **July 7, 2025**, and may not reflect the most recent upstream changes. For the latest versions, refer to the official repositories linked above.
+> <p align="justify">The license texts included in the <b>licenses</b> folder are snapshots as of <b>July 7, 2025</b>, and may not reflect the most recent upstream changes. For the latest versions, refer to the official repositories linked above.</p>
 
 - This project uses [CLI11](https://github.com/CLIUtils/CLI11) under the [BSD 3-Clause License](https://github.com/CLIUtils/CLI11/blob/main/LICENSE).
 - This project uses [PyTorch](https://github.com/pytorch/pytorch) under the [BSD 3-Clause License](https://github.com/pytorch/pytorch/blob/main/LICENSE).

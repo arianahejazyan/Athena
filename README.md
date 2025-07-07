@@ -16,7 +16,7 @@
 - [4PC engines and tools](#4pc-engines--tools)
   - engines
   - tools
-- [credits](#credits)
+- [licenses](#licenses)
 
 
 ## Installation
@@ -55,6 +55,11 @@ Welcome to our growing list of four-player chess engines and tools! Here, you’
 - Colosseum ([GitHub](https://github.com/arianahejazyan/Colosseum)) [GUI and tournamant manager]
 
 
-## Credits
+## Licenses
 
-- This project uses the [CLI11](https://github.com/CLIUtils/CLI11) library for command-line parsing. ([BSD-3-Clause License](licenses/CLI11/LICENSE))
+- This project uses [CLI11](https://github.com/CLIUtils/CLI11) under the [BSD 3-Clause License](https://github.com/CLIUtils/CLI11/blob/main/LICENSE).
+- This project uses [PyTorch](https://github.com/pytorch/pytorch) under the [BSD 3-Clause License](https://github.com/pytorch/pytorch/blob/main/LICENSE).
+- This project uses [GoogleTest](https://github.com/google/googletest) under the [BSD 3-Clause License](https://github.com/google/googletest/blob/main/LICENSE).
+
+> [!INFO]
+> The license texts included in the `licenses/` folder are snapshots as of **July 7, 2025**, and may not reflect the most recent upstream changes. For the latest versions, refer to the official repositories linked above.

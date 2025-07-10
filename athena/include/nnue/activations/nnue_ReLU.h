@@ -1,5 +1,5 @@
-#ifndef RELU_H
-#define RELU_H
+#ifndef NNUE_RELU_H
+#define NNUE_RELU_H
 
 #include <algorithm>
 
@@ -21,4 +21,4 @@ namespace athena
 
 } // namespace athena
 
-#endif /* RELU_H */
+#endif /* NNUE_RELU_H */

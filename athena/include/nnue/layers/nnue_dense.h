@@ -10,10 +10,16 @@ namespace athena
     class Dense
     {
     private:
-        alignas(CacheLineSize) int32_t weights[outSize][inSize];
-        alignas(CacheLineSize) int32_t biases[outSize];
+        alignas(CacheLineSize) int32_t weights_[outSize][inSize];
+        alignas(CacheLineSize) int32_t biases_[outSize];
 
     public:
+        int32_t (&weights())[outSize][inSize] { return weights_; }
+        int32_t (&biases())[outSize] { return biases_; }
+
+        const int32_t (&weights() const)[outSize][inSize] { return weights_; }
+        const int32_t (&biases() const)[outSize] { return biases_; }
+
         void propagate(const int32_t *input, int32_t *output)
         {
             for (int j = 0; j < outSize; ++j)

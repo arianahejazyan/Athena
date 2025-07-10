@@ -1,22 +1,13 @@
-#pragma once
+#ifndef NNUE_FEATURE_TRANSFORMER_H
+#define NNUE_FEATURE_TRANSFORMER_H
 
 #include <cstring>
-#include <cstdint>
+#include "nnue_feature.h"
 #include "position.h"
+#include "nnue_config.h"
 
 namespace athena
 {
-
-    constexpr std::size_t L0 = 6 * 4 * 160; // 3840 input features
-    constexpr std::size_t L1 = 128;         // Hidden layer size, example value
-    constexpr std::size_t L2 = 1;
-
-    int make_index(Square sq, PieceClass pc)
-    {
-        auto piece = pc.piece();
-        auto color = pc.color();
-        return color + (piece * 4) + (sq * 24);
-    }
 
     class FeatureTransformer
     {
@@ -29,7 +20,7 @@ namespace athena
                 auto pc = pos.board[sq];
                 if (pc != EMPTY)
                 {
-                    auto idx = make_index(sq, pc);
+                    auto idx = feature_index(sq, pc);
                     feature_vector[idx] = 1;
                 }
             }
@@ -37,3 +28,5 @@ namespace athena
     };
 
 } // namespace athena
+
+#endif /* NNUE_FEATURE_TRANSFORMER_H */

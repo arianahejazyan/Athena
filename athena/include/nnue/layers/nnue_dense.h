@@ -1,5 +1,5 @@
-#ifndef DENSE_H
-#define DENSE_H
+#ifndef NNUE_DENSE_H
+#define NNUE_DENSE_H
 
 #include <cstdint>
 
@@ -33,4 +33,4 @@ namespace athena
 
 } // namespace athena
 
-#endif /* DENSE_H */
+#endif /* NNUE_DENSE_H */

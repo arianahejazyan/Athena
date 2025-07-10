@@ -2,6 +2,7 @@
 #define NNUE_DENSE_H
 
 #include <cstdint>
+#include "../nnue_config.h"
 
 namespace athena
 {
@@ -24,14 +25,14 @@ namespace athena
         {
             for (int j = 0; j < outSize; ++j)
             {
-                output[j] = biases[j];
+                output[j] = biases_[j];
             }
 
             for (int j = 0; j < inSize; ++j)
             {
                 for (int i = 0; i < outSize; ++i)
                 {
-                    output[i] += weights[i][j] * input[j];
+                    output[i] += weights_[i][j] * input[j];
                 }
             }
         }

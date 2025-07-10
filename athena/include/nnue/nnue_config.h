@@ -6,6 +6,8 @@
 namespace athena
 {
 
+    constexpr int CacheLineSize = 32;
+
     constexpr std::size_t L0 = 6 * 4 * 160; // 3840 input features
     constexpr std::size_t L1 = 128;         // Hidden layer size, example value
     constexpr std::size_t L2 = 1;

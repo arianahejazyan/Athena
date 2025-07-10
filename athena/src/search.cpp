@@ -15,7 +15,7 @@ namespace athena
     Move MOVE_CHECKMATE;
     Move MOVE_STALEMATE;
 
-    int negamax(Position &pos, Thread &thread, int alpha, int beta, int depth, int play = 0)
+    int negamax(Position &pos, Thread &thread, int alpha, int beta, int depth, int play)
     {
         if ((play == depth) || (play >= MAX_PLAY))
         {

@@ -1,5 +1,9 @@
 #pragma once
+
+#include "position.h"
 namespace athena
 {
+
+    int negamax(Position &pos, Thread &thread, int alpha, int beta, int depth, int play = 0);
 
 } // namespace athena

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "position.h"
+#include "thread.h"
 namespace athena
 {
 

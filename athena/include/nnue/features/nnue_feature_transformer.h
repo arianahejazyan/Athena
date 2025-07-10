@@ -4,7 +4,7 @@
 #include <cstring>
 #include "nnue_feature.h"
 #include "position.h"
-#include "nnue_config.h"
+#include "../nnue_config.h"
 
 namespace athena
 {
@@ -14,7 +14,7 @@ namespace athena
     public:
         void transform(const Position &pos, int *feature_vector) const
         {
-            std::memset(feature_vector, 0, sizeof(int) * L0);
+            std::memset(feature_vector, 0, sizeof(int) * Lx0);
             for (auto sq : VALID_SQUARES)
             {
                 auto pc = pos.board[sq];

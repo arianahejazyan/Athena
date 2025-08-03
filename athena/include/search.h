@@ -1,10 +1,26 @@
-#pragma once
+#ifndef SEARCH_H
+#define SEARCH_H
 
 #include "position.h"
-#include "thread.h"
+
 namespace athena
 {
 
-    int negamax(Position &pos, Thread &thread, int alpha, int beta, int depth, int play = 0);
+// class Thread
+// {
+//     public:
+
+//         int score;
+//         Move move;
+// };
+
+class Search
+{
+
+};
+
+    // int negamax(Position &pos, Thread &thread, int alpha, int beta, int depth, int play = 0);
 
 } // namespace athena
+
+#endif /* SEARCH_H */

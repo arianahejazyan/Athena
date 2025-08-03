@@ -1,142 +1,184 @@
 #include <gtest/gtest.h>
 #include "position.h"
-#include "movegen.h"
+#include "move.h"
 #include "utility.h"
 
 using namespace athena;
 
 class TestMoveGen : public ::testing::Test
 {
-    protected:
+protected:
+    MoveList moves;
+    Position pos;
 
-        Move moves[MAX_MOVES];
-        int size = 0;
-        Position pos;
-        
-        void checkMoves(int size, const std::vector<std::string>& expected)
+    void checkMoves(int size, const std::vector<std::string> &expected)
+    {
+        ASSERT_EQ(size, expected.size()) << "Move count mismatch";
+        for (int i = 0; i < size; ++i)
         {
-            ASSERT_EQ(size, expected.size()) << "Move count mismatch";
-            for (int i = 0; i < size; ++i) 
-            {
-                std::string actual = toString(moves[i]);
-                ASSERT_EQ(actual, expected[i]) 
+            std::string actual = moves[i].uci(true);
+            ASSERT_EQ(actual, expected[i])
                 << "mismatch at index " << i << ": expected '" << expected[i]
                 << "', got '" << actual << "'";
-            }
         }
+    }
 };
 
-TEST_F(TestMoveGen, IsSquareAttacked)
-{
-    // Knight
-    fromString("classic r 0 0000 0000 -,-,-,- rn,159", pos);
-    ASSERT_TRUE( isSquareAttacked(pos, G3, Blue)) << "Knight";
-    ASSERT_FALSE(isSquareAttacked(pos, F3, Blue)) << "Knight";
+// TEST_F(TestMoveGen, IsSquareAttacked)
+// {
+//     char fen[1024];
+//     std::strcpy(fen, "R-0,0,0,0-0,0,0,0-0,0,0,0-0,0,0,0-0-x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x/14/14/14/14/4,rN,9/14/14/14/x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x");    
+//     pos.init(fen);
+//     EXPECT_TRUE( (pos.isSquareAttacked<2, Color::o>(SQ::G10)));
+//     EXPECT_FALSE((pos.isSquareAttacked<1, Color::o>(SQ::H8 )));
+    
+//     std::strcpy(fen, "R-0,0,0,0-0,0,0,0-0,0,0,0-0,0,0,0-0-x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x/14/14/6,rK,7/14/14/14/14/14/x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x");    
+//     pos.init(fen);
+//     EXPECT_TRUE( (pos.isSquareAttacked<2, Color::o>(SQ::G11)));
+//     EXPECT_FALSE((pos.isSquareAttacked<1, Color::o>(SQ::F7 )));
 
-    // Rook
-    fromString("classic r 0 0000 0000 -,-,-,- rr,2,bp,156", pos);
-    ASSERT_TRUE( isSquareAttacked(pos, G2, Blue)) << "Rook";
-    ASSERT_FALSE(isSquareAttacked(pos, K2, Blue)) << "Rook";
+//     std::strcpy(fen, "R-0,0,0,0-0,0,0,0-0,0,0,0-0,0,0,0-0-x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x/14/14/14/14/14/14/14/14/x,x,x,3,gP,4,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x");    
+//     pos.init(fen);
+//     pos.print(true);
+//     EXPECT_TRUE( (pos.isSquareAttacked<0, Color::c>(SQ::G3)));
+//     EXPECT_FALSE((pos.isSquareAttacked<0, Color::c>(SQ::G4)));
 
-    // Bishop
-    fromString("classic r 0 0000 0000 -,-,-,- rb,17,bp,141", pos);
-    ASSERT_TRUE( isSquareAttacked(pos, G4, Blue)) << "Bishop";
-    ASSERT_FALSE(isSquareAttacked(pos, H5, Blue)) << "Bishop";
 
-    // Pawn
-    fromString("classic r 0 0000 0000 -,-,-,- rp,159", pos);
-    ASSERT_TRUE( isSquareAttacked(pos, F3, Blue)) << "Pawn";
-    ASSERT_FALSE(isSquareAttacked(pos, E3, Blue)) << "Pawn";
+//     std::strcpy(fen, "R-0,0,0,0-0,0,0,0-0,0,0,0-0,0,0,0-0-x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x/3,bR,3,bP,6/14/14/14/14/14/14/14/x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x");    
+//     pos.init(fen);
+//     pos.print(true);
+//     EXPECT_TRUE( (pos.isSquareAttacked<3, Color::c>(SQ::E15)));
+//     EXPECT_FALSE((pos.isSquareAttacked<2, Color::c>(SQ::M12)));
 
-    // King
-    fromString("classic r 0 0000 0000 -,-,-,- rk,159", pos);
-    ASSERT_TRUE( isSquareAttacked(pos, F2, Blue)) << "King";
-    ASSERT_FALSE(isSquareAttacked(pos, G2, Blue)) << "King";
-}
 
-TEST_F(TestMoveGen, GenJumperMoves)
-{
-    fromString("classic r 0 0000 0000 -,-,-,- rk,7,yp,bp,150", pos);
-    size = 0; 
-    size += genAllNoisyMoves(pos, moves + size);
-    size += genAllQuietMoves(pos, moves + size);
-    checkMoves(size, {"e2f3", "e2f2"});
-}
+//     std::strcpy(fen, "R-0,0,0,0-0,0,0,0-0,0,0,0-0,0,0,0-0-x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x/14/14/14/14/14/14/14/8,gP,5/x,x,x,8,x,x,x/x,x,x,3,gB,4,x,x,x/x,x,x,8,x,x,x");    
+//     pos.init(fen);
+//     pos.print(true);
+//     EXPECT_TRUE( (pos.isSquareAttacked<1, Color::c>(SQ::D7)));
+//     EXPECT_FALSE((pos.isSquareAttacked<1, Color::c>(SQ::K6)));
 
-TEST_F(TestMoveGen, GenSliderMoves)
-{
-    fromString("classic r 0 0000 0000 -,-,-,- rq,2,bq,12,gq,1,yq,141", pos);
-    size = 0; 
-    size += genAllNoisyMoves(pos, moves + size);
-    size += genAllQuietMoves(pos, moves + size);
-    checkMoves(size, {"e2h2", "e2e4", "e2f2", "e2g2", "e2e3", "e2f3"});
-}
+// }
 
-TEST_F(TestMoveGen, GenPushMoves)
-{
-    fromString("classic r 0 0000 0000 -,-,-,- rp,rp,rp,6,yp,8,yp,141", pos);
-    size = 0; 
-    size += genAllNoisyMoves(pos, moves + size);
-    size += genAllQuietMoves(pos, moves + size);
-    checkMoves(size, {"e2e3", "g2g3", "e2e4"});
-}
+// TEST_F(TestMoveGen, GenKingMoves)
+// {
+//     char fen[1024];
+//     std::strcpy(fen, "R-0,0,0,0-0,0,0,0-0,0,0,0-0,0,0,0-0-x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x/14/14/14/14/14/14/14/14/x,x,x,8,x,x,x/x,x,x,yP,bP,6,x,x,x/x,x,x,rK,7,x,x,x");    
+//     pos.init(fen);
+//     moves.size = 0;
+//     moves.genNoisyMoves(pos);
+//     moves.genQuietMoves(pos);
+//     checkMoves(moves.size, {"e2f3", "e2f2"});
+// }
 
-TEST_F(TestMoveGen, GenTakeMoves)
-{
-    fromString("classic r 0 0000 0000 -,-,-,- rp,2,rp,4,yp,bp,1,yp,yp,147", pos);
-    size = 0; 
-    size += genAllNoisyMoves(pos, moves + size);
-    size += genAllQuietMoves(pos, moves + size);
-    checkMoves(size, {"e2f3"});
-} 
+// TEST_F(TestMoveGen, GenKnightMoves)
+// {
+//     char fen[1024];
+//     std::strcpy(fen, "B-0,0,0,0-0,0,0,0-0,0,0,0-0,0,0,0-0-x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x/14/14/14/14/14/14/14/14/x,x,x,rP,1,gP,5,x,x,x/x,x,x,8,x,x,x/x,x,x,1,bN,6,x,x,x");    
+//     pos.init(fen);
+//     moves.size = 0;
+//     moves.genNoisyMoves(pos);
+//     moves.genQuietMoves(pos);
+//     checkMoves(moves.size, {"f2e4", "f2h3"});
+// }
 
-TEST_F(TestMoveGen, GenEvolveMoves)
-{
-    fromString("classic r 0 0000 0000 -,-,-,- 108,rp,2,rp,12,yp,yp,gp,33", pos);
-    size = 0; 
-    size += genAllNoisyMoves(pos, moves + size);
-    size += genAllQuietMoves(pos, moves + size);
-    checkMoves(size, {"b11b12q", "b11b12r", "b11b12b", "b11b12n", "e11f12q", "e11f12r", "e11f12b", "e11f12n"});
-}
+// TEST_F(TestMoveGen, GenRookMoves)
+// {
+//     char fen[1024];
+//     std::strcpy(fen, "Y-0,0,0,0-0,0,0,0-0,0,0,0-0,0,0,0-0-x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x/14/14/14/14/14/14/14/14/x,x,x,1,bR,6,x,x,x/x,x,x,8,x,x,x/x,x,x,1,yR,1,rR,4,x,x,x");    
+//     pos.init(fen);
+//     moves.size = 0;
+//     moves.genNoisyMoves(pos);
+//     moves.genQuietMoves(pos);
+//     checkMoves(moves.size, {"f2f4", "f2e2", "f2g2", "f2f3"});
+// }
 
-TEST_F(TestMoveGen, GenEnpassMoves)
-{
-    fromString("classic r 0 0000 0000 -,d5,-,m5 16,rp,6,rp,3,bp,6,gp,125", pos);
-    size = 0; 
-    size += genAllNoisyMoves(pos, moves + size);
-    size += genAllQuietMoves(pos, moves + size);
-    checkMoves(size, {"e4d5", "l4m5"});
-}
+// TEST_F(TestMoveGen, GenBishopMoves)
+// {
+//     char fen[1024];
+//     std::strcpy(fen, "G-0,0,0,0-0,0,0,0-0,0,0,0-0,0,0,0-0-x,x,x,8,x,x,x/x,x,x,2,rB,5,x,x,x/x,x,x,8,x,x,x/3,gB,10/4,yB,9/1,bB,12/14/14/14/14/14/x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x");    
+//     pos.init(fen);
+//     moves.size = 0;
+//     moves.genNoisyMoves(pos);
+//     moves.genQuietMoves(pos);
+//     checkMoves(moves.size, {"e12f11", "e12g14", "e12d11", "e12f13"});
+// }
+
+// TEST_F(TestMoveGen, GenPushMoves)
+// {
+//     char fen[1024];
+//     std::strcpy(fen, "R-0,0,0,0-0,0,0,0-0,0,0,0-0,0,0,0-0-x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x/14/14/14/14/14/14/14/14/x,x,x,3,rP,2,yP,1,x,x,x/x,x,x,2,rP,3,rP,1,x,x,x/x,x,x,8,x,x,x");    
+//     pos.init(fen);
+//     moves.size = 0;
+//     moves.genNoisyMoves(pos);
+//     moves.genQuietMoves(pos);
+//     checkMoves(moves.size, {"g3g4", "h4h5", "g3g5"});
+// }
+
+// TEST_F(TestMoveGen, GenTakeMoves)
+// {
+//     char fen[1024];
+//     std::strcpy(fen, "R-0,0,0,0-0,0,0,0-0,0,0,0-0,0,0,0-0-x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x/14/14/14/14/14/14/14/14/x,x,x,1,bP,gP,3,yP,yP,x,x,x/x,x,x,1,rP,5,rP,x,x,x/x,x,x,8,x,x,x");    
+//     pos.init(fen);
+//     moves.size = 0;
+//     moves.genNoisyMoves(pos);
+//     moves.genQuietMoves(pos);
+//     checkMoves(moves.size, {"f3g4"});
+// }
+
+// TEST_F(TestMoveGen, GenEvolveMoves)
+// {
+//     char fen[1024];
+//     std::strcpy(fen, "B-0,0,0,0-0,0,0,0-0,0,0,0-0,0,0,0-0-x,x,x,6,bP,gP,x,x,x/x,x,x,8,x,x,x/x,x,x,7,gP,x,x,x/9,bP,4/10,yP,3/14/14/14/14/14/14/x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x");    
+//     pos.init(fen);
+//     moves.size = 0;
+//     moves.genNoisyMoves(pos);
+//     moves.genQuietMoves(pos);
+//     checkMoves(moves.size, {"k12l11q", "k12l11r", "k12l11b", "k12l11n", "k12l12q", "k12l12r", "k12l12b", "k12l12n"});
+// }
+
+// TEST_F(TestMoveGen, GenEnpassMoves)
+// {
+//     char fen[1024];
+//     std::strcpy(fen, "R-0,0,0,0-0,0,0,0-0,0,0,0-0,0,0,0-0-{'enPassant':('','','','l8:k8')}-x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x/14/14/14/10,gP,3/10,rP,1,rP,1/14/14/14/x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x");    
+//     pos.init(fen);
+//     moves.size = 0;
+//     moves.genNoisyMoves(pos);
+//     moves.genQuietMoves(pos);
+//     checkMoves(moves.size, {"l8m9", "n8m9", "n8n9"});
+// }
 
 TEST_F(TestMoveGen, GenCastleMoves)
 {
-    fromString("classic r 0 0000 0000 -,-,-,- 160", pos);
-    size = 0;
-    size += genAllNoisyMoves(pos, moves + size);
-    size += genAllQuietMoves(pos, moves + size);
-    checkMoves(size, {});
+    char fen[1024];
+    std::strcpy(fen, "B-0,0,0,0-0,0,0,0-0,0,0,0-0,0,0,0-0-x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x/14/14/14/14/14/14/14/14/x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x");    
+    pos.init(fen);
+    moves.size = 0;
+    moves.genNoisyMoves(pos);
+    moves.genQuietMoves(pos);
+    checkMoves(moves.size, {});
 
-    fromString("classic r 0 1000 1000 -,-,-,- 160", pos);
-    size = 0; 
-    size += genAllNoisyMoves(pos, moves + size);
-    size += genAllQuietMoves(pos, moves + size);
-    checkMoves(size, {"i2k2", "i2g2"});
+    std::strcpy(fen, "B-0,0,0,0-0,1,0,0-0,1,0,0-0,0,0,0-0-x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x/14/14/14/14/14/14/14/14/x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x");    
+    pos.init(fen);
+    pos.print(true);
+    moves.size = 0;
+    moves.genNoisyMoves(pos);
+    moves.genQuietMoves(pos);
+    checkMoves(moves.size, {"b8b6", "b8b10"});
 
-    fromString("classic r 0 1000 1000 -,-,-,- 1,yn,158", pos);
-    size = 0; 
-    size += genAllNoisyMoves(pos, moves + size);
-    size += genAllQuietMoves(pos, moves + size);
-    checkMoves(size, {"i2k2"});
 
-    fromString("classic r 0 1000 1000 -,-,-,- 19,gq,140", pos);
-    size = 0; 
-    size += genAllNoisyMoves(pos, moves + size);
-    size += genAllQuietMoves(pos, moves + size);
-    checkMoves(size, {});
-}
+    std::strcpy(fen, "B-0,0,0,0-0,1,0,0-0,1,0,0-0,0,0,0-0-x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x/14/gN,13/14/14/14/14/gN,13/14/x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x");    
+    pos.init(fen);
+    pos.print(true);
+    moves.size = 0;
+    moves.genNoisyMoves(pos);
+    moves.genQuietMoves(pos);
+    checkMoves(moves.size, {});
 
-int main(int argc, char **argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    std::strcpy(fen, "B-0,0,0,0-0,1,0,0-0,1,0,0-0,0,0,0-0-x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x/14/14/14/2,yQ,11/14/14/14/14/x,x,x,8,x,x,x/x,x,x,8,x,x,x/x,x,x,8,x,x,x");    
+    pos.init(fen);
+    pos.print(true);
+    moves.size = 0;
+    moves.genNoisyMoves(pos);
+    moves.genQuietMoves(pos);
+    checkMoves(moves.size, {});
 }

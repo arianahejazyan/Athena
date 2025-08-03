@@ -1,17 +1,17 @@
-#ifndef NNUE_H
-#define NNUE_H
+// #ifndef NNUE_H
+// #define NNUE_H
 
-#include "position.h"
+// #include "position.h"
 
-namespace athena
-{
+// namespace athena
+// {
 
-    class NNUE
-    {
-    public:
-        int32_t evaluate(const Position &pos);
-    };
+//     class NNUE
+//     {
+//     public:
+//         int32_t evaluate(const Position &pos);
+//     };
 
-} // namespace athena
+// } // namespace athena
 
-#endif /* NNUE_H */
+// #endif /* NNUE_H */

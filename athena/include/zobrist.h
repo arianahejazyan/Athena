@@ -6,4 +6,4 @@ namespace athena
 
 } // namespace athena
 
-#endif // #ifndef ZOBRIST_H
+#endif /* ZOBRIST_H */

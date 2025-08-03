@@ -1,24 +1,24 @@
-#ifndef NNUE_RELU_H
-#define NNUE_RELU_H
+// #ifndef NNUE_RELU_H
+// #define NNUE_RELU_H
 
-#include <algorithm>
+// #include <algorithm>
 
-namespace athena
-{
+// namespace athena
+// {
 
-    template <std::size_t Size>
-    class ReLU
-    {
-    public:
-        void propagatge(const int *input, int *output) const
-        {
-            for (int i = 0; i < Size; ++i)
-            {
-                output[i] = std::max(0, input[i]);
-            }
-        }
-    };
+//     template <std::size_t Size>
+//     class ReLU
+//     {
+//     public:
+//         void propagatge(const int *input, int *output) const
+//         {
+//             for (int i = 0; i < Size; ++i)
+//             {
+//                 output[i] = std::max(0, input[i]);
+//             }
+//         }
+//     };
 
-} // namespace athena
+// } // namespace athena
 
-#endif /* NNUE_RELU_H */
+// #endif /* NNUE_RELU_H */

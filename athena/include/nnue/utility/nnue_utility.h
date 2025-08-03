@@ -1,15 +1,15 @@
-#ifndef NNUE_UTILITY_H
-#define NNUE_UTILITY_H
+// #ifndef NNUE_UTILITY_H
+// #define NNUE_UTILITY_H
 
-namespace athena
-{
+// namespace athena
+// {
 
-    template <typename T>
-    T clipped(T value, T min, T max)
-    {
-        return std::min(std::max(value, min), max);
-    }
+//     template <typename T>
+//     T clipped(T value, T min, T max)
+//     {
+//         return std::min(std::max(value, min), max);
+//     }
 
-} // namespace athena
+// } // namespace athena
 
-#endif /* NNUE_UTILITY_H */
+// #endif /* NNUE_UTILITY_H */

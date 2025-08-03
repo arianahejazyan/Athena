@@ -9,4 +9,4 @@ namespace athena
 
 } // namespace athena
 
-#endif // #ifndef EVAL_H
+#endif /* EVAL_H */

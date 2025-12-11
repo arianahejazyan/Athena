@@ -1,6 +1,7 @@
 #pragma once
 
 #include "chess.h"
+#include "bitboard.h"
 
 namespace athena
 {
@@ -44,6 +45,22 @@ class alignas(CACHELINE_SIZE) Position
         return turn_;
     }
 
+    void setPiece(Square sq, PieceClass pc) noexcept
+    {
+        board_[static_cast<uint8_t>(sq)] = pc;
+
+        pieces_[static_cast<uint8_t>(pc.piece())].setSquare(sq);
+        colors_[static_cast<uint8_t>(pc.color())].setSquare(sq);
+    }
+
+    void popPiece(Square sq) noexcept
+    {
+        pieces_[static_cast<uint8_t>(board_[static_cast<uint8_t>(sq)].piece())].popSquare(sq);
+        colors_[static_cast<uint8_t>(board_[static_cast<uint8_t>(sq)].color())].popSquare(sq);
+
+        board_[static_cast<uint8_t>(sq)] = PieceClass::Empty();
+    }
+
     void makemove(Move move);
     void undomove(Move move);
 
@@ -58,6 +75,9 @@ class alignas(CACHELINE_SIZE) Position
 
     std::array<PieceClass, SQUARE_NB> board_;
     std::array<GameState, PLAY_NB> states_;
+    std::array<Bitboard, 8> pieces_;
+    std::array<Bitboard, 8> colors_;
+    
     std::array<Square, COLOR_NB> royals_;
     std::array<Square, COLOR_NB> enpass_;
     uint8_t play_;

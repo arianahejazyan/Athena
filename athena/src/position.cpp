@@ -67,6 +67,9 @@ void Position::init(FEN fen)
 
     // 5. Parse board //
     royals_.fill(Square::Offboard);
+    
+    pieces_.fill(Bitboard(0,0,0,0));
+    colors_.fill(Bitboard(0,0,0,0));
 
     for (int sq = 0; sq < SQUARE_NB; ++sq)
     {
@@ -101,7 +104,7 @@ void Position::init(FEN fen)
             const auto color = UCI2Color(file[0]);
             const auto piece = UCI2Piece(file[1]);
             
-            board_[static_cast<uint8_t>(sq)] = PieceClass(color, piece);
+            setPiece(sq, PieceClass(color, piece));
 
             // Handling royal squares
             if (piece == Piece::King) royals_[static_cast<uint8_t>(color)] = sq;     
@@ -110,6 +113,263 @@ void Position::init(FEN fen)
         // Moving to the next rank
         row--, col = 1;
     }
+}
+
+void Position::makemove(Move move)
+{
+    play_++;
+
+    GameState& currGS = states_[play_ - 1];
+    GameState& nextGS = states_[play_ - 0];
+
+    auto source = move.source();
+    auto target = move.target();
+
+    auto type = move.type();
+    auto flag = move.flag();
+
+    auto attacker = board_[static_cast<uint8_t>(source)];
+    auto defender = board_[static_cast<uint8_t>(target)];
+
+    nextGS.capture = defender;
+
+    if (defender != PieceClass::Empty())
+    {
+        pieces_[static_cast<uint8_t>(defender.piece())].popSquare(target);
+        colors_[static_cast<uint8_t>(defender.color())].popSquare(target);
+    }
+
+    popPiece(source);
+    setPiece(target, attacker);
+    
+    // Update enpassant
+    nextGS.enpass = enpass_[static_cast<uint8_t>(turn_)];
+    enpass_[static_cast<uint8_t>(turn_)] = Square::Offboard;
+    
+    // Update castling rights
+    nextGS.castle = currGS.castle;
+    nextGS.castle &= castling_rights(source);
+    nextGS.castle &= castling_rights(target);
+
+    if (attacker.piece() == Piece::King) {
+        royals_[static_cast<uint8_t>(turn_)] = target;
+    }
+
+    // Handle movetypes
+    if (type == MoveType::Stride)
+    {
+        enpass_[static_cast<uint8_t>(turn_)] = (source + target) >> 1;
+    }
+    
+    else if (type == MoveType::Enpass)
+    {
+        const auto offset = 
+        turn_ == Color::Red    ? push_offsets(Color::Red   )[0] : 
+        turn_ == Color::Blue   ? push_offsets(Color::Blue  )[0] : 
+        turn_ == Color::Yellow ? push_offsets(Color::Yellow)[0] : 
+        turn_ == Color::Green  ? push_offsets(Color::Green )[0] : 0;
+
+        board_[static_cast<uint8_t>(source + offset)] = PieceClass::Empty();
+    }
+        
+    else if (type == MoveType::Castle)
+    {
+        std::array<Square, 4> squares {};
+        if (move.castle() == Side::KingSide)
+        {
+            squares =
+            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::KingSide) : 
+            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::KingSide) : 
+            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::KingSide) : 
+            turn_ == Color::Green  ? castle_squares(Color::Green , Side::KingSide) : std::array<Square, 4>();
+        }
+
+        else
+        {
+            squares =
+            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::QueenSide) : 
+            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::QueenSide) : 
+            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::QueenSide) : 
+            turn_ == Color::Green  ? castle_squares(Color::Green , Side::QueenSide) : std::array<Square, 4>();
+        }
+
+        board_[static_cast<uint8_t>(squares[2])] = PieceClass::Empty();
+        board_[static_cast<uint8_t>(squares[3])] = PieceClass(turn_, Piece::Rook);   
+    }
+
+    else if (type == MoveType::Evolve) 
+    { 
+        board_[static_cast<uint8_t>(target)] = PieceClass(turn_, move.evolve()); 
+    }
+
+    // Update fiftymove clock rule
+    if (attacker.piece() == Piece::Pawn || flag == MoveFlag::Noisy || type == MoveType::Castle)
+         nextGS.fiftymove = 0;
+    else nextGS.fiftymove = currGS.fiftymove + 1;
+    
+    turn_ = next(turn_);
+}
+
+void Position::undomove(Move move)
+{
+    play_--;
+
+    GameState& prevGS = states_[play_ + 0];
+    GameState& currGS = states_[play_ + 1];
+
+    turn_ = prev(turn_);
+
+    auto source = move.source();
+    auto target = move.target();
+
+    auto type = move.type(); 
+    auto flag = move.flag();
+
+    auto attacker = board_[static_cast<uint8_t>(target)];
+    auto defender = currGS.capture;
+
+    setPiece(target, defender);
+    setPiece(source, attacker);
+
+    // Update enpassant
+    enpass_[static_cast<uint8_t>(turn_)] = currGS.enpass;
+
+    if (attacker.piece() == Piece::King) {
+        royals_[static_cast<uint8_t>(turn_)] = source;
+    }
+
+    else if (type == MoveType::Enpass)
+    {
+        const auto offset = 
+        turn_ == Color::Red    ? push_offsets(Color::Red   )[0] : 
+        turn_ == Color::Blue   ? push_offsets(Color::Blue  )[0] : 
+        turn_ == Color::Yellow ? push_offsets(Color::Yellow)[0] : 
+        turn_ == Color::Green  ? push_offsets(Color::Green )[0] : 0;
+
+        board_[static_cast<uint8_t>(source + offset)] = PieceClass(move.enpass(), Piece::Pawn);
+    }
+        
+    else if (type == MoveType::Castle)
+    {
+        std::array<Square, 4> squares {};
+        if (move.castle() == Side::KingSide)
+        {
+            squares =
+            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::KingSide) : 
+            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::KingSide) : 
+            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::KingSide) : 
+            turn_ == Color::Green  ? castle_squares(Color::Green , Side::KingSide) : std::array<Square, 4>();
+        }
+
+        else
+        {
+            squares =
+            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::QueenSide) : 
+            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::QueenSide) : 
+            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::QueenSide) : 
+            turn_ == Color::Green  ? castle_squares(Color::Green , Side::QueenSide) : std::array<Square, 4>();
+        }
+
+        board_[static_cast<uint8_t>(squares[2])] = PieceClass(turn_, Piece::Rook);
+        board_[static_cast<uint8_t>(squares[3])] = PieceClass::Empty();   
+    }
+
+    else if (type == MoveType::Evolve)
+    {
+        board_[static_cast<uint8_t>(source)] = PieceClass(turn_, Piece::Pawn);
+    }   
+}
+
+bool Position::inCheck(Color color, Square sq) const
+{
+    // Checked by Knight
+    for (auto offset : crawl_offsets(Piece::Knight))
+    {
+        PieceClass pc = board(sq + offset);
+
+        if (pc.piece() == Piece::Knight &&  isOpponent(pc.color(), color))
+        {
+            return true;
+        }
+    }
+
+    // Checked by King
+    for (auto offset : crawl_offsets(Piece::King))
+    {
+        PieceClass pc = board(sq + offset);
+
+        if (pc.piece() == Piece::King &&  isOpponent(pc.color(), color))
+        {
+            return true;
+        }
+    }
+
+    // Checked by Queen or Bishop
+    for (auto offset : slide_offsets(Piece::Bishop))
+    {
+        Square target = sq;
+        bool blocked = false;
+
+        for (int step = 0; step < max_step(Piece::Bishop) && !blocked; ++step)
+        {
+            target += offset;
+            PieceClass pc = board(target);
+    
+            bool is_stone = (pc == PieceClass::Stone());
+            bool is_empty = (pc == PieceClass::Empty());
+            bool is_enemy = isOpponent(pc.color(), color) && (pc.piece() == Piece::Bishop || pc.piece() == Piece::Queen);
+
+            if (!is_stone && !is_empty && is_enemy)
+                return true;
+
+            blocked = is_stone || !is_empty;
+        }
+    }
+
+    // Checked by Queen or Rook
+    for (auto offset : slide_offsets(Piece::Rook))
+    {
+        Square target = sq;
+        bool blocked = false;
+
+        for (int step = 0; step < max_step(Piece::Rook) && !blocked; ++step)
+        {
+            target += offset;
+            PieceClass pc = board(target);
+    
+            bool is_stone = (pc == PieceClass::Stone());
+            bool is_empty = (pc == PieceClass::Empty());
+            bool is_enemy = isOpponent(pc.color(), color) && (pc.piece() == Piece::Rook || pc.piece() == Piece::Queen);
+
+            if (!is_stone && !is_empty && is_enemy)
+                return true;
+
+            blocked = is_stone || !is_empty;
+        }
+    }
+
+    constexpr std::array<uint8_t, TAKE_NB> takeR = take_offsets(Color::Red   );
+    constexpr std::array<uint8_t, TAKE_NB> takeB = take_offsets(Color::Blue  );
+    constexpr std::array<uint8_t, TAKE_NB> takeY = take_offsets(Color::Yellow);
+    constexpr std::array<uint8_t, TAKE_NB> takeG = take_offsets(Color::Green );
+
+    // Checked by Pawn
+    for (Color opponent: opponents(color))
+    {
+        for (auto offset : (opponent == Color::Red ? takeY : opponent == Color::Blue ? takeG : opponent == Color::Yellow ? takeR : takeB))
+        {
+            if (board(sq + offset) == PieceClass(opponent, Piece::Pawn))
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool Position::inCheck(Color color) const {
+    return inCheck(color, royal(color));
 }
 
 std::string Position::fen() const//{'enPassant':('k3:k4','d3:','','')}
@@ -336,258 +596,6 @@ void Position::print() const
 
     std::cout << std::endl;
 }
-
-void Position::makemove(Move move)
-{
-    play_++;
-
-    GameState& currGS = states_[play_ - 1];
-    GameState& nextGS = states_[play_ - 0];
-
-    auto source = move.source();
-    auto target = move.target();
-
-    auto type = move.type();
-    auto flag = move.flag();
-
-    auto attacker = board_[static_cast<uint8_t>(source)];
-    auto defender = board_[static_cast<uint8_t>(target)];
-
-    nextGS.capture = defender;
-
-    board_[static_cast<uint8_t>(target)] = attacker;
-    board_[static_cast<uint8_t>(source)] = PieceClass::Empty(); // set pop zobrist
-
-    // Update enpassant
-    nextGS.enpass = enpass_[static_cast<uint8_t>(turn_)];
-    enpass_[static_cast<uint8_t>(turn_)] = Square::Offboard;
-    
-    // Update castling rights
-    nextGS.castle = currGS.castle;
-    nextGS.castle &= castling_rights(source);
-    nextGS.castle &= castling_rights(target);
-
-    if (attacker.piece() == Piece::King) {
-        royals_[static_cast<uint8_t>(turn_)] = target;
-    }
-
-    // Handle movetypes
-    if (type == MoveType::Stride)
-    {
-        enpass_[static_cast<uint8_t>(turn_)] = (source + target) >> 1;
-    }
-    
-    else if (type == MoveType::Enpass)
-    {
-        const auto offset = 
-        turn_ == Color::Red    ? push_offsets(Color::Red   )[0] : 
-        turn_ == Color::Blue   ? push_offsets(Color::Blue  )[0] : 
-        turn_ == Color::Yellow ? push_offsets(Color::Yellow)[0] : 
-        turn_ == Color::Green  ? push_offsets(Color::Green )[0] : 0;
-
-        board_[static_cast<uint8_t>(source + offset)] = PieceClass::Empty();
-    }
-        
-    else if (type == MoveType::Castle)
-    {
-        std::array<Square, 4> squares {};
-        if (move.castle() == Side::KingSide)
-        {
-            squares =
-            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::KingSide) : 
-            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::KingSide) : 
-            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::KingSide) : 
-            turn_ == Color::Green  ? castle_squares(Color::Green , Side::KingSide) : std::array<Square, 4>();
-        }
-
-        else
-        {
-            squares =
-            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::QueenSide) : 
-            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::QueenSide) : 
-            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::QueenSide) : 
-            turn_ == Color::Green  ? castle_squares(Color::Green , Side::QueenSide) : std::array<Square, 4>();
-        }
-
-        board_[static_cast<uint8_t>(squares[2])] = PieceClass::Empty();
-        board_[static_cast<uint8_t>(squares[3])] = PieceClass(turn_, Piece::Rook);   
-    }
-
-    else if (type == MoveType::Evolve) 
-    { 
-        board_[static_cast<uint8_t>(target)] = PieceClass(turn_, move.evolve()); 
-    }
-
-    // Update fiftymove clock rule
-    if (attacker.piece() == Piece::Pawn || flag == MoveFlag::Noisy || type == MoveType::Castle)
-         nextGS.fiftymove = 0;
-    else nextGS.fiftymove = currGS.fiftymove + 1;
-    
-    turn_ = next(turn_);
-}
-
-void Position::undomove(Move move)
-{
-    play_--;
-
-    GameState& prevGS = states_[play_ + 0];
-    GameState& currGS = states_[play_ + 1];
-
-    turn_ = prev(turn_);
-
-    auto source = move.source();
-    auto target = move.target();
-
-    auto type = move.type(); 
-    auto flag = move.flag();
-
-    auto attacker = board_[static_cast<uint8_t>(target)];
-    auto defender = currGS.capture;
-
-    board_[static_cast<uint8_t>(target)] = defender;
-    board_[static_cast<uint8_t>(source)] = attacker;
-
-    // Update enpassant
-    enpass_[static_cast<uint8_t>(turn_)] = currGS.enpass;
-
-    if (attacker.piece() == Piece::King) {
-        royals_[static_cast<uint8_t>(turn_)] = source;
-    }
-
-    else if (type == MoveType::Enpass)
-    {
-        const auto offset = 
-        turn_ == Color::Red    ? push_offsets(Color::Red   )[0] : 
-        turn_ == Color::Blue   ? push_offsets(Color::Blue  )[0] : 
-        turn_ == Color::Yellow ? push_offsets(Color::Yellow)[0] : 
-        turn_ == Color::Green  ? push_offsets(Color::Green )[0] : 0;
-
-        board_[static_cast<uint8_t>(source + offset)] = PieceClass(move.enpass(), Piece::Pawn);
-    }
-        
-    else if (type == MoveType::Castle)
-    {
-        std::array<Square, 4> squares {};
-        if (move.castle() == Side::KingSide)
-        {
-            squares =
-            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::KingSide) : 
-            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::KingSide) : 
-            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::KingSide) : 
-            turn_ == Color::Green  ? castle_squares(Color::Green , Side::KingSide) : std::array<Square, 4>();
-        }
-
-        else
-        {
-            squares =
-            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::QueenSide) : 
-            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::QueenSide) : 
-            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::QueenSide) : 
-            turn_ == Color::Green  ? castle_squares(Color::Green , Side::QueenSide) : std::array<Square, 4>();
-        }
-
-        board_[static_cast<uint8_t>(squares[2])] = PieceClass(turn_, Piece::Rook);
-        board_[static_cast<uint8_t>(squares[3])] = PieceClass::Empty();   
-    }
-
-    else if (type == MoveType::Evolve)
-    {
-        board_[static_cast<uint8_t>(source)] = PieceClass(turn_, Piece::Pawn);
-    }   
-}
-
-bool Position::inCheck(Color color, Square sq) const
-{
-    // Checked by Knight
-    for (auto offset : crawl_offsets(Piece::Knight))
-    {
-        PieceClass pc = board(sq + offset);
-
-        if (pc.piece() == Piece::Knight &&  isOpponent(pc.color(), color))
-        {
-            return true;
-        }
-    }
-
-    // Checked by King
-    for (auto offset : crawl_offsets(Piece::King))
-    {
-        PieceClass pc = board(sq + offset);
-
-        if (pc.piece() == Piece::King &&  isOpponent(pc.color(), color))
-        {
-            return true;
-        }
-    }
-
-    // Checked by Queen or Bishop
-    for (auto offset : slide_offsets(Piece::Bishop))
-    {
-        Square target = sq;
-        bool blocked = false;
-
-        for (int step = 0; step < max_step(Piece::Bishop) && !blocked; ++step)
-        {
-            target += offset;
-            PieceClass pc = board(target);
-    
-            bool is_stone = (pc == PieceClass::Stone());
-            bool is_empty = (pc == PieceClass::Empty());
-            bool is_enemy = isOpponent(pc.color(), color) && (pc.piece() == Piece::Bishop || pc.piece() == Piece::Queen);
-
-            if (!is_stone && !is_empty && is_enemy)
-                return true;
-
-            blocked = is_stone || !is_empty;
-        }
-    }
-
-    // Checked by Queen or Rook
-    for (auto offset : slide_offsets(Piece::Rook))
-    {
-        Square target = sq;
-        bool blocked = false;
-
-        for (int step = 0; step < max_step(Piece::Rook) && !blocked; ++step)
-        {
-            target += offset;
-            PieceClass pc = board(target);
-    
-            bool is_stone = (pc == PieceClass::Stone());
-            bool is_empty = (pc == PieceClass::Empty());
-            bool is_enemy = isOpponent(pc.color(), color) && (pc.piece() == Piece::Rook || pc.piece() == Piece::Queen);
-
-            if (!is_stone && !is_empty && is_enemy)
-                return true;
-
-            blocked = is_stone || !is_empty;
-        }
-    }
-
-    constexpr std::array<uint8_t, TAKE_NB> takeR = take_offsets(Color::Red   );
-    constexpr std::array<uint8_t, TAKE_NB> takeB = take_offsets(Color::Blue  );
-    constexpr std::array<uint8_t, TAKE_NB> takeY = take_offsets(Color::Yellow);
-    constexpr std::array<uint8_t, TAKE_NB> takeG = take_offsets(Color::Green );
-
-    // Checked by Pawn
-    for (Color opponent: opponents(color))
-    {
-        for (auto offset : (opponent == Color::Red ? takeY : opponent == Color::Blue ? takeG : opponent == Color::Yellow ? takeR : takeB))
-        {
-            if (board(sq + offset) == PieceClass(opponent, Piece::Pawn))
-            {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-bool Position::inCheck(Color color) const {
-    return inCheck(color, royal(color));
-}
-
 
 // template<Piece piece, Color color, Type type, Flag flag, Side side, Piece promo, Color enpass, Setup setup>
 // void makemove(PS& ps, Move move)

@@ -100,6 +100,8 @@ CRAWL_NB       = 8,
 SLIDE_NB       = 4,
 PUSH_NB        = 2,
 TAKE_NB        = 2,
+CHUNK_NB       = 4,
+CHUNK_SIZE     = 64,
 CACHELINE_SIZE = 64;
 
 using FEN = std::string_view;
@@ -243,8 +245,11 @@ consteval std::array<uint8_t, TAKE_NB> take_offsets(Color color)
     return TAKE_OFFSETS[static_cast<uint8_t>(color)];
 }
 
-inline int rank(Square square) noexcept { return static_cast<uint8_t>(square) / FILE_NB; }
-inline int file(Square square) noexcept { return static_cast<uint8_t>(square) % FILE_NB; }
+inline constexpr uint8_t index(Square square) noexcept { return static_cast<uint8_t>(square) % CHUNK_SIZE; }
+inline constexpr uint8_t chunk(Square square) noexcept { return static_cast<uint8_t>(square) / CHUNK_SIZE; }
+
+inline constexpr int rank(Square square) noexcept { return static_cast<uint8_t>(square) / FILE_NB; }
+inline constexpr int file(Square square) noexcept { return static_cast<uint8_t>(square) % FILE_NB; }
 
 inline Color next(Color color) noexcept { return Color((static_cast<uint8_t>(color) + 1) & 0b011); }
 inline Color ally(Color color) noexcept { return Color((static_cast<uint8_t>(color) + 2) & 0b011); }
@@ -282,7 +287,7 @@ bool isPromotion(Square square) noexcept
     color == Color::Green  ? f == (FILE_NB - PROMOTION_RANK - 1) : false;
 }
 
-inline bool isStone(Square square) noexcept
+inline constexpr bool isStone(Square square) noexcept
 {
     auto r = rank(square);
     auto f = file(square);
@@ -310,7 +315,7 @@ inline bool operator<=(Square lhs, Square rhs) noexcept {
     return static_cast<uint8_t>(lhs) <= static_cast<uint8_t>(rhs);
 }
 
-inline Square operator+(Square sq, uint8_t offset) noexcept {
+inline constexpr Square operator+(Square sq, uint8_t offset) noexcept {
     return static_cast<Square>(
         static_cast<uint8_t>(sq) + offset
     );

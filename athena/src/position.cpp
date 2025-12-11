@@ -1,299 +1,250 @@
+#include <cstdint>
 #include <iostream>
 #include <iomanip>
 #include <cstring>
 #include "position.h"
+#include "chess.h"
 #include "utility.h"
+#include <string_view>
+#include "uci.h"
+#include <algorithm>
 
 namespace athena
 {
 
-// inline const char* encodeString(SQ sq, bool debug)
-// {
-//     static constexpr char TABLE[SQUARE_NB][4] =
-//     {
-//         "a1" , "b1" , "c1" , "d1" , "e1" , "f1",  "g1",  "h1" , "i1" , "j1" , "k1" , "l1" , "m1" , "n1" , "o1" , "p1" ,
-//         "a2" , "b2" , "c2" , "d2" , "e2" , "f2",  "g2",  "h2" , "i2" , "j2" , "k2" , "l2" , "m2" , "n2" , "o2" , "p2" ,
-//         "a3" , "b3" , "c3" , "d3" , "e3" , "f3",  "g3",  "h3" , "i3" , "j3" , "k3" , "l3" , "m3" , "n3" , "o3" , "p3" ,
-//         "a4" , "b4" , "c4" , "d4" , "e4" , "f4",  "g4",  "h4" , "i4" , "j4" , "k4" , "l4" , "m4" , "n4" , "o4" , "p4" ,
-//         "a5" , "b5" , "c5" , "d5" , "e5" , "f5",  "g5",  "h5" , "i5" , "j5" , "k5" , "l5" , "m5" , "n5" , "o5" , "p5" ,
-//         "a6" , "b6" , "c6" , "d6" , "e6" , "f6",  "g6",  "h6" , "i6" , "j6" , "k6" , "l6" , "m6" , "n6" , "o6" , "p6" ,
-//         "a7" , "b7" , "c7" , "d7" , "e7" , "f7",  "g7",  "h7" , "i7" , "j7" , "k7" , "l7" , "m7" , "n7" , "o7" , "p7" ,
-//         "a8" , "b8" , "c8" , "d8" , "e8" , "f8",  "g8",  "h8" , "i8" , "j8" , "k8" , "l8" , "m8" , "n8" , "o8" , "p8" ,
-//         "a9" , "b9" , "c9" , "d9" , "e9" , "f9",  "g9",  "h9" , "i9" , "j9" , "k9" , "l9" , "m9" , "n9" , "o9" , "p9" ,
-//         "a10", "b10", "c10", "d10", "e10", "f10", "g10", "h10", "i10", "j10", "k10", "l10", "m10", "n10", "o10", "p10",
-//         "a11", "b11", "c11", "d11", "e11", "f11", "g11", "h11", "i11", "j11", "k11", "l11", "m11", "n11", "o11", "p11",
-//         "a12", "b12", "c12", "d12", "e12", "f12", "g12", "h12", "i12", "j12", "k12", "l12", "m12", "n12", "o12", "p12",
-//         "a13", "b13", "c13", "d13", "e13", "f13", "g13", "h13", "i13", "j13", "k13", "l13", "m13", "n13", "o13", "p13",
-//         "a14", "b14", "c14", "d14", "e14", "f14", "g14", "h14", "i14", "j14", "k14", "l14", "m14", "n14", "o14", "p14",
-//         "a15", "b15", "c15", "d15", "e15", "f15", "g15", "h15", "i15", "j15", "k15", "l15", "m15", "n15", "o15", "p15",
-//         "a16", "b16", "c16", "d16", "e16", "f16", "g16", "h16", "i16", "j16", "k16", "l16", "m16", "n16", "o16", "p16",
-//     };
-//     return TABLE[debug ? sq : (sq - 17)];
-// }
-
-// inline char* encodeString(char* out, Piece piece, bool lowercase = false)
-// {
-//     switch (piece)
-//     {
-//     case P : *(out++) = lowercase ? 'p' : 'P'; break;
-//     case N : *(out++) = lowercase ? 'n' : 'N'; break;
-//     case B : *(out++) = lowercase ? 'b' : 'B'; break;
-//     case R : *(out++) = lowercase ? 'r' : 'R'; break;
-//     case Q : *(out++) = lowercase ? 'q' : 'Q'; break;
-//     case K : *(out++) = lowercase ? 'k' : 'K'; break;
-//     default: break;
-//     }
-//     return out;
-// }
-
-// inline char* encodeString(char* out, Color color, bool uppercase = false)
-// {
-//     switch (color)
-//     {
-//     case r : *(out++) = uppercase ? 'R' : 'r'; break;
-//     case b : *(out++) = uppercase ? 'B' : 'b'; break;
-//     case y : *(out++) = uppercase ? 'Y' : 'y'; break;
-//     case g : *(out++) = uppercase ? 'G' : 'g'; break;
-//     default: break;
-//     }
-//     return out;
-// }
-
-// inline char* encodeString(char* out)
-// {
-//     *(out++) = '0'; *(out++) = ',';
-//     *(out++) = '0'; *(out++) = ',';
-//     *(out++) = '0'; *(out++) = ',';
-//     *(out++) = '0';
-//     return out;
-// }
-
-void Position::init(char* fen, Setup setup)
+void Position::init(FEN fen)
 {
-    GS& gs = states[0];
+    const auto tokens = tokenize(fen, '-');
+    GameState& gs = states_[play_ = 0];
 
-    //
-    
-    //
-    
-    // gs.royals  = 0;
-    // gs.zobrist = 0ULL;
+    // Reset gs variables
+    gs.capture = PieceClass::Empty();
+    gs.enpass  = Square::Offboard;
 
-    for (int pc = 0; pc < PIECECOLOR_NB; ++pc)
-        bitboards[pc] = BLANK;
+    // 1. Parse turn //
+    turn_ = UCI2Color(std::tolower(tokens[0][0]));
+
+    // 2. Parse castling rights //
+    uint8_t castle = 0;
+
+    if (tokens[2][0] == '1') castle |= static_cast<uint8_t>(Castle::rKS);
+    if (tokens[2][2] == '1') castle |= static_cast<uint8_t>(Castle::bKS);
+    if (tokens[2][4] == '1') castle |= static_cast<uint8_t>(Castle::yKS);
+    if (tokens[2][6] == '1') castle |= static_cast<uint8_t>(Castle::gKS);
+    if (tokens[3][0] == '1') castle |= static_cast<uint8_t>(Castle::rQS);
+    if (tokens[3][2] == '1') castle |= static_cast<uint8_t>(Castle::bQS);
+    if (tokens[3][4] == '1') castle |= static_cast<uint8_t>(Castle::yQS);
+    if (tokens[3][6] == '1') castle |= static_cast<uint8_t>(Castle::gQS);
+
+    gs.castle = static_cast<Castle>(castle);
+
+    // 3. Parse fiftymove //
+    gs.fiftymove = std::stoi(std::string(tokens[5]));
+
+    // 4. Parse enpassant //
+    enpass_.fill(Square::Offboard);
+
+    if (tokens.size() == 8) // // {'enPassant':('k3:k4','d3:','','')}
+    {
+        const auto lbrace = tokens[6].find('(');
+        const auto rbrace = tokens[6].find(')');
+        const auto substr = tokens[6].substr(lbrace + 1, rbrace - lbrace - 1);
+
+        const auto enPassant = tokenize(substr, ',');
+        for (Color color : {Color::Red, Color::Blue, Color::Yellow, Color::Green})
+        {
+            const std::size_t lquote = 1;
+            const std::size_t rquote = enPassant[static_cast<uint8_t>(color)].size() - 2;
+
+            const auto square = enPassant[static_cast<uint8_t>(color)].substr(lquote, rquote);
+
+            if (square.empty())
+                continue;
+
+            enpass_[static_cast<uint8_t>(color)] = UCI2Square(tokenize(square, ':')[0]); 
+        }
+    }
+
+    // 5. Parse board //
+    royals_.fill(Square::Offboard);
 
     for (int sq = 0; sq < SQUARE_NB; ++sq)
     {
-        const auto s = SQ(sq);
-        const auto r = s.rank();
-        const auto f = s.file();
-        mailbox[sq] = isInValidSquare(r, f) ? PC::STONE : PC::NOTHING;
+        auto s = static_cast<Square>(sq);
+        auto r = rank(s);
+        auto f = file(s);
+        board_[static_cast<uint8_t>(s)] = isStone(s) ? PieceClass::Stone() : PieceClass::Empty();
     }
+ 
+    // Split board into ranks
+    const auto ranks = tokenize(tokens.back(), '/');
 
-    //
-    static char* tokens[32];
-    const auto size = tokenize(fen, tokens, 32, "-");
-
-    // ********************************************* //
-    gs.turn = toColor(tokens[0][0]);
-
-    // ********************************************* //
-    gs.rights.encoded = 0;
-    auto& ks = tokens[2];
-    auto& qs = tokens[3];
-    if (ks[0] == '1') gs.rights.encoded ^= Rights(Color::r, KS).encoded; if (qs[0] == '1') gs.rights.encoded ^= Rights(Color::r, QS).encoded;
-    if (ks[2] == '1') gs.rights.encoded ^= Rights(Color::b, KS).encoded; if (qs[2] == '1') gs.rights.encoded ^= Rights(Color::b, QS).encoded;
-    if (ks[4] == '1') gs.rights.encoded ^= Rights(Color::y, KS).encoded; if (qs[4] == '1') gs.rights.encoded ^= Rights(Color::y, QS).encoded;
-    if (ks[6] == '1') gs.rights.encoded ^= Rights(Color::g, KS).encoded; if (qs[6] == '1') gs.rights.encoded ^= Rights(Color::g, QS).encoded;
-
-    // ********************************************* //
-    // gs.enpass.packed = {SQ::OFFBOARD, SQ::OFFBOARD, SQ::OFFBOARD, SQ::OFFBOARD};
-
-    // gs.enpass[Color::r] = SQ::OFFBOARD;
-    // gs.enpass[Color::b] = SQ::OFFBOARD;
-    // gs.enpass[Color::y] = SQ::OFFBOARD;
-    // gs.enpass[Color::g] = SQ::OFFBOARD;
-
-    gs.enpass = 0;
-    if (size == 8)
-    {
-        char* lbrace = std::strchr(tokens[6], '(');
-        char* rbrace = std::strchr(tokens[6], ')');
-        *rbrace = '\0';
-
-        static char* epsq[(COLOR_NB - 4)] = {};
-        tokenize(lbrace + 1, epsq, 4, ",");
-
-        if (std::strlen(epsq[Color::r]) != 2) gs.enpass.packed ^= (toSQ(epsq[Color::r]) << (Color::r * 8));
-        if (std::strlen(epsq[Color::b]) != 2) gs.enpass.packed ^= (toSQ(epsq[Color::b]) << (Color::b * 8));
-        if (std::strlen(epsq[Color::y]) != 2) gs.enpass.packed ^= (toSQ(epsq[Color::y]) << (Color::y * 8));
-        if (std::strlen(epsq[Color::g]) != 2) gs.enpass.packed ^= (toSQ(epsq[Color::g]) << (Color::g * 8));
-
-//         char enpass[64] = {0};
-//         std::strncpy(enpass, lbrace + 1, rbrace - lbrace - 1);
-
-//         char* epsq[4] = {};
-//         size_t count = tokenize(enpass, epsq, 4, ",");
-
-//         for (int i = 0; i < 4; i++)
-//         {
-//             if (std::strlen(epsq[i]) != 2)
-//             {
-//                 int rank = (epsq[i][3] == ':' ? (epsq[i][2] - '0') : ((epsq[i][2] - '0') * 10 + (epsq[i][3] - '0')));
-//                 int file = (epsq[i][1] - 'a' + 1);
-//                 gs.enpass ^= encodeEnpass(encodeSQ(rank, file), static_cast<Color>(i));
-//             }
-//         }
-    }
-
-    // ********************************************* //
-    static char* ranks[256];
-    const auto num_ranks = tokenize((size == 7 ? tokens[6] : tokens[7]), ranks, 256, "/");
-
-    // gs.royals.packed = {SQ::OFFBOARD, SQ::OFFBOARD, SQ::OFFBOARD, SQ::OFFBOARD};
-
-    // gs.royals[Color::r] = SQ::OFFBOARD;
-    // gs.royals[Color::b] = SQ::OFFBOARD;
-    // gs.royals[Color::y] = SQ::OFFBOARD;
-    // gs.royals[Color::g] = SQ::OFFBOARD;
-
-    gs.royals = 0;
-
+    // Initializing board
     int row = 14, col = 1;
-    for (int rank = 0; rank < num_ranks; rank++)
+    for (const auto rank: ranks)
     {
-        static char* files[16];
-        const auto num_files = tokenize(ranks[rank], files, 16, ",");
-
-        for (int file = 0; file < num_files; file++)
+        const auto files = tokenize(rank, ',');
+        for (const auto file: files)
         {
-            const char ch = files[file][0];
+            Square sq = buildSquare(row, col++);
 
-            if (ch == 'x')
-                col++;
+            // Handling stones
+            if (isStone(sq)) continue;
 
-            else if ('0' > ch || ch > '9')
+            // Handling numbers
+            if (std::all_of(file.begin(), file.end(), ::isdigit))
             {
-                const auto sq = SQ(row, col++);
-                const auto pc = PC(toPiece(files[file][1]), toColor(files[file][0]));
-
-                const auto piece = pc.piece();
-                const auto color = pc.color(); 
-
-                mailbox[sq.encoded] = pc;
-                toggleSQ(sq, pc);
-                // if (piece == Piece::K) gs.royals.packed ^= sq << (color * 8);
+                col += std::stoi(std::string(file)) - 1;
+                continue;
             }
-            else col += std::stoi(files[file]);
+
+            const auto color = UCI2Color(file[0]);
+            const auto piece = UCI2Piece(file[1]);
+            
+            board_[static_cast<uint8_t>(sq)] = PieceClass(color, piece);
+
+            // Handling royal squares
+            if (piece == Piece::King) royals_[static_cast<uint8_t>(color)] = sq;     
         }
+
+        // Moving to the next rank
         row--, col = 1;
     }
-
-    // ********************************************* //
-    gs.capture = PC::NOTHING;
 }
 
-// inline char* encodeString(char* ptr, uint32_t enpass, Color color)
-// {
-//     *(ptr++)= '\'';
-//     const auto epsq = decodeEnpass(enpass, color);
-//     if (epsq != OFFBOARD)
-//     {
-//         auto offset1 = 0;
-//         auto offset2 = 0;
-
-//         switch (color)
-//         {
-//         case r: offset2 = +16; break;
-//         case b: offset2 = +1 ; break;
-//         case y: offset2 = -16; break;
-//         case g: offset2 = -1 ; break;
-//         default: break;
-//         }
-
-//         auto sq1 = encodeString(static_cast<SQ>(epsq + offset1), false);
-//         auto sq2 = encodeString(static_cast<SQ>(epsq + offset2), false);
-
-//         while (*sq1) *(ptr++) = *(sq1++); *(ptr++)= ':';
-//         while (*sq2) *(ptr++) = *(sq2++);
-//     }
-//     *(ptr++)= '\'';
-
-//     return ptr;
-// }
-
-const char* Position::fen() const
+std::string Position::fen() const//{'enPassant':('k3:k4','d3:','','')}
 {
-    static char fen[1024];
-    char* ptr = fen;
+    const auto& gs = state();
+    std::string output = "";
 
-//     const auto& gs = states[0];
+    // 1. Converting turn //
+    output += std::toupper(color2UCI(turn())[0]);
+    output += '-';
 
-//     ptr = encodeString(ptr, gs.turn, true); *(ptr++)= '-';
-//     ptr = encodeString(ptr);                *(ptr++)= '-';
-//     ptr = encodeString(ptr, gs.rights, KS); *(ptr++)= '-';
-//     ptr = encodeString(ptr, gs.rights, QS); *(ptr++)= '-';
-//     ptr = encodeString(ptr);                *(ptr++)= '-';
+    // 2. Converting status //
+    output += "0,0,0,0";
+    output += '-';
 
-//     *(ptr++)= '0';
-//     *(ptr++)= '-';
+    // 3. Converting kingside castling rights //
+    output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::rKS)) ? "1" : "0"); output += ',';
+    output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::bKS)) ? "1" : "0"); output += ',';
+    output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::yKS)) ? "1" : "0"); output += ',';
+    output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::gKS)) ? "1" : "0");
+    output += '-';
 
-//     if (gs.enpass != 0)
-//     {
-//         const char* begin = "{\'enPassant\':(";
-//         while (*begin) *(ptr++) = *(begin++);
+    // 4. Converting queenside castling rights  //
+    output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::rQS)) ? "1" : "0"); output += ',';
+    output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::bQS)) ? "1" : "0"); output += ',';  
+    output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::yQS)) ? "1" : "0"); output += ',';
+    output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::gQS)) ? "1" : "0");
+    output += '-';
 
-//         ptr = encodeString(ptr, gs.enpass, r); *(ptr++)= ',';
-//         ptr = encodeString(ptr, gs.enpass, b); *(ptr++)= ',';
-//         ptr = encodeString(ptr, gs.enpass, y); *(ptr++)= ',';
-//         ptr = encodeString(ptr, gs.enpass, g);
+    // 5. Converting scores //
+    output += "0,0,0,0";
+    output += '-';
 
-//         const char* end = ")}";
-//         while (*end) *(ptr++) = *(end++); *(ptr++)= '-';
-//     }
+    // 6. converting fiftymove clock rule //
+    output += std::to_string(gs.fiftymove);
+    output += '-';
 
-//     int count = 0;
-//     for (size_t rank = 14; rank >= 1 ; rank--)
-//     for (size_t file = 1 ; file <= 14; file++)
-//     {
-//         const auto pc = mailbox[encodeSQ(rank, file)];
+    // 7. Converting enpassant //
+    constexpr auto prefix = "{\'enPassant\':(";
+    constexpr auto suffix = ")}";
 
-//         if (pc != NOTHING)
-//         {
-//             if (count != 0)
-//             {
-//                 ptr += std::sprintf(ptr, "%d,", count);
-//                 count = 0;
-//             }
+    std::string ep = "";
+    bool any = false;
+    for (Color color : {Color::Red, Color::Blue, Color::Yellow, Color::Green})
+    {
+        Square sq1 = enpass(color);
+        Square sq2 = enpass(color);
 
-//             if (pc != STONE)
-//             {
-//                 ptr = encodeString(ptr, decodeColor(pc));
-//                 ptr = encodeString(ptr, decodePiece(pc));
-//                 *(ptr++) = ',';
-//             }
-//             else *(ptr++) = 'x', *(ptr++) = ',';;
-//         }
-//         else count++;
+        switch (static_cast<uint8_t>(color))
+        {
+            case static_cast<uint8_t>(Color::Red)   : sq2 += push_offsets(Color::Red   )[0]; break;
+            case static_cast<uint8_t>(Color::Blue)  : sq2 += push_offsets(Color::Blue  )[0]; break;
+            case static_cast<uint8_t>(Color::Yellow): sq2 += push_offsets(Color::Yellow)[0]; break;
+            case static_cast<uint8_t>(Color::Green) : sq2 += push_offsets(Color::Green )[0]; break;
+            default: break;
+        }
 
-//         if (file == 14)
-//         {
-//             if (count != 0)
-//                 ptr += std::sprintf(ptr, "%d", count);
-//             else if (*(ptr - 1) == ',') ptr--;
-//         }
+        if (sq1 == Square::Offboard)
+        {
+            ep += "\'\'";
+            continue;
+        }
 
-//         if (rank != 1 && file == 14) *(ptr++)= '/';
-//     }
+        any = true;
+        ep += '\'';
+        ep += square2UCI(sq1);
+        ep += ':';
+        ep += square2UCI(sq2);
+        ep += '\'';
 
-//     *ptr = '\0';
-    return fen;
+        // Avoiding trailing comma
+        if (color != Color::Green) ep += ',';
+    }
+
+    if (any) output += prefix + ep + suffix + '-';
+
+    // 8. Converting board //
+    int count = 0;
+    for (int row = 14; row >= 1; row--)
+    {
+        for (int col = 1; col <= 14; col++)
+        {
+            Square sq = buildSquare(row, col);
+            PieceClass pc = board_[static_cast<uint8_t>(sq)];
+
+            if (pc == PieceClass::Stone())
+            {
+                if (count)
+                {
+                    output += std::to_string(count) + ",";
+                    count = 0;
+                }
+
+                output += 'x';
+                output += ',';
+            }
+                
+            else if (pc != PieceClass::Empty())
+            {
+                if (count)
+                {
+                    output += std::to_string(count) + ",";
+                    count = 0;
+                }
+
+                output += PieceClass2UCI(pc);
+                output += ',';
+            }
+
+            else count++;
+        }
+
+        if (count)
+        {
+            output += std::to_string(count) + ",";
+            count = 0;
+        }
+
+        // Replace trainling ',' with '/'
+        output.back() = '/';
+    }
+
+    // Remove trailing '/'
+    output.pop_back();
+
+    return output;
 }
 
-void Position::print(bool debug) const
+void Position::print() const
 {
-    int start = debug ? 0 : 1;
-    int end   = debug ? RANK_NB : RANK_NB - 1;
+    constexpr std::size_t KEY_WIDTH = 12;
+    const auto& gs = state();
+
+    int start = 1;
+    int end   =  RANK_NB - 1;
 
     std::cout << "\n     ";
     for (int file = start; file < end; ++file)
@@ -305,33 +256,33 @@ void Position::print(bool debug) const
         std::cout << (((rank - start + 1) < 10) ? " " : "") << (rank - start + 1) << " | ";
         for (int file = start; file < end; ++file)
         {
-            const auto sq = SQ(rank, file);
-            const auto pc = mailbox[sq.encoded];
+            auto sq = buildSquare(rank, file);
+            auto pc = board_[static_cast<uint8_t>(sq)];
 
-            const auto piece = pc.piece();
-            const auto color = pc.color();
+            auto piece = pc.piece();
+            auto color = pc.color();
 
             const char* sqStr;
-            switch (piece.encoded)
+            switch (static_cast<uint8_t>(piece))
             {
-            case Piece::P: sqStr = "\u2659"; break;
-            case Piece::Q: sqStr = "\u2655"; break;
-            case Piece::B: sqStr = "\u2657"; break;
-            case Piece::R: sqStr = "\u2656"; break;
-            case Piece::N: sqStr = "\u2658"; break;
-            case Piece::K: sqStr = "\u2654"; break;
-            case Piece::A: sqStr = "x"; break;
-            case Piece::E: sqStr = "\033[2m.\033[0m"; break;
+                case static_cast<uint8_t>(Piece::Pawn)  : sqStr = "\u2659"; break;
+                case static_cast<uint8_t>(Piece::Queen) : sqStr = "\u2655"; break;
+                case static_cast<uint8_t>(Piece::Bishop): sqStr = "\u2657"; break;
+                case static_cast<uint8_t>(Piece::Rook)  : sqStr = "\u2656"; break;
+                case static_cast<uint8_t>(Piece::Knight): sqStr = "\u2658"; break;
+                case static_cast<uint8_t>(Piece::King)  : sqStr = "\u2654"; break;
+                case static_cast<uint8_t>(Piece::Stone) : sqStr = "x"     ; break;
+                case static_cast<uint8_t>(Piece::Empty) : sqStr = "\033[2m.\033[0m"; break;
             }
 
             const char* colorCode;
-            switch (color.encoded)
+            switch (static_cast<uint8_t>(color))
             {
-            case Color::r : colorCode = "\033[31m"; break;
-            case Color::b : colorCode = "\033[34m"; break;
-            case Color::y : colorCode = "\033[33m"; break;
-            case Color::g : colorCode = "\033[32m"; break;
-            default: colorCode = ""; break;
+                case static_cast<uint8_t>(Color::Red)   : colorCode = "\033[31m"; break;
+                case static_cast<uint8_t>(Color::Blue)  : colorCode = "\033[34m"; break;
+                case static_cast<uint8_t>(Color::Yellow): colorCode = "\033[33m"; break;
+                case static_cast<uint8_t>(Color::Green) : colorCode = "\033[32m"; break;
+                default: colorCode = ""; break;
             }
             std::cout << colorCode << sqStr << "\033[0m  ";
             }
@@ -344,53 +295,694 @@ void Position::print(bool debug) const
         std::cout << static_cast<char>('a' + (file - start)) << "  ";
     std::cout << "\n";
 
-    const auto& gs = states[0];
-    constexpr size_t KEY_WIDTH = 12;
     std::cout << "\n" << std::left << std::setw(KEY_WIDTH) << "turn:";
-    switch (gs.turn.encoded)
+    switch (turn())
     {
-    case Color::r:  std::cout << "\033[1;31mRed\033[0m"   << "\n"; break;
-    case Color::b:  std::cout << "\033[1;34mBlue\033[0m"  << "\n"; break;
-    case Color::y:  std::cout << "\033[1;33mYellow\033[0m"<< "\n"; break;
-    case Color::g:  std::cout << "\033[1;32mGreen\033[0m" << "\n"; break;
-    default: std::cout << "unknown"<< "\n"; break;
+        case Color::Red   : std::cout << "\033[1;31mRed\033[0m   " << "\n"; break;
+        case Color::Blue  : std::cout << "\033[1;34mBlue\033[0m  " << "\n"; break;
+        case Color::Yellow: std::cout << "\033[1;33mYellow\033[0m" << "\n"; break;
+        case Color::Green : std::cout << "\033[1;32mGreen\033[0m " << "\n"; break;
+        default           : std::cout << "unknown"                 << "\n"; break;
     }
 
-    char ks[8]; ks[7] = '\0'; write(ks, gs.rights, KS);
-    char qs[8]; qs[7] = '\0'; write(qs, gs.rights, QS);
+    std::string ks = "";
+    std::string qs = "";
+
+    ks += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::rKS)) ? "1" : "0"; ks += ',';      
+    ks += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::bKS)) ? "1" : "0"; ks += ',';
+    ks += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::yKS)) ? "1" : "0"; ks += ',';
+    ks += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::gKS)) ? "1" : "0";
+    qs += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::rQS)) ? "1" : "0"; qs += ',';
+    qs += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::bQS)) ? "1" : "0"; qs += ',';
+    qs += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::yQS)) ? "1" : "0"; qs += ',';
+    qs += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::gQS)) ? "1" : "0";
+
     std::cout << std::left << std::setw(KEY_WIDTH) << "kingside:"  << ks << "\n"
-              << std::left << std::setw(KEY_WIDTH) << "queenside:" << qs << "\n";
+              << std::left << std::setw(KEY_WIDTH) << "queenside:" << qs << "\n"
+              << std::left << std::setw(KEY_WIDTH) << "fiftymove:" << static_cast<int>(gs.fiftymove) << "\n"
+              << std::left << std::setw(KEY_WIDTH)
+              << "enpassant:";
 
-    const auto 
-    ENPASS_R = gs.enpass[Color(Color::r)],
-    ENPASS_B = gs.enpass[Color(Color::b)],
-    ENPASS_Y = gs.enpass[Color(Color::y)],
-    ENPASS_G = gs.enpass[Color(Color::g)];
 
-    // char EPSQ_R[4]; (*write(EPSQ_R, gs.enpass.decode(Color::r))) = '\0';
-    // char EPSQ_B[4]; (*write(EPSQ_R, gs.enpass.decode(Color::r))) = '\0';
-    // char EPSQ_Y[4]; (*write(EPSQ_R, gs.enpass.decode(Color::r))) = '\0';
-    // char EPSQ_G[4]; (*write(EPSQ_R, gs.enpass.decode(Color::r))) = '\0';
+    for (Color color : {Color::Red, Color::Blue, Color::Yellow, Color::Green})
+        std::cout << square2UCI(enpass(color)) << (color == Color::Green ? "" : ",");
 
-    std::cout << std::left << std::setw(KEY_WIDTH) 
-              << "enpassant:"
-              << (ENPASS_R.encoded != SQ::OFFBOARD ? toString(ENPASS_R, debug) : "-") << ","
-              << (ENPASS_B.encoded != SQ::OFFBOARD ? toString(ENPASS_B, debug) : "-") << ","
-              << (ENPASS_Y.encoded != SQ::OFFBOARD ? toString(ENPASS_Y, debug) : "-") << ","
-              << (ENPASS_G.encoded != SQ::OFFBOARD ? toString(ENPASS_G, debug) : "-") << std::endl;
+    std::cout << "\n";
+    std::cout << std::left << std::setw(KEY_WIDTH)
+              << "royals:";
 
-    const auto 
-    ROYAL_R = gs.royals[Color::r],
-    ROYAL_B = gs.royals[Color::b],
-    ROYAL_Y = gs.royals[Color::y],
-    ROYAL_G = gs.royals[Color::g];
+    for (Color color : {Color::Red, Color::Blue, Color::Yellow, Color::Green})
+        std::cout << square2UCI(royal(color)) << (color == Color::Green ? "" : ",");
 
-    std::cout << std::left << std::setw(KEY_WIDTH) 
-              << "royals:"
-              << (ROYAL_R.encoded != SQ::OFFBOARD ? toString(ROYAL_R, debug) : "-") << ","
-              << (ROYAL_B.encoded != SQ::OFFBOARD ? toString(ROYAL_B, debug) : "-") << ","
-              << (ROYAL_Y.encoded != SQ::OFFBOARD ? toString(ROYAL_Y, debug) : "-") << ","
-              << (ROYAL_G.encoded != SQ::OFFBOARD ? toString(ROYAL_G, debug) : "-") << std::endl;
+    std::cout << std::endl;
 }
+
+void Position::makemove(Move move)
+{
+    play_++;
+
+    GameState& currGS = states_[play_ - 1];
+    GameState& nextGS = states_[play_ - 0];
+
+    auto source = move.source();
+    auto target = move.target();
+
+    auto type = move.type();
+    auto flag = move.flag();
+
+    auto attacker = board_[static_cast<uint8_t>(source)];
+    auto defender = board_[static_cast<uint8_t>(target)];
+
+    nextGS.capture = defender;
+
+    board_[static_cast<uint8_t>(target)] = attacker;
+    board_[static_cast<uint8_t>(source)] = PieceClass::Empty(); // set pop zobrist
+
+    // Update enpassant
+    nextGS.enpass = enpass_[static_cast<uint8_t>(turn_)];
+    enpass_[static_cast<uint8_t>(turn_)] = Square::Offboard;
+    
+    // Update castling rights
+    nextGS.castle = currGS.castle;
+    nextGS.castle &= castling_rights(source);
+    nextGS.castle &= castling_rights(target);
+
+    if (attacker.piece() == Piece::King) {
+        royals_[static_cast<uint8_t>(turn_)] = target;
+    }
+
+    // Handle movetypes
+    if (type == MoveType::Stride)
+    {
+        enpass_[static_cast<uint8_t>(turn_)] = (source + target) >> 1;
+    }
+    
+    else if (type == MoveType::Enpass)
+    {
+        const auto offset = 
+        turn_ == Color::Red    ? push_offsets(Color::Red   )[0] : 
+        turn_ == Color::Blue   ? push_offsets(Color::Blue  )[0] : 
+        turn_ == Color::Yellow ? push_offsets(Color::Yellow)[0] : 
+        turn_ == Color::Green  ? push_offsets(Color::Green )[0] : 0;
+
+        board_[static_cast<uint8_t>(source + offset)] = PieceClass::Empty();
+    }
+        
+    else if (type == MoveType::Castle)
+    {
+        std::array<Square, 4> squares {};
+        if (move.castle() == Side::KingSide)
+        {
+            squares =
+            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::KingSide) : 
+            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::KingSide) : 
+            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::KingSide) : 
+            turn_ == Color::Green  ? castle_squares(Color::Green , Side::KingSide) : std::array<Square, 4>();
+        }
+
+        else
+        {
+            squares =
+            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::QueenSide) : 
+            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::QueenSide) : 
+            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::QueenSide) : 
+            turn_ == Color::Green  ? castle_squares(Color::Green , Side::QueenSide) : std::array<Square, 4>();
+        }
+
+        board_[static_cast<uint8_t>(squares[2])] = PieceClass::Empty();
+        board_[static_cast<uint8_t>(squares[3])] = PieceClass(turn_, Piece::Rook);   
+    }
+
+    else if (type == MoveType::Evolve) 
+    { 
+        board_[static_cast<uint8_t>(target)] = PieceClass(turn_, move.evolve()); 
+    }
+
+    // Update fiftymove clock rule
+    if (attacker.piece() == Piece::Pawn || flag == MoveFlag::Noisy || type == MoveType::Castle)
+         nextGS.fiftymove = 0;
+    else nextGS.fiftymove = currGS.fiftymove + 1;
+    
+    turn_ = next(turn_);
+}
+
+void Position::undomove(Move move)
+{
+    play_--;
+
+    GameState& prevGS = states_[play_ + 0];
+    GameState& currGS = states_[play_ + 1];
+
+    turn_ = prev(turn_);
+
+    auto source = move.source();
+    auto target = move.target();
+
+    auto type = move.type(); 
+    auto flag = move.flag();
+
+    auto attacker = board_[static_cast<uint8_t>(target)];
+    auto defender = currGS.capture;
+
+    board_[static_cast<uint8_t>(target)] = defender;
+    board_[static_cast<uint8_t>(source)] = attacker;
+
+    // Update enpassant
+    enpass_[static_cast<uint8_t>(turn_)] = currGS.enpass;
+
+    if (attacker.piece() == Piece::King) {
+        royals_[static_cast<uint8_t>(turn_)] = source;
+    }
+
+    else if (type == MoveType::Enpass)
+    {
+        const auto offset = 
+        turn_ == Color::Red    ? push_offsets(Color::Red   )[0] : 
+        turn_ == Color::Blue   ? push_offsets(Color::Blue  )[0] : 
+        turn_ == Color::Yellow ? push_offsets(Color::Yellow)[0] : 
+        turn_ == Color::Green  ? push_offsets(Color::Green )[0] : 0;
+
+        board_[static_cast<uint8_t>(source + offset)] = PieceClass(move.enpass(), Piece::Pawn);
+    }
+        
+    else if (type == MoveType::Castle)
+    {
+        std::array<Square, 4> squares {};
+        if (move.castle() == Side::KingSide)
+        {
+            squares =
+            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::KingSide) : 
+            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::KingSide) : 
+            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::KingSide) : 
+            turn_ == Color::Green  ? castle_squares(Color::Green , Side::KingSide) : std::array<Square, 4>();
+        }
+
+        else
+        {
+            squares =
+            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::QueenSide) : 
+            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::QueenSide) : 
+            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::QueenSide) : 
+            turn_ == Color::Green  ? castle_squares(Color::Green , Side::QueenSide) : std::array<Square, 4>();
+        }
+
+        board_[static_cast<uint8_t>(squares[2])] = PieceClass(turn_, Piece::Rook);
+        board_[static_cast<uint8_t>(squares[3])] = PieceClass::Empty();   
+    }
+
+    else if (type == MoveType::Evolve)
+    {
+        board_[static_cast<uint8_t>(source)] = PieceClass(turn_, Piece::Pawn);
+    }   
+}
+
+bool Position::inCheck(Color color, Square sq) const
+{
+    // Checked by Knight
+    for (auto offset : crawl_offsets(Piece::Knight))
+    {
+        PieceClass pc = board(sq + offset);
+
+        if (pc.piece() == Piece::Knight &&  isOpponent(pc.color(), color))
+        {
+            return true;
+        }
+    }
+
+    // Checked by King
+    for (auto offset : crawl_offsets(Piece::King))
+    {
+        PieceClass pc = board(sq + offset);
+
+        if (pc.piece() == Piece::King &&  isOpponent(pc.color(), color))
+        {
+            return true;
+        }
+    }
+
+    // Checked by Queen or Bishop
+    for (auto offset : slide_offsets(Piece::Bishop))
+    {
+        Square target = sq;
+        bool blocked = false;
+
+        for (int step = 0; step < max_step(Piece::Bishop) && !blocked; ++step)
+        {
+            target += offset;
+            PieceClass pc = board(target);
+    
+            bool is_stone = (pc == PieceClass::Stone());
+            bool is_empty = (pc == PieceClass::Empty());
+            bool is_enemy = isOpponent(pc.color(), color) && (pc.piece() == Piece::Bishop || pc.piece() == Piece::Queen);
+
+            if (!is_stone && !is_empty && is_enemy)
+                return true;
+
+            blocked = is_stone || !is_empty;
+        }
+    }
+
+    // Checked by Queen or Rook
+    for (auto offset : slide_offsets(Piece::Rook))
+    {
+        Square target = sq;
+        bool blocked = false;
+
+        for (int step = 0; step < max_step(Piece::Rook) && !blocked; ++step)
+        {
+            target += offset;
+            PieceClass pc = board(target);
+    
+            bool is_stone = (pc == PieceClass::Stone());
+            bool is_empty = (pc == PieceClass::Empty());
+            bool is_enemy = isOpponent(pc.color(), color) && (pc.piece() == Piece::Rook || pc.piece() == Piece::Queen);
+
+            if (!is_stone && !is_empty && is_enemy)
+                return true;
+
+            blocked = is_stone || !is_empty;
+        }
+    }
+
+    constexpr std::array<uint8_t, TAKE_NB> takeR = take_offsets(Color::Red   );
+    constexpr std::array<uint8_t, TAKE_NB> takeB = take_offsets(Color::Blue  );
+    constexpr std::array<uint8_t, TAKE_NB> takeY = take_offsets(Color::Yellow);
+    constexpr std::array<uint8_t, TAKE_NB> takeG = take_offsets(Color::Green );
+
+    // Checked by Pawn
+    for (Color opponent: opponents(color))
+    {
+        for (auto offset : (opponent == Color::Red ? takeY : opponent == Color::Blue ? takeG : opponent == Color::Yellow ? takeR : takeB))
+        {
+            if (board(sq + offset) == PieceClass(opponent, Piece::Pawn))
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool Position::inCheck(Color color) const {
+    return inCheck(color, royal(color));
+}
+
+
+// template<Piece piece, Color color, Type type, Flag flag, Side side, Piece promo, Color enpass, Setup setup>
+// void makemove(PS& ps, Move move)
+// {
+//     // const
+//     // GS& curr = ps.states[ps.ply + 0];
+//     // GS& next = ps.states[ps.ply + 1];
+
+//     // const auto 
+//     // source = move.source(),
+//     // target = move.target();
+
+//     // const auto 
+//     // srcINDEX = 1ULL << source.index(),
+//     // tgtINDEX = 1ULL << target.index();
+    
+//     // const auto 
+//     // srcCHUNK = source.chunk(),
+//     // tgtCHUNK = target.chunk();
+
+//     // constexpr auto
+//     // sourcePC = PC(PC::NOTHING),
+//     // targetPC = PC(piece,color);
+
+//     // if constexpr (flag == Flag::Noisy && type != Type::Enpass)
+//     // {
+//     //     const auto capture = ps.mailbox[target];
+//     //     next.capture = capture;
+//     //     ps.pieces[capture.piece()].chunks[tgtCHUNK] ^= tgtINDEX,
+//     //     ps.colors[capture.color()].chunks[tgtCHUNK] ^= tgtINDEX;
+//     // }
+
+//     // else next.capture = PC::NOTHING;
+
+//     // if constexpr (
+//     // type == Type::Jumper ||
+//     // type == Type::Slider ||
+//     // type == Type::Pushed ||
+//     // type == Type::Strike ||
+//     // type == Type::Stride ||
+//     // type == Type::Enpass)
+//     // {
+//     //     ps.mailbox[source] = sourcePC;
+//     //     ps.mailbox[target] = targetPC;
+
+//     //     ps.pieces[piece].chunks[srcCHUNK] ^= srcINDEX;
+//     //     ps.pieces[piece].chunks[tgtCHUNK] ^= tgtINDEX;
+//     //     ps.colors[color].chunks[srcCHUNK] ^= srcINDEX;
+//     //     ps.colors[color].chunks[tgtCHUNK] ^= tgtINDEX;
+//     // }
+
+//     // if constexpr (type == Type::Enpass)
+//     // {
+//     //     const auto ep = target + DELTA_INFO[enpass].pushS;
+//     //     const auto epIDX = 1ULL << ep.index();
+//     //     const auto epCHK = ep.chunk();
+
+//     //     constexpr auto epPIECE = Piece::P;
+//     //     constexpr auto epCOLOR = enpass;
+
+//     //     if constexpr (enpass == Color::r)
+//     //     ps.pieces[epPIECE].chunks[1] ^= epIDX,
+//     //     ps.colors[epCOLOR].chunks[1] ^= epIDX;
+
+//     //     else if constexpr (enpass == Color::y)
+//     //     ps.pieces[epPIECE].chunks[2] ^= epIDX,
+//     //     ps.colors[epCOLOR].chunks[2] ^= epIDX;
+
+//     //     else
+//     //     ps.pieces[epPIECE].chunks[epCHK] ^= epIDX,
+//     //     ps.colors[epCOLOR].chunks[epCHK] ^= epIDX;
+//     // }
+    
+//     // if constexpr (type == Type::Evolve)
+//     // {
+//     //     constexpr auto evolvePC = PC(promo, color);
+//     //     ps.mailbox[source] = sourcePC;
+//     //     ps.mailbox[target] = evolvePC;
+
+//     //     if constexpr (color == Color::r)
+//     //     ps.pieces[piece].chunks[2] ^= srcINDEX,
+//     //     ps.pieces[promo].chunks[2] ^= tgtINDEX,
+//     //     ps.colors[color].chunks[2] ^= srcINDEX,
+//     //     ps.colors[color].chunks[2] ^= tgtINDEX; 
+
+//     //     else if constexpr (color == Color::y)
+//     //     ps.pieces[piece].chunks[1] ^= srcINDEX,
+//     //     ps.pieces[promo].chunks[1] ^= tgtINDEX,
+//     //     ps.colors[color].chunks[1] ^= srcINDEX,
+//     //     ps.colors[color].chunks[1] ^= tgtINDEX;
+
+//     //     else
+//     //     ps.pieces[piece].chunks[srcCHUNK] ^= srcINDEX,
+//     //     ps.pieces[promo].chunks[tgtCHUNK] ^= tgtINDEX,
+//     //     ps.colors[color].chunks[srcCHUNK] ^= srcINDEX,
+//     //     ps.colors[color].chunks[tgtCHUNK] ^= tgtINDEX;
+//     // }
+
+//     // if constexpr (type == Type::Castle)
+//     // {
+//     //     constexpr auto 
+//     //     rookSOURCE = CASTLE_INFO[color][side].rookSOURCE,
+//     //     rookTARGET = CASTLE_INFO[color][side].rookTARGET,
+//     //     kingSOURCE = CASTLE_INFO[color][side].kingSOURCE,
+//     //     kingTARGET = CASTLE_INFO[color][side].kingTARGET;
+
+//     //     constexpr auto 
+//     //     rsIDX = 1ULL << rookSOURCE.index(),
+//     //     rtIDX = 1ULL << rookTARGET.index(),
+//     //     ksIDX = 1ULL << kingSOURCE.index(),
+//     //     ktIDX = 1ULL << kingTARGET.index();
+
+//     //     constexpr auto 
+//     //     rsCHK = rookSOURCE.chunk(),
+//     //     rtCHK = rookTARGET.chunk(),
+//     //     ksCHK = kingSOURCE.chunk(),
+//     //     ktCHK = kingTARGET.chunk();
+
+//     //     constexpr auto
+//     //     rsPC = PC(PC::NOTHING),
+//     //     ksPC = PC(PC::NOTHING),
+//     //     rtPC = PC(Piece::R, color),
+//     //     ktPC = PC(Piece::K, color);
+
+//     //     ps.mailbox[rookSOURCE] = rsPC;
+//     //     ps.mailbox[rookTARGET] = rtPC;
+//     //     ps.mailbox[kingSOURCE] = ksPC;
+//     //     ps.mailbox[kingTARGET] = ktPC;
+
+//     //     constexpr auto 
+//     //     rPIECE = Piece::R,
+//     //     kPIECE = Piece::K;
+
+//     //     constexpr auto 
+//     //     rCOLOR = color,
+//     //     kCOLOR = color;
+
+//     //     constexpr auto 
+//     //     kIDX = (ksIDX ^ ktIDX),
+//     //     rIDX = (rsIDX ^ rtIDX);
+
+//     //     // --- King ---
+//     //     if constexpr (ksCHK == ktCHK)
+//     //     ps.pieces[kPIECE].chunks[ksCHK] ^= kIDX,
+//     //     ps.colors[kCOLOR].chunks[ksCHK] ^= kIDX;
+//     //     else
+//     //     ps.pieces[kPIECE].chunks[ksCHK] ^= ksIDX,
+//     //     ps.pieces[kPIECE].chunks[ktCHK] ^= ktIDX,
+//     //     ps.colors[kCOLOR].chunks[ksCHK] ^= ksIDX,
+//     //     ps.colors[kCOLOR].chunks[ktCHK] ^= ktIDX;
+        
+//     //     // --- Rook ---
+//     //     if constexpr (rsCHK == rtCHK)
+//     //     ps.pieces[rPIECE].chunks[rsCHK] ^= rIDX,
+//     //     ps.colors[rCOLOR].chunks[rsCHK] ^= rIDX;
+//     //     else
+//     //     ps.pieces[rPIECE].chunks[rsCHK] ^= rsIDX,
+//     //     ps.pieces[rPIECE].chunks[rtCHK] ^= rtIDX,
+//     //     ps.colors[rCOLOR].chunks[rsCHK] ^= rsIDX,
+//     //     ps.colors[rCOLOR].chunks[rtCHK] ^= rtIDX;
+//     // }
+
+//     // // // --- gs.rights ---
+//     // // next.rights = curr.rights;
+//     // // if constexpr (piece == Piece::K)
+//     // // {
+//     // //     constexpr u8 mask =
+//     // //     color == Color::r ? static_cast<u8>(~RS::rKQ): 
+//     // //     color == Color::r ? static_cast<u8>(~RS::bKQ): 
+//     // //     color == Color::r ? static_cast<u8>(~RS::yKQ): 
+//     // //     color == Color::r ? static_cast<u8>(~RS::gKQ): static_cast<u8>(~RS::RIGHTS);
+//     // //     next.rights &= mask;
+//     // // }
+
+//     // // if constexpr (piece == Piece::R)
+//     // // {
+//     // //     if (UNLIKELY(srcINDEX & CASTLING_MASK))
+//     // //     {
+//     // //         constexpr auto
+//     // //         team1 = color.team().encoded == Color::o ? Color::r : Color::b,
+//     // //         team2 = color.team().encoded == Color::o ? Color::y : Color::g;
+
+//     // //         constexpr RS
+//     // //         mask1 = (team1 == Color::o ? static_cast<u8>(~RS::rKS) : static_cast<u8>(~RS::bKS)),
+//     // //         mask2 = (team2 == Color::o ? static_cast<u8>(~RS::yQS) : static_cast<u8>(~RS::gQS));
+
+//     // //         const SQ
+//     // //         sq1 = CASTLE_INFO[ps.setup][team1][Side::KS].rookSOURCE,
+//     // //         sq2 = CASTLE_INFO[ps.setup][team2][Side::QS].rookSOURCE;
+
+//     // //         if (source.encoded == sq1) next.rights &= mask1;
+//     // //         if (source.encoded == sq2) next.rights &= mask2;
+//     // //     }
+//     // // }
+
+//     // // if constexpr (
+//     // // flag == Flag::Noisy  && (
+//     // // type == Type::Jumper ||
+//     // // type == Type::Slider ||
+//     // // type == Type::Strike))
+//     // // {
+//     // //     if (UNLIKELY(tgtINDEX & CASTLING_MASK))
+//     // //     {
+//     // //         constexpr auto
+//     // //         enem1 = color.enem() == Color::o ? Color::r : Color::b,
+//     // //         enem2 = color.enem() == Color::o ? Color::y : Color::g;
+
+//     // //         constexpr RS
+//     // //         mask1 = (enem1 == Color::o ? ~RS::rKS : ~RS::bKS),
+//     // //         mask2 = (enem1 == Color::o ? ~RS::rQS : ~RS::bQS),
+//     // //         mask3 = (enem1 == Color::o ? ~RS::yKS : ~RS::gKS),
+//     // //         mask4 = (enem1 == Color::o ? ~RS::yQS : ~RS::gQS);
+
+//     // //         constexpr SQ
+//     // //         sq1 = CASTLE_INFO[ps.setup][enem1][KS].rookSOURCE,
+//     // //         sq2 = CASTLE_INFO[ps.setup][enem1][QS].rookSOURCE,
+//     // //         sq3 = CASTLE_INFO[ps.setup][enem2][KS].rookSOURCE,
+//     // //         sq4 = CASTLE_INFO[ps.setup][enem2][QS].rookSOURCE;
+
+//     // //         if (target == sq1) gs.rights &= mask1; else
+//     // //         if (target == sq2) gs.rights &= mask2; else
+//     // //         if (target == sq3) gs.rights &= mask3; else
+//     // //         if (target == sq4) gs.rights &= mask4;
+//     // //     }
+//     // // }
+
+//     // // --- gs.royals ---
+//     // next.royals = curr.royals;
+//     // if constexpr (piece == Piece::K) next.royals[color] = target;
+//     // if constexpr (piece != Piece::K) {}
+
+//     // // --- gs.enpass ---
+//     // next.enpass = curr.enpass;
+//     // if constexpr (type == Type::Stride) next.enpass[color] = source + DELTA_INFO[color].pushS;
+//     // if constexpr (type != Type::Stride) next.enpass[color] = SQ::OFFBOARD;
+
+//     // // --- gs.fiftymove ---
+//     // if constexpr (piece == Piece::P || flag == Flag::Noisy || type == Type::Castle) next.fiftymove = 0;
+//     // if constexpr (piece != Piece::P && flag != Flag::Noisy && type != Type::Castle) next.fiftymove = curr.fiftymove + 1;
+
+//     // ps.ply++;
+// }
+
+// template<Piece piece, Color color, Type type, Flag flag, Side side, Piece promo, Color enpass, Setup setup>
+// void undomove(PS& ps, Move move)
+// {
+//     // const GS& 
+//     // prev = ps.states[ps.ply - 1],
+//     // curr = ps.states[ps.ply + 0];
+
+//     // const auto 
+//     // source = move.source(),
+//     // target = move.target();
+
+//     // const auto
+//     // srcINDEX = 1ULL << source.index(),
+//     // tgtINDEX = 1ULL << target.index();
+    
+//     // const auto 
+//     // srcCHUNK = source.chunk(),
+//     // tgtCHUNK = target.chunk();
+
+//     // constexpr auto
+//     // sourcePC = PC(piece, color),
+//     // targetPC = curr.capture;
+
+//     // if constexpr (
+//     // type == Type::Jumper ||
+//     // type == Type::Slider ||
+//     // type == Type::Pushed ||
+//     // type == Type::Strike ||
+//     // type == Type::Stride ||
+//     // type == Type::Enpass)
+//     // {
+//     //     ps.mailbox[source] = sourcePC;
+//     //     ps.mailbox[target] = targetPC;
+
+//     //     ps.pieces[piece].chunks[srcCHUNK] ^= srcINDEX;
+//     //     ps.pieces[piece].chunks[tgtCHUNK] ^= tgtINDEX;
+//     //     ps.colors[color].chunks[srcCHUNK] ^= srcINDEX;
+//     //     ps.colors[color].chunks[tgtCHUNK] ^= tgtINDEX;
+//     // }
+
+//     // if constexpr (type == Type::Enpass)
+//     // {
+//     //     const auto ep = target + DELTA_INFO[enpass].pushS;
+//     //     const auto epIDX = 1ULL << ep.index();
+//     //     const auto epCHK = ep.chunk();
+
+//     //     constexpr auto epPIECE = Piece::P;
+//     //     constexpr auto epCOLOR = enpass;
+
+//     //     if constexpr (enpass == Color::r)
+//     //     ps.pieces[epPIECE].chunks[1] ^= epIDX,
+//     //     ps.colors[epCOLOR].chunks[1] ^= epIDX;
+
+//     //     else if constexpr (enpass == Color::y)
+//     //     ps.pieces[epPIECE].chunks[2] ^= epIDX,
+//     //     ps.colors[epCOLOR].chunks[2] ^= epIDX;
+
+//     //     else
+//     //     ps.pieces[epPIECE].chunks[epCHK] ^= epIDX,
+//     //     ps.colors[epCOLOR].chunks[epCHK] ^= epIDX;
+//     // }
+
+//     // if constexpr (type == Type::Evolve)
+//     // {
+//     //     constexpr auto evolvePC = PC(promo, color);
+//     //     ps.mailbox[source] = sourcePC;
+//     //     ps.mailbox[target] = targetPC;
+
+//     //     if constexpr (color == Color::r)
+//     //     ps.pieces[piece].chunks[2] ^= srcINDEX,
+//     //     ps.pieces[promo].chunks[2] ^= tgtINDEX,
+//     //     ps.colors[color].chunks[2] ^= srcINDEX,
+//     //     ps.colors[color].chunks[2] ^= tgtINDEX; 
+
+//     //     else if constexpr (color == Color::y)
+//     //     ps.pieces[piece].chunks[1] ^= srcINDEX,
+//     //     ps.pieces[promo].chunks[1] ^= tgtINDEX,
+//     //     ps.colors[color].chunks[1] ^= srcINDEX,
+//     //     ps.colors[color].chunks[1] ^= tgtINDEX;
+
+//     //     else
+//     //     ps.pieces[piece].chunks[srcCHUNK] ^= srcINDEX,
+//     //     ps.pieces[promo].chunks[tgtCHUNK] ^= tgtINDEX,
+//     //     ps.colors[color].chunks[srcCHUNK] ^= srcINDEX,
+//     //     ps.colors[color].chunks[tgtCHUNK] ^= tgtINDEX;
+//     // }
+
+//     // if constexpr (type == Type::Castle)
+//     // {
+//     //     constexpr auto 
+//     //     rookSOURCE = CASTLE_INFO[setup][color][side].rookSOURCE,
+//     //     rookTARGET = CASTLE_INFO[setup][color][side].rookTARGET,
+//     //     kingSOURCE = CASTLE_INFO[setup][color][side].kingSOURCE,
+//     //     kingTARGET = CASTLE_INFO[setup][color][side].kingTARGET;
+
+//     //     constexpr auto 
+//     //     rsIDX = 1ULL << rookSOURCE.index(),
+//     //     rtIDX = 1ULL << rookTARGET.index(),
+//     //     ksIDX = 1ULL << kingSOURCE.index(),
+//     //     ktIDX = 1ULL << kingTARGET.index();
+
+//     //     constexpr auto 
+//     //     rsCHK = rookSOURCE.chunk(),
+//     //     rtCHK = rookTARGET.chunk(),
+//     //     ksCHK = kingSOURCE.chunk(),
+//     //     ktCHK = kingTARGET.chunk();
+
+//     //     constexpr auto
+//     //     rsPC = PC(Piece::R, color),
+//     //     ksPC = PC(Piece::K, color),
+//     //     rtPC = PC(PC::NOTHING),
+//     //     ktPC = PC(PC::NOTHING);
+
+//     //     ps.mailbox[rookSOURCE] = rsPC;
+//     //     ps.mailbox[rookTARGET] = rtPC;
+//     //     ps.mailbox[kingSOURCE] = ksPC;
+//     //     ps.mailbox[kingTARGET] = ktPC;
+
+//     //     constexpr auto 
+//     //     rPIECE = Piece::R,
+//     //     kPIECE = Piece::K;
+
+//     //     constexpr auto 
+//     //     rCOLOR = color,
+//     //     kCOLOR = color;
+
+//     //     constexpr auto 
+//     //     kIDX = (ksIDX ^ ktIDX),
+//     //     rIDX = (rsIDX ^ rtIDX);
+
+//     //     // --- King ---
+//     //     if constexpr (ksCHK == ktCHK)
+//     //     ps.pieces[kPIECE].chunks[ksCHK] ^= kIDX,
+//     //     ps.colors[kCOLOR].chunks[ksCHK] ^= kIDX;
+//     //     else
+//     //     ps.pieces[kPIECE].chunks[ksCHK] ^= ksIDX,
+//     //     ps.pieces[kPIECE].chunks[ktCHK] ^= ktIDX,
+//     //     ps.colors[kCOLOR].chunks[ksCHK] ^= ksIDX,
+//     //     ps.colors[kCOLOR].chunks[ktCHK] ^= ktIDX;
+        
+//     //     // --- Rook ---
+//     //     if constexpr (rsCHK == rtCHK)
+//     //     ps.pieces[rPIECE].chunks[rsCHK] ^= rIDX,
+//     //     ps.colors[rCOLOR].chunks[rsCHK] ^= rIDX;
+//     //     else
+//     //     ps.pieces[rPIECE].chunks[rsCHK] ^= rsIDX,
+//     //     ps.pieces[rPIECE].chunks[rtCHK] ^= rtIDX,
+//     //     ps.colors[rCOLOR].chunks[rsCHK] ^= rsIDX,
+//     //     ps.colors[rCOLOR].chunks[rtCHK] ^= rtIDX;
+//     // }
+
+//     // ps.ply--;
+// }
 
 } // namespace athena

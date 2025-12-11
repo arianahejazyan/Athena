@@ -1,10 +1,10 @@
-// #include "search.h"
+#include "search.h"
 // #include "movegen.h"
 // #include "thread.h"
 // #include "eval.h"
 
-// namespace athena
-// {
+namespace athena
+{
 
 //     int SCORE_INFINITY = 100000;
 //     int SCORE_DRAW = 0;
@@ -107,4 +107,4 @@
 //         return bestScore;
 //     }
 
-// } // namespace athena
+} // namespace athena

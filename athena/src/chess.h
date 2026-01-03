@@ -160,7 +160,7 @@ class PieceClass
     static consteval PieceClass Empty() { return PieceClass(Color::None, Piece::Empty); };
 };
 
-inline Square buildSquare(int rank, int file) { 
+inline constexpr Square buildSquare(int rank, int file) { 
     return Square(rank * FILE_NB + file);
 }
 

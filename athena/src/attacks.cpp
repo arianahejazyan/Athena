@@ -5,7 +5,48 @@
 namespace athena
 {
 
-    
+
+constexpr std::array<Straight, SQUARE_NB> STRAIGHT = []() 
+{
+    std::array<Straight, SQUARE_NB> arr {};
+
+    for (int s = 0; s < SQUARE_NB; s++)
+    {
+        Square sq = Square(s);
+        auto r = rank(sq);
+        auto f = file(sq);
+
+        if (isStone(sq)) continue;
+
+        auto offsets = slide_offsets(Piece::Rook);
+
+        for (auto offset : {offsets[0], offsets[3]})
+        {
+            Square target = sq + offset;
+
+            while (!isStone(target))
+            {
+                arr[s].vertical.setSquare(target);
+                target += offset;
+            }
+        }
+
+        for (auto offset : {offsets[1], offsets[2]})
+        {
+            Square target = sq + offset;
+
+            while (!isStone(target))
+            {
+                arr[s].horizontal.setSquare(target);
+                target += offset;
+            }
+        }
+    }
+
+    return arr;
+}();
+
+
     // consteval auto fillv2()
     // {
     //     constexpr std::array<std::array<int, 2>, 2> diag_deltas = {{{+1, +1}, {-1, -1}}};
@@ -234,5 +275,47 @@ consteval std::array<std::array<uint64_t, 1024>, SQUARE_NB> fill_anti_pext_table
 
 constexpr std::array<std::array<uint64_t, 1024>, SQUARE_NB> PEXT_TABLE_DIAG = fill_diag_pext_table();
 constexpr std::array<std::array<uint64_t, 1024>, SQUARE_NB> PEXT_TABLE_ANTI = fill_anti_pext_table();
+
+consteval auto fill_pext_table_vertical()
+{
+    std::array<std::array<Bitboard, 4096>, RANK_NB> table {};
+
+    auto offset = slide_offsets(Piece::Rook);
+
+    for (int r = 1; r <= 14; r++)
+    {
+        for (uint64_t occupied = 0; occupied < 4096; occupied++)
+        {
+            Bitboard mask(0,0,0,0);
+
+            int x = r;
+            while (true)
+            {
+                x--;
+                if (x == 0) break;
+                mask.setSquare(buildSquare(x, 0));
+                if (x == 1) break;
+                if (occupied & (1ULL << x)) break;
+            }
+
+            int y = r;
+            while (true)
+            {
+                y++;
+                if (y == 15) break;
+                mask.setSquare(buildSquare(y, 0));
+                if (y == 14) break;
+                if (occupied & (1ULL << y)) break;
+            }
+
+            table[r][occupied] = mask;
+        }
+    }
+
+    return table;
+}
+
+constexpr std::array<std::array<Bitboard, 4096>, RANK_NB   > PEXT_TABLE_VERTICAL   = fill_pext_table_vertical();
+// constexpr std::array<std::array<uint64_t, 4096>, CHUNK_SIZE> PEXT_TABLE_HORIZONTAL;
 
 } // namespace athena

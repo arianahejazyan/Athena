@@ -167,7 +167,7 @@ void Position::makemove(Move move)
         turn_ == Color::Red    ? push_offsets(Color::Red   )[0] : 
         turn_ == Color::Blue   ? push_offsets(Color::Blue  )[0] : 
         turn_ == Color::Yellow ? push_offsets(Color::Yellow)[0] : 
-        turn_ == Color::Green  ? push_offsets(Color::Green )[0] : 0;
+        turn_ == Color::Green  ? push_offsets(Color::Green )[0] : Offset::Z;
 
         board_[static_cast<uint8_t>(source + offset)] = PieceClass::Empty();
     }
@@ -244,7 +244,7 @@ void Position::undomove(Move move)
         turn_ == Color::Red    ? push_offsets(Color::Red   )[0] : 
         turn_ == Color::Blue   ? push_offsets(Color::Blue  )[0] : 
         turn_ == Color::Yellow ? push_offsets(Color::Yellow)[0] : 
-        turn_ == Color::Green  ? push_offsets(Color::Green )[0] : 0;
+        turn_ == Color::Green  ? push_offsets(Color::Green )[0] : Offset::Z;
 
         board_[static_cast<uint8_t>(source + offset)] = PieceClass(move.enpass(), Piece::Pawn);
     }
@@ -348,10 +348,10 @@ bool Position::inCheck(Color color, Square sq) const
         }
     }
 
-    constexpr std::array<uint8_t, TAKE_NB> takeR = take_offsets(Color::Red   );
-    constexpr std::array<uint8_t, TAKE_NB> takeB = take_offsets(Color::Blue  );
-    constexpr std::array<uint8_t, TAKE_NB> takeY = take_offsets(Color::Yellow);
-    constexpr std::array<uint8_t, TAKE_NB> takeG = take_offsets(Color::Green );
+    constexpr std::array<Offset, TAKE_NB> takeR = take_offsets(Color::Red   );
+    constexpr std::array<Offset, TAKE_NB> takeB = take_offsets(Color::Blue  );
+    constexpr std::array<Offset, TAKE_NB> takeY = take_offsets(Color::Yellow);
+    constexpr std::array<Offset, TAKE_NB> takeG = take_offsets(Color::Green );
 
     // Checked by Pawn
     for (Color opponent: opponents(color))

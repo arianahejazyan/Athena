@@ -141,10 +141,10 @@ Move* genEnpassMoves(const Position& pos, Move* moves)
         if (target == Square::Offboard)
             continue;
 
-        constexpr std::array<uint8_t, TAKE_NB> takeR = take_offsets(Color::Red   );
-        constexpr std::array<uint8_t, TAKE_NB> takeB = take_offsets(Color::Blue  );
-        constexpr std::array<uint8_t, TAKE_NB> takeY = take_offsets(Color::Yellow);
-        constexpr std::array<uint8_t, TAKE_NB> takeG = take_offsets(Color::Green );
+        constexpr std::array<Offset, TAKE_NB> takeR = take_offsets(Color::Red   );
+        constexpr std::array<Offset, TAKE_NB> takeB = take_offsets(Color::Blue  );
+        constexpr std::array<Offset, TAKE_NB> takeY = take_offsets(Color::Yellow);
+        constexpr std::array<Offset, TAKE_NB> takeG = take_offsets(Color::Green );
 
         for (auto offset : (turn == Color::Red ? takeY : turn == Color::Blue ? takeG : turn == Color::Yellow ? takeR : takeB))
         {
@@ -209,6 +209,9 @@ Move* genCastleMoves(const Position& pos, Move* moves)
 template<Color turn>
 Move* genMoves(const Position& pos, Move* moves)
 {
+    // checkmask
+    // pinned
+
     for (Square sq = Square::E2; sq <= Square::L15; sq++)
     {
         PieceClass pc = pos.board(sq);

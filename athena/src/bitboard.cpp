@@ -4,40 +4,6 @@
 namespace athena
 {
 
-constexpr std::array<Adjacent, SQUARE_NB> ADJACENT = []() 
-{
-    std::array<Adjacent, SQUARE_NB> arr {};
-
-    for (int s = 0; s < SQUARE_NB; s++)
-    {
-        Square sq = Square(s);
-        auto r = rank(sq);
-        auto f = file(sq);
-
-        if (isStone(sq)) continue;
-
-        for (auto offset : crawl_offsets(Piece::Knight))
-        {
-            Square target = sq + offset;
-
-            if (isStone(target)) continue;
-
-            arr[s].knight.setSquare(target);
-        }
-
-        for (auto offset : crawl_offsets(Piece::King))
-        {
-            Square target = sq + offset;
-
-            if (isStone(target)) continue;
-
-            arr[s].king.setSquare(target);
-        }
-    }
-
-    return arr;
-}();
-
 void Bitboard::print(bool debug) const
 {
     const int size   = debug ? 16 : 14;

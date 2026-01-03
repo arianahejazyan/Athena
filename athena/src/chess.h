@@ -56,7 +56,7 @@ enum class Side : uint8_t
 
 enum class Castle : uint8_t
 {
-    rKS = 1 << ((static_cast<uint8_t>(Color:: Red   ) * 2) + static_cast<uint8_t>(Side::KingSide )),
+    rKS = 1 << ((static_cast<uint8_t>(Color:: Red   ) * 2) + static_cast<uint8_t>(Side::KingSide )), // 0b00000001
     rQS = 1 << ((static_cast<uint8_t>(Color:: Red   ) * 2) + static_cast<uint8_t>(Side::QueenSide)),
     bKS = 1 << ((static_cast<uint8_t>(Color:: Blue  ) * 2) + static_cast<uint8_t>(Side::KingSide )),
     bQS = 1 << ((static_cast<uint8_t>(Color:: Blue  ) * 2) + static_cast<uint8_t>(Side::QueenSide)),
@@ -105,7 +105,6 @@ CHUNK_SIZE     = 64,
 CACHELINE_SIZE = 64;
 
 using FEN = std::string_view;
-
 static constexpr FEN STARTPOS =
 #ifdef GAME_SETUP_MODERN
 "R-0,0,0,0-1,1,1,1-1,1,1,1-0,0,0,0-0-"
@@ -165,85 +164,170 @@ inline Square buildSquare(int rank, int file) {
     return Square(rank * FILE_NB + file);
 }
 
-consteval uint8_t Offset(int rank, int file) { 
-    return rank * FILE_NB + file;
+enum class Offset : int
+{
+    N = +16,
+    S = -16,
+    E = +1 ,
+    W = -1 ,
+    Z =  0 ,
+};
+
+consteval Offset operator+(Offset lhs, Offset rhs) noexcept {
+    return Offset(static_cast<int>(lhs) + static_cast<int>(rhs));
 }
 
-consteval std::array<uint8_t, CRAWL_NB> crawl_offsets(Piece piece)
+consteval std::array<Offset, CRAWL_NB> crawl_offsets(Piece piece)
 {
-    std::array<uint8_t, CRAWL_NB> KNIGHT_OFFSETS =
+    std::array<Offset, CRAWL_NB> KNIGHT_OFFSETS =
     {{
-        Offset(-2, -1),
-        Offset(-2, +1),
-        Offset(-1, -2),
-        Offset(-1, +2),
-        Offset(+1, -2),
-        Offset(+1, +2),
-        Offset(+2, -1),
-        Offset(+2, +1),
+        Offset::S + Offset::S + Offset::W,
+        Offset::S + Offset::S + Offset::E,
+        Offset::S + Offset::W + Offset::W,
+        Offset::S + Offset::E + Offset::E,
+        Offset::N + Offset::W + Offset::W,
+        Offset::N + Offset::E + Offset::E,
+        Offset::N + Offset::N + Offset::W,
+        Offset::N + Offset::N + Offset::E,
     }};
 
-    std::array<uint8_t, CRAWL_NB> KING_OFFSETS = 
+    std::array<Offset, CRAWL_NB> KING_OFFSETS = 
     {{
-        Offset(-1, -1),
-        Offset(-1, 0 ),
-        Offset(-1, +1),
-        Offset(0 , -1),
-        Offset(0 , +1),
-        Offset(+1, -1),
-        Offset(+1, 0 ),
-        Offset(+1, +1),
+        Offset::S + Offset::W,
+        Offset::S            ,
+        Offset::S + Offset::E,
+        Offset::W            ,
+        Offset::E            ,
+        Offset::N + Offset::W,
+        Offset::N            ,
+        Offset::N + Offset::E,
     }};
 
     return piece == Piece::Knight ? KNIGHT_OFFSETS : KING_OFFSETS;
 }
 
-consteval std::array<uint8_t, SLIDE_NB> slide_offsets(Piece piece)
-{
-    std::array<uint8_t, SLIDE_NB> BISHOP_OFFSETS =
-    {{
-        Offset(-1, -1),
-        Offset(-1, +1),
-        Offset(+1, -1),
-        Offset(+1, +1),
-    }};
+// consteval std::array<uint8_t, CRAWL_NB> crawl_offsets(Piece piece)
+// {
+//     std::array<uint8_t, CRAWL_NB> KNIGHT_OFFSETS =
+//     {{
+//         Offset(-2, -1),
+//         Offset(-2, +1),
+//         Offset(-1, -2),
+//         Offset(-1, +2),
+//         Offset(+1, -2),
+//         Offset(+1, +2),
+//         Offset(+2, -1),
+//         Offset(+2, +1),
+//     }};
 
-    std::array<uint8_t, SLIDE_NB> ROOK_OFFSETS = 
-    {{
-        Offset(-1, 0 ),
-        Offset(0 , -1),
-        Offset(0 , +1),
-        Offset(+1, 0 ),
-    }};
+//     std::array<uint8_t, CRAWL_NB> KING_OFFSETS = 
+//     {{
+//         Offset(-1, -1),
+//         Offset(-1, 0 ),
+//         Offset(-1, +1),
+//         Offset(0 , -1),
+//         Offset(0 , +1),
+//         Offset(+1, -1),
+//         Offset(+1, 0 ),
+//         Offset(+1, +1),
+//     }};
+
+//     return piece == Piece::Knight ? KNIGHT_OFFSETS : KING_OFFSETS;
+// }
+
+consteval std::array<Offset, SLIDE_NB> slide_offsets(Piece piece)
+{
+    std::array<Offset, SLIDE_NB> BISHOP_OFFSETS =
+    {
+        Offset::S + Offset::W,
+        Offset::S + Offset::E,
+        Offset::N + Offset::W,
+        Offset::N + Offset::E,
+    };
+
+    std::array<Offset, SLIDE_NB> ROOK_OFFSETS = 
+    {
+        Offset::S,
+        Offset::W,
+        Offset::E,
+        Offset::N,
+    };
 
     return piece == Piece::Bishop ? BISHOP_OFFSETS : ROOK_OFFSETS;
 }
 
-consteval std::array<uint8_t, PUSH_NB> push_offsets(Color color)
+// consteval std::array<uint8_t, SLIDE_NB> slide_offsets(Piece piece)
+// {
+//     std::array<uint8_t, SLIDE_NB> BISHOP_OFFSETS =
+//     {{
+//         Offset(-1, -1),
+//         Offset(-1, +1),
+//         Offset(+1, -1),
+//         Offset(+1, +1),
+//     }};
+
+//     std::array<uint8_t, SLIDE_NB> ROOK_OFFSETS = 
+//     {{
+//         Offset(-1, 0 ),
+//         Offset(0 , -1),
+//         Offset(0 , +1),
+//         Offset(+1, 0 ),
+//     }};
+
+//     return piece == Piece::Bishop ? BISHOP_OFFSETS : ROOK_OFFSETS;
+// }
+
+consteval std::array<Offset, PUSH_NB> push_offsets(Color color)
 {
-    std::array<std::array<uint8_t, PUSH_NB>, COLOR_NB> PUSH_OFFSETS =
+    std::array<std::array<Offset, PUSH_NB>, COLOR_NB> PUSH_OFFSETS =
     {{
-        {{ Offset(+1, 0 ), Offset(+2, 0 ) }},
-        {{ Offset(0 , +1), Offset(0 , +2) }},
-        {{ Offset(-1, 0 ), Offset(-2, 0 ) }},
-        {{ Offset(0 , -1), Offset(0 , -2) }},
+        {{ Offset::N, Offset::N + Offset::N }},
+        {{ Offset::E, Offset::E + Offset::E }},
+        {{ Offset::S, Offset::S + Offset::S }},
+        {{ Offset::W, Offset::W + Offset::W }},
     }};
 
     return PUSH_OFFSETS[static_cast<uint8_t>(color)];
 }
 
-consteval std::array<uint8_t, TAKE_NB> take_offsets(Color color)
+consteval std::array<Offset, TAKE_NB> take_offsets(Color color)
 {
-    std::array<std::array<uint8_t, TAKE_NB>, COLOR_NB> TAKE_OFFSETS =
+    std::array<std::array<Offset, TAKE_NB>, COLOR_NB> TAKE_OFFSETS =
     {{
-        {{ Offset(+1, -1), Offset(+1, +1) }},
-        {{ Offset(-1, +1), Offset(+1, +1) }},
-        {{ Offset(-1, -1), Offset(-1, +1) }},
-        {{ Offset(-1, -1), Offset(+1, -1) }},
+        {{ Offset::N + Offset::W, Offset::N + Offset::E }},
+        {{ Offset::E + Offset::S, Offset::E + Offset::N }},
+        {{ Offset::S + Offset::W, Offset::S + Offset::E }},
+        {{ Offset::W + Offset::S, Offset::W + Offset::N }},
     }};
 
     return TAKE_OFFSETS[static_cast<uint8_t>(color)];
 }
+
+// consteval std::array<uint8_t, PUSH_NB> push_offsets(Color color)
+// {
+//     std::array<std::array<uint8_t, PUSH_NB>, COLOR_NB> PUSH_OFFSETS =
+//     {{
+//         {{ Offset(+1, 0 ), Offset(+2, 0 ) }},
+//         {{ Offset(0 , +1), Offset(0 , +2) }},
+//         {{ Offset(-1, 0 ), Offset(-2, 0 ) }},
+//         {{ Offset(0 , -1), Offset(0 , -2) }},
+//     }};
+
+//     return PUSH_OFFSETS[static_cast<uint8_t>(color)];
+// }
+
+// consteval std::array<uint8_t, TAKE_NB> take_offsets(Color color)
+// {
+//     std::array<std::array<uint8_t, TAKE_NB>, COLOR_NB> TAKE_OFFSETS =
+//     {{
+//         {{ Offset(+1, -1), Offset(+1, +1) }},
+//         {{ Offset(-1, +1), Offset(+1, +1) }},
+//         {{ Offset(-1, -1), Offset(-1, +1) }},
+//         {{ Offset(-1, -1), Offset(+1, -1) }},
+//     }};
+
+//     return TAKE_OFFSETS[static_cast<uint8_t>(color)];
+// }
 
 inline constexpr uint8_t index(Square square) noexcept { return static_cast<uint8_t>(square) % CHUNK_SIZE; }
 inline constexpr uint8_t chunk(Square square) noexcept { return static_cast<uint8_t>(square) / CHUNK_SIZE; }
@@ -300,18 +384,27 @@ inline constexpr bool isStone(Square square) noexcept
            (r >= 12 && f <= 3 );
 }
 
-inline Square& operator+=(Square& square, uint8_t offset) noexcept {
+inline constexpr Offset operator*(Offset lhs, int rhs) noexcept {
+    return Offset(static_cast<int>(lhs) * rhs);
+}
+
+inline constexpr Square& operator+=(Square& square, uint8_t offset) noexcept {
     square = static_cast<Square>(static_cast<uint8_t>(square) + offset);
     return square;
 }
 
-inline Square operator++(Square& square, int) noexcept {
+inline constexpr  Square& operator+=(Square& square, Offset offset) noexcept {
+    square = static_cast<Square>(static_cast<uint8_t>(square) + static_cast<int>(offset));
+    return square;
+}
+
+inline constexpr Square operator++(Square& square, int) noexcept {
     Square old = square;
     square = static_cast<Square>(static_cast<uint8_t>(square) + 1);
     return old;
 }
 
-inline bool operator<=(Square lhs, Square rhs) noexcept {
+inline constexpr bool operator<=(Square lhs, Square rhs) noexcept {
     return static_cast<uint8_t>(lhs) <= static_cast<uint8_t>(rhs);
 }
 
@@ -320,6 +413,13 @@ inline constexpr Square operator+(Square sq, uint8_t offset) noexcept {
         static_cast<uint8_t>(sq) + offset
     );
 }
+
+inline constexpr Square operator+(Square sq, Offset offset) noexcept {
+    return static_cast<Square>(
+        static_cast<uint8_t>(sq) + static_cast<int>(offset)
+    );
+}
+
 
 inline Square operator+(Square lhs, Square rhs) noexcept {
     return static_cast<Square>(

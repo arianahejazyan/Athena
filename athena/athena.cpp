@@ -1,5 +1,7 @@
+#include <cstdint>
 #include <iostream>
 #include "cli.h"
+#include "attacks.h"
 
 int main(int argc, char *argv[])
 {
@@ -22,6 +24,38 @@ int main(int argc, char *argv[])
         std::cout << "info string unknown flag '" << name << "'" << std::endl;
         return 1;
     }
+
+    // athena::Bitboard bb(0,0,0,0);
+    // bb |= athena::PEXT_DIAG[static_cast<uint8_t>(athena::Square::E2)][0x00];
+    // bb.print();
+
+
+    // athena::Bitboard bb(0,0,0,0);
+    // bb.setSquare(athena::Square::F9);
+    // bb.setSquare(athena::Square::J7);
+    // bb.setSquare(athena::Square::K4);
+    // bb.print();
+
+    // auto x = athena::genBishopAttacks(athena::Square::I6, bb);
+    // x.print();
+
+    
+
+    // auto z = athena::PEXT_TABLE_DIAG[static_cast<uint8_t>(athena::Square::F3)][0x01];
+    // athena::Bitboard bb2(z, z, z, z);
+    // bb2.print();
+
+
+
+    // athena::Bitboard bb(athena::DIAGONAL[static_cast<int>(athena::Square::I6)].diag);
+    // bb.print();
+
+    // athena::Bitboard bb2(athena::DIAGONAL[static_cast<int>(athena::Square::I6)].anti);
+    // bb2.print();
+
+
+    // bb = bb.shift<athena::Offset::N>();
+    // bb.print();
     
     athena::CLI cli;
     cli.launch();

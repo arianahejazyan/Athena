@@ -61,6 +61,8 @@ add_library(athena_lib STATIC
     ${ALL_SRC_FILES}
 )
 
+target_compile_options(athena_lib PRIVATE -fconstexpr-ops-limit=1000000000)
+
 target_include_directories(athena_lib PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
@@ -70,6 +72,11 @@ add_executable(athena
 )
 
 target_link_libraries(athena PRIVATE athena_lib)
+
+# Print compiler information
+message(STATUS "Compiler ID: ${CMAKE_CXX_COMPILER_ID}")
+message(STATUS "Compiler path: ${CMAKE_CXX_COMPILER}")
+message(STATUS "Compiler version: ${CMAKE_CXX_COMPILER_VERSION}")
 
 # add_library(athena-utility STATIC 
 #     src/utility/utility.cpp

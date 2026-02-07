@@ -59,6 +59,7 @@ inline Bitboard genRookAttacks(Square sq, const Bitboard& occupied) noexcept
 {
     Bitboard attacks(0,0,0,0);
 
+    // Vertical attacks
     const auto f = file(sq);
     const auto r = rank(sq);
 
@@ -78,8 +79,20 @@ inline Bitboard genRookAttacks(Square sq, const Bitboard& occupied) noexcept
     _mm256_storeu_si256((__m256i*)temp, shifted);
     attacks |= Bitboard(temp[0], temp[1], temp[2], temp[3]);
 
-    // const auto chk = chunk(sq);
-    // const auto idx = index(sq);
+    // Horizontal attacks
+    const auto chk = chunk(sq);
+    const auto idx = index(sq);
+
+    const auto shift = (r & 0b11) * FILE_NB;
+    const auto occ = occupied.chunks()[chk] >> shift;
+
+    const auto upper = occ & (0xFFFFULL << (1  + f));
+    const auto lower = occ & (0xFFFFULL >> (16 - f));
+
+    const auto ms1B = 0x8000000000000000ULL >> _lzcnt_u64(lower | 1);
+    const auto diff = upper ^ (upper - ms1B);
+
+    attacks.chunks()[chk] |= (diff & (0x7FFEULL ^ (1 << f))) << shift;
 
     // attacks.chunks()[chk] |= PEXT_TABLE_HORIZONTAL[idx][_pext_u64(occupied.chunks()[chk], STRAIGHT[static_cast<uint8_t>(sq)].horizontal.chunks()[chk])];
 

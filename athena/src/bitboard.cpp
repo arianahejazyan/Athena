@@ -22,9 +22,9 @@ void Bitboard::print(bool debug) const
         {
             int r = rank + offset;
             int f = file + offset;
-            auto sq = buildSquare(r, f);
-            bool valid = isStone(sq);
-            bool set = hasSquare(sq);
+            auto sq = Square(r, f);
+            bool valid = sq.stone();
+            bool set = has(sq);
             if (set)
                  std::cout << (!valid ? "\033[34mX\033[0m" : "\033[90mX\033[0m");
             else std::cout << (!valid ? "." : "\033[90m.\033[0m");

@@ -80,31 +80,31 @@ void Perft::run(const Position& pos, const Options& options)
 
 uint64_t Perft::perft(Position& pos, int depth)
 {
-    if (depth == 0)
-        return 1;
+    // if (depth == 0)
+    //     return 1;
 
-    Move moves[MOVE_NB];
-    std::size_t num = genAllPseudoMoves(pos, moves);
+    // Move moves[MOVE_NB];
+    // std::size_t num = genAllPseudoMoves(pos, moves);
 
-    // if (depth == 1)
-    // {
-    //     return num;
-    // }
+    // // if (depth == 1)
+    // // {
+    // //     return num;
+    // // }
 
     uint64_t nodes = 0;
-    for (std::size_t i = 0; i < num; ++i)
-    {
-        pos.makemove(moves[i]);
+    // for (std::size_t i = 0; i < num; ++i)
+    // {
+    //     pos.makemove(moves[i]);
 
-        if (pos.inCheck(pos.turn()))
-        {
-            pos.undomove(moves[i]);
-            continue;
-        }
+    //     if (pos.inCheck(pos.turn()))
+    //     {
+    //         pos.undomove(moves[i]);
+    //         continue;
+    //     }
 
-        nodes += perft(pos, depth - 1);
-        pos.undomove(moves[i]);
-    }
+    //     nodes += perft(pos, depth - 1);
+    //     pos.undomove(moves[i]);
+    // }
 
     return nodes;
 }

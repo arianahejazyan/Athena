@@ -3,6 +3,8 @@
 #include "cli.h"
 #include "attacks.h"
 
+using namespace athena;
+
 int main(int argc, char *argv[])
 {
     if (argc > 1)
@@ -25,7 +27,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    athena::CLI cli;
+    CLI cli;
     cli.launch();
 
     return 0;

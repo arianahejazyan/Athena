@@ -13,10 +13,10 @@ constexpr std::array<Straight, SQUARE_NB> STRAIGHT = []()
     for (int s = 0; s < SQUARE_NB; s++)
     {
         Square sq = Square(s);
-        auto r = rank(sq);
-        auto f = file(sq);
+        auto r = sq.rank();
+        auto f = sq.file();
 
-        if (isStone(sq)) continue;
+        if (sq.stone()) continue;
 
         auto offsets = slide_offsets(Piece::Rook);
 
@@ -24,9 +24,9 @@ constexpr std::array<Straight, SQUARE_NB> STRAIGHT = []()
         {
             Square target = sq + offset;
 
-            while (!isStone(target))
+            while (!target.stone())
             {
-                arr[s].vertical.setSquare(target);
+                arr[s].vertical.set(target);
                 target += offset;
             }
         }
@@ -35,9 +35,9 @@ constexpr std::array<Straight, SQUARE_NB> STRAIGHT = []()
         {
             Square target = sq + offset;
 
-            while (!isStone(target))
+            while (!target.stone())
             {
-                arr[s].horizontal.setSquare(target);
+                arr[s].horizontal.set(target);
                 target += offset;
             }
         }
@@ -105,10 +105,10 @@ constexpr std::array<Diagonal, SQUARE_NB> DIAGONAL = []()
     for (int s = 0; s < SQUARE_NB; s++)
     {
         Square sq = Square(s);
-        auto r = rank(sq);
-        auto f = file(sq);
+        auto r = sq.rank();
+        auto f = sq.file();
 
-        if (isStone(sq)) continue;
+        if (sq.stone()) continue;
 
         auto offsets = slide_offsets(Piece::Bishop);
 
@@ -116,9 +116,9 @@ constexpr std::array<Diagonal, SQUARE_NB> DIAGONAL = []()
         {
             Square target = sq + offset;
 
-            while (!isStone(target))
+            while (!target.stone())
             {
-                arr[s].diag.setSquare(target);
+                arr[s].diag.set(target);
                 target += offset;
             }
         }
@@ -127,9 +127,9 @@ constexpr std::array<Diagonal, SQUARE_NB> DIAGONAL = []()
         {
             Square target = sq + offset;
 
-            while (!isStone(target))
+            while (!target.stone())
             {
-                arr[s].anti.setSquare(target);
+                arr[s].anti.set(target);
                 target += offset;
             }
         }
@@ -145,27 +145,27 @@ constexpr std::array<Adjacent, SQUARE_NB> ADJACENT = []()
     for (int s = 0; s < SQUARE_NB; s++)
     {
         Square sq = Square(s);
-        auto r = rank(sq);
-        auto f = file(sq);
+        auto r = sq.rank();
+        auto f = sq.file();
 
-        if (isStone(sq)) continue;
+        if (sq.stone()) continue;
 
         for (auto offset : crawl_offsets(Piece::Knight))
         {
             Square target = sq + offset;
 
-            if (isStone(target)) continue;
+            if (target.stone()) continue;
 
-            arr[s].knight.setSquare(target);
+            arr[s].knight.set(target);
         }
 
         for (auto offset : crawl_offsets(Piece::King))
         {
             Square target = sq + offset;
 
-            if (isStone(target)) continue;
+            if (target.stone()) continue;
 
-            arr[s].king.setSquare(target);
+            arr[s].king.set(target);
         }
     }
 
@@ -201,7 +201,7 @@ consteval std::array<std::array<uint64_t, 1024>, SQUARE_NB> fill_diag_pext_table
 
     for (Square sq = Square::E2; sq <= Square::L15; sq++)
     {
-        if (isStone(sq)) continue;
+        if (sq.stone()) continue;
 
         for (uint64_t occupied = 0; occupied < 1024; occupied++)
         {
@@ -211,17 +211,17 @@ consteval std::array<std::array<uint64_t, 1024>, SQUARE_NB> fill_diag_pext_table
             Bitboard diag(DIAGONAL[static_cast<uint8_t>(sq)].diag);
             diag &= pdep(occupied, diag.combine());
 
-            for (Square bit = sq + offset1; !isStone(bit); bit += offset1)
+            for (Square bit = sq + offset1; !bit.stone(); bit += offset1)
             {
-                mask |= 1ULL << index(bit);
-                if (diag.hasSquare(bit)) break;
+                mask |= 1ULL << bit.index();
+                if (diag.has(bit)) break;
                 // if (occupied & (1ULL << file(bit))) break;
             }
 
-            for (Square bit = sq + offset2; !isStone(bit); bit += offset2)
+            for (Square bit = sq + offset2; !bit.stone(); bit += offset2)
             {
-                mask |= 1ULL << index(bit);
-                if (diag.hasSquare(bit)) break;
+                mask |= 1ULL << bit.index();
+                if (diag.has(bit)) break;
                 // if (occupied & (1ULL << file(bit))) break;
             }
 
@@ -242,7 +242,7 @@ consteval std::array<std::array<uint64_t, 1024>, SQUARE_NB> fill_anti_pext_table
 
     for (Square sq = Square::E2; sq <= Square::L15; sq++)
     {
-        if (isStone(sq)) continue;
+        if (sq.stone()) continue;
 
         for (uint64_t occupied = 0; occupied < 1024; occupied++)
         {
@@ -252,17 +252,17 @@ consteval std::array<std::array<uint64_t, 1024>, SQUARE_NB> fill_anti_pext_table
             Bitboard anti(DIAGONAL[static_cast<uint8_t>(sq)].anti);
             anti &= pdep(occupied, anti.combine());
 
-            for (Square bit = sq + offset1; !isStone(bit); bit += offset1)
+            for (Square bit = sq + offset1; !bit.stone(); bit += offset1)
             {
-                mask |= 1ULL << index(bit);
-                if (anti.hasSquare(bit)) break;
+                mask |= 1ULL << bit.index();
+                if (anti.has(bit)) break;
                 // if (occupied & (1ULL << file(bit))) break;
             }
 
-            for (Square bit = sq + offset2; !isStone(bit); bit += offset2)
+            for (Square bit = sq + offset2; !bit.stone(); bit += offset2)
             {
-                mask |= 1ULL << index(bit);
-                if (anti.hasSquare(bit)) break;
+                mask |= 1ULL << bit.index();
+                if (anti.has(bit)) break;
                 // if (occupied & (1ULL << file(bit))) break;
             }
 
@@ -293,7 +293,7 @@ consteval auto fill_pext_table_vertical()
             {
                 x--;
                 if (x == 0) break;
-                mask.setSquare(buildSquare(x, 0));
+                mask.set(Square(x, 0));
                 if (x == 1) break;
                 if (occupied & (1ULL << x)) break;
             }
@@ -303,7 +303,7 @@ consteval auto fill_pext_table_vertical()
             {
                 y++;
                 if (y == 15) break;
-                mask.setSquare(buildSquare(y, 0));
+                mask.set(Square(y, 0));
                 if (y == 14) break;
                 if (occupied & (1ULL << y)) break;
             }

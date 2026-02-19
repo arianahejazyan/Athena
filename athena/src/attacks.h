@@ -38,7 +38,7 @@ extern const std::array<Adjacent, SQUARE_NB> ADJACENT;
 extern const std::array<std::array<uint64_t, 1024>, SQUARE_NB> PEXT_TABLE_DIAG;
 extern const std::array<std::array<uint64_t, 1024>, SQUARE_NB> PEXT_TABLE_ANTI;
 
-inline Bitboard genBishopAttacks(Square sq, const Bitboard& occupied) noexcept
+inline Bitboard bishop_attacks(Square sq, const Bitboard& occupied) noexcept
 {
     auto [diag, anti] = DIAGONAL[static_cast<uint8_t>(sq)];
 
@@ -55,15 +55,15 @@ inline Bitboard genBishopAttacks(Square sq, const Bitboard& occupied) noexcept
 extern const std::array<std::array<Bitboard, 4096>, RANK_NB   > PEXT_TABLE_VERTICAL;
 extern const std::array<std::array<uint64_t, 4096>, CHUNK_SIZE> PEXT_TABLE_HORIZONTAL;
 
-inline Bitboard genRookAttacks(Square sq, const Bitboard& occupied) noexcept
+inline Bitboard rook_attacks(Square sq, const Bitboard& occupied) noexcept
 {
     Bitboard attacks(0,0,0,0);
 
     // Vertical attacks
-    const auto f = file(sq);
-    const auto r = rank(sq);
+    const auto f = sq.file();
+    const auto r = sq.rank();
 
-    __m256i v = _mm256_loadu_si256((const __m256i*)occupied.chunks());
+    __m256i v = _mm256_loadu_si256((const __m256i*)occupied.chunks_);
     __m256i s = _mm256_slli_epi64(v,  15 - f);
 
     // attacks |= PEXT_TABLE_VERTICAL[r][_pext_u32(_mm256_movemask_epi8(s), 0xAAAAAAAAU)];
@@ -71,7 +71,7 @@ inline Bitboard genRookAttacks(Square sq, const Bitboard& occupied) noexcept
     Bitboard vertical = PEXT_TABLE_VERTICAL[r][_pext_u32(_mm256_movemask_epi8(s), 0xAAAAAAAAU)];
     
     // Shift left by f amount without cross-chunk calculation
-    __m256i vertical_v = _mm256_loadu_si256((const __m256i*)vertical.chunks());
+    __m256i vertical_v = _mm256_loadu_si256((const __m256i*)vertical.chunks_);
     __m256i shifted = _mm256_slli_epi64(vertical_v, f);
     
     // Extract chunks and construct Bitboard
@@ -80,11 +80,11 @@ inline Bitboard genRookAttacks(Square sq, const Bitboard& occupied) noexcept
     attacks |= Bitboard(temp[0], temp[1], temp[2], temp[3]);
 
     // Horizontal attacks
-    const auto chk = chunk(sq);
-    const auto idx = index(sq);
+    const auto chk = sq.chunk();
+    const auto idx = sq.index();
 
     const auto shift = (r & 0b11) * FILE_NB;
-    const auto occ = occupied.chunks()[chk] >> shift;
+    const auto occ = occupied.chunks_[chk] >> shift;
 
     const auto upper = occ & (0xFFFFULL << (1  + f));
     const auto lower = occ & (0xFFFFULL >> (16 - f));
@@ -92,11 +92,46 @@ inline Bitboard genRookAttacks(Square sq, const Bitboard& occupied) noexcept
     const auto ms1B = 0x8000000000000000ULL >> _lzcnt_u64(lower | 1);
     const auto diff = upper ^ (upper - ms1B);
 
-    attacks.chunks()[chk] |= (diff & (0x7FFEULL ^ (1 << f))) << shift;
+    attacks.chunks_[chk] |= (diff & (0x7FFEULL ^ (1 << f))) << shift;
 
     // attacks.chunks()[chk] |= PEXT_TABLE_HORIZONTAL[idx][_pext_u64(occupied.chunks()[chk], STRAIGHT[static_cast<uint8_t>(sq)].horizontal.chunks()[chk])];
 
     return attacks;
+}
+
+inline Bitboard bishop_attacks(Square sq) noexcept
+{
+    return 
+    DIAGONAL[static_cast<uint8_t>(sq)].diag | 
+    DIAGONAL[static_cast<uint8_t>(sq)].anti;
+}
+
+inline Bitboard rook_attacks(Square sq) noexcept
+{
+    return 
+    STRAIGHT[static_cast<uint8_t>(sq)].vertical | 
+    STRAIGHT[static_cast<uint8_t>(sq)].horizontal;
+}
+
+// ===== between mask (template specialization) ===== //
+
+template<uint8_t piece>
+inline Bitboard between_mask(Square sq1, Square sq2) noexcept;
+
+template<>
+inline Bitboard between_mask<Piece::Bishop>(Square sq1, Square sq2) noexcept
+{
+    return 
+    bishop_attacks(sq1) & 
+    bishop_attacks(sq2) & subtract(sq1, sq2);
+}
+
+template<>
+inline Bitboard between_mask<Piece::Rook>(Square sq1, Square sq2) noexcept
+{
+    return 
+    rook_attacks(sq1) & 
+    rook_attacks(sq2) & subtract(sq1, sq2);
 }
 
 } // namespace athena

@@ -22,21 +22,24 @@ void Position::init(FEN fen)
     gs.enpass  = Square::Offboard;
 
     // 1. Parse turn //
-    turn_ = UCI2Color(std::tolower(tokens[0][0]));
+    turn_ = Color(tokens[0]);
 
     // 2. Parse castling rights //
-    uint8_t castle = 0;
+    Castle castle(tokens[2], tokens[3]);
+    gs.castle = castle;
 
-    if (tokens[2][0] == '1') castle |= static_cast<uint8_t>(Castle::rKS);
-    if (tokens[2][2] == '1') castle |= static_cast<uint8_t>(Castle::bKS);
-    if (tokens[2][4] == '1') castle |= static_cast<uint8_t>(Castle::yKS);
-    if (tokens[2][6] == '1') castle |= static_cast<uint8_t>(Castle::gKS);
-    if (tokens[3][0] == '1') castle |= static_cast<uint8_t>(Castle::rQS);
-    if (tokens[3][2] == '1') castle |= static_cast<uint8_t>(Castle::bQS);
-    if (tokens[3][4] == '1') castle |= static_cast<uint8_t>(Castle::yQS);
-    if (tokens[3][6] == '1') castle |= static_cast<uint8_t>(Castle::gQS);
+    // uint8_t castle = 0;
 
-    gs.castle = static_cast<Castle>(castle);
+    // if (tokens[2][0] == '1') castle |= static_cast<uint8_t>(Castle::rKS);
+    // if (tokens[2][2] == '1') castle |= static_cast<uint8_t>(Castle::bKS);
+    // if (tokens[2][4] == '1') castle |= static_cast<uint8_t>(Castle::yKS);
+    // if (tokens[2][6] == '1') castle |= static_cast<uint8_t>(Castle::gKS);
+    // if (tokens[3][0] == '1') castle |= static_cast<uint8_t>(Castle::rQS);
+    // if (tokens[3][2] == '1') castle |= static_cast<uint8_t>(Castle::bQS);
+    // if (tokens[3][4] == '1') castle |= static_cast<uint8_t>(Castle::yQS);
+    // if (tokens[3][6] == '1') castle |= static_cast<uint8_t>(Castle::gQS);
+
+    // gs.castle = static_cast<Castle>(castle);
 
     // 3. Parse fiftymove //
     gs.fiftymove = std::stoi(std::string(tokens[5]));
@@ -61,7 +64,7 @@ void Position::init(FEN fen)
             if (square.empty())
                 continue;
 
-            enpass_[static_cast<uint8_t>(color)] = UCI2Square(tokenize(square, ':')[0]); 
+            enpass_[static_cast<uint8_t>(color)] = Square(tokenize(square, ':')[0]); 
         }
     }
 
@@ -74,9 +77,9 @@ void Position::init(FEN fen)
     for (int sq = 0; sq < SQUARE_NB; ++sq)
     {
         auto s = static_cast<Square>(sq);
-        auto r = rank(s);
-        auto f = file(s);
-        board_[static_cast<uint8_t>(s)] = isStone(s) ? PieceClass::Stone() : PieceClass::Empty();
+        auto r = s.rank();
+        auto f = s.file();
+        board_[static_cast<uint8_t>(s)] = s.stone() ? PieceClass::Stone() : PieceClass::Empty();
     }
  
     // Split board into ranks
@@ -89,10 +92,10 @@ void Position::init(FEN fen)
         const auto files = tokenize(rank, ',');
         for (const auto file: files)
         {
-            Square sq = buildSquare(row, col++);
+            Square sq = Square(row, col++);
 
             // Handling stones
-            if (isStone(sq)) continue;
+            if (sq.stone()) continue;
 
             // Handling numbers
             if (std::all_of(file.begin(), file.end(), ::isdigit))
@@ -101,11 +104,11 @@ void Position::init(FEN fen)
                 continue;
             }
 
-            const auto color = UCI2Color(file[0]);
-            const auto piece = UCI2Piece(file[1]);
+            const auto color = Color(file.substr(0, 1));
+            const auto piece = Piece(file.substr(1, 1));
             
             setPiece(sq, PieceClass(color, piece));
-
+        
             // Handling royal squares
             if (piece == Piece::King) royals_[static_cast<uint8_t>(color)] = sq;     
         }
@@ -135,8 +138,8 @@ void Position::makemove(Move move)
 
     if (defender != PieceClass::Empty())
     {
-        pieces_[static_cast<uint8_t>(defender.piece())].popSquare(target);
-        colors_[static_cast<uint8_t>(defender.color())].popSquare(target);
+        pieces_[static_cast<uint8_t>(defender.piece())].pop(target);
+        colors_[static_cast<uint8_t>(defender.color())].pop(target);
     }
 
     popPiece(source);
@@ -167,7 +170,7 @@ void Position::makemove(Move move)
         turn_ == Color::Red    ? push_offsets(Color::Red   )[0] : 
         turn_ == Color::Blue   ? push_offsets(Color::Blue  )[0] : 
         turn_ == Color::Yellow ? push_offsets(Color::Yellow)[0] : 
-        turn_ == Color::Green  ? push_offsets(Color::Green )[0] : Offset::Z;
+        turn_ == Color::Green  ? push_offsets(Color::Green )[0] : Offset::None;
 
         board_[static_cast<uint8_t>(source + offset)] = PieceClass::Empty();
     }
@@ -207,7 +210,7 @@ void Position::makemove(Move move)
          nextGS.fiftymove = 0;
     else nextGS.fiftymove = currGS.fiftymove + 1;
     
-    turn_ = next(turn_);
+    turn_ = turn_.next();
 }
 
 void Position::undomove(Move move)
@@ -217,7 +220,7 @@ void Position::undomove(Move move)
     GameState& prevGS = states_[play_ + 0];
     GameState& currGS = states_[play_ + 1];
 
-    turn_ = prev(turn_);
+    turn_ = turn_.prev();
 
     auto source = move.source();
     auto target = move.target();
@@ -244,7 +247,7 @@ void Position::undomove(Move move)
         turn_ == Color::Red    ? push_offsets(Color::Red   )[0] : 
         turn_ == Color::Blue   ? push_offsets(Color::Blue  )[0] : 
         turn_ == Color::Yellow ? push_offsets(Color::Yellow)[0] : 
-        turn_ == Color::Green  ? push_offsets(Color::Green )[0] : Offset::Z;
+        turn_ == Color::Green  ? push_offsets(Color::Green )[0] : Offset::None;
 
         board_[static_cast<uint8_t>(source + offset)] = PieceClass(move.enpass(), Piece::Pawn);
     }
@@ -287,7 +290,7 @@ bool Position::inCheck(Color color, Square sq) const
     {
         PieceClass pc = board(sq + offset);
 
-        if (pc.piece() == Piece::Knight &&  isOpponent(pc.color(), color))
+        if (pc.piece() == Piece::Knight &&  pc.color().is_opponent(color))
         {
             return true;
         }
@@ -298,7 +301,7 @@ bool Position::inCheck(Color color, Square sq) const
     {
         PieceClass pc = board(sq + offset);
 
-        if (pc.piece() == Piece::King &&  isOpponent(pc.color(), color))
+        if (pc.piece() == Piece::King &&  pc.color().is_opponent(color))
         {
             return true;
         }
@@ -317,7 +320,7 @@ bool Position::inCheck(Color color, Square sq) const
     
             bool is_stone = (pc == PieceClass::Stone());
             bool is_empty = (pc == PieceClass::Empty());
-            bool is_enemy = isOpponent(pc.color(), color) && (pc.piece() == Piece::Bishop || pc.piece() == Piece::Queen);
+            bool is_enemy = pc.color().is_opponent(color) && (pc.piece() == Piece::Bishop || pc.piece() == Piece::Queen);
 
             if (!is_stone && !is_empty && is_enemy)
                 return true;
@@ -339,7 +342,7 @@ bool Position::inCheck(Color color, Square sq) const
     
             bool is_stone = (pc == PieceClass::Stone());
             bool is_empty = (pc == PieceClass::Empty());
-            bool is_enemy = isOpponent(pc.color(), color) && (pc.piece() == Piece::Rook || pc.piece() == Piece::Queen);
+            bool is_enemy = pc.color().is_opponent(color) && (pc.piece() == Piece::Rook || pc.piece() == Piece::Queen);
 
             if (!is_stone && !is_empty && is_enemy)
                 return true;
@@ -372,13 +375,65 @@ bool Position::inCheck(Color color) const {
     return inCheck(color, royal(color));
 }
 
+void Position::compute_masks()
+{
+    // const auto& t = turn();
+    // const auto& r = royal();
+
+    // auto& [checkmask, pinned] = masks_;
+
+    // Bitboard checkers = 0;
+
+    // // Checked by King or Knight
+    // auto [king, knight] = crawl_attacks(sq);
+
+    // king   &= opponent(Piece::King  );
+    // knight &= opponent(Piece::Knight);
+
+    // checkers |= king  ;
+    // checkers |= knight;
+
+    // // Checked by Bishop
+    // auto bishop = bishop_attacks(sq, occupied);
+    // bishop &= opponent(Piece::Queen, Piece::Bishop);
+    // checkers |= bishop;
+
+    // // Checked by Rook
+    // auto rook = rook_attacks(sq, occupied);
+    // rook &= opponent(Piece::Queen, Piece::Rook);
+    // checkers |= rook;
+
+    // // Checked by Pawn
+    // auto pawn = pawn_attacks(sq, color.oppo());
+    // pawn &= opponent(Piece::Pawn);
+    // checkers |= pawn;
+
+    // Bitboard candidates =
+    // bishop_attacks(sq, opponent(Piece::Bishop, Piece::Queen)) |
+    //   rook_attacks(sq, opponent(Piece::Rook  , Piece::Queen));
+       
+    // // Compute checkmask
+    // switch (checkers.count())
+    // {
+    //     case 0:
+    //         checkmask = UINT64_MAX;
+    //         break;
+    //     case 1:
+    //         checkmask = checkers;
+    //         break;
+    //     case 2:
+    //         checkmask = 0;
+    //         break;
+    // }
+}
+
 std::string Position::fen() const//{'enPassant':('k3:k4','d3:','','')}
 {
     const auto& gs = state();
     std::string output = "";
 
     // 1. Converting turn //
-    output += std::toupper(color2UCI(turn())[0]);
+    output += std::toupper(turn().uci()[0]);
     output += '-';
 
     // 2. Converting status //
@@ -386,17 +441,19 @@ std::string Position::fen() const//{'enPassant':('k3:k4','d3:','','')}
     output += '-';
 
     // 3. Converting kingside castling rights //
-    output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::rKS)) ? "1" : "0"); output += ',';
-    output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::bKS)) ? "1" : "0"); output += ',';
-    output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::yKS)) ? "1" : "0"); output += ',';
-    output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::gKS)) ? "1" : "0");
+    // output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::rKS)) ? "1" : "0"); output += ',';
+    // output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::bKS)) ? "1" : "0"); output += ',';
+    // output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::yKS)) ? "1" : "0"); output += ',';
+    // output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::gKS)) ? "1" : "0");
+    output += gs.castle.uci(Side::KingSide);
     output += '-';
 
     // 4. Converting queenside castling rights  //
-    output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::rQS)) ? "1" : "0"); output += ',';
-    output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::bQS)) ? "1" : "0"); output += ',';  
-    output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::yQS)) ? "1" : "0"); output += ',';
-    output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::gQS)) ? "1" : "0");
+    // output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::rQS)) ? "1" : "0"); output += ',';
+    // output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::bQS)) ? "1" : "0"); output += ',';  
+    // output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::yQS)) ? "1" : "0"); output += ',';
+    // output += (static_cast<uint8_t>(gs.castle) & (static_cast<uint8_t>(Castle::gQS)) ? "1" : "0");
+    output += gs.castle.uci(Side::QueenSide);
     output += '-';
 
     // 5. Converting scores //
@@ -435,9 +492,9 @@ std::string Position::fen() const//{'enPassant':('k3:k4','d3:','','')}
 
         any = true;
         ep += '\'';
-        ep += square2UCI(sq1);
+        ep += sq1.uci();
         ep += ':';
-        ep += square2UCI(sq2);
+        ep += sq2.uci();
         ep += '\'';
 
         // Avoiding trailing comma
@@ -452,7 +509,7 @@ std::string Position::fen() const//{'enPassant':('k3:k4','d3:','','')}
     {
         for (int col = 1; col <= 14; col++)
         {
-            Square sq = buildSquare(row, col);
+            Square sq = Square(row, col);
             PieceClass pc = board_[static_cast<uint8_t>(sq)];
 
             if (pc == PieceClass::Stone())
@@ -475,7 +532,7 @@ std::string Position::fen() const//{'enPassant':('k3:k4','d3:','','')}
                     count = 0;
                 }
 
-                output += PieceClass2UCI(pc);
+                output += pc.uci();
                 output += ',';
             }
 
@@ -516,7 +573,7 @@ void Position::print() const
         std::cout << (((rank - start + 1) < 10) ? " " : "") << (rank - start + 1) << " | ";
         for (int file = start; file < end; ++file)
         {
-            auto sq = buildSquare(rank, file);
+            auto sq = Square(rank, file);
             auto pc = board_[static_cast<uint8_t>(sq)];
 
             auto piece = pc.piece();
@@ -556,7 +613,7 @@ void Position::print() const
     std::cout << "\n";
 
     std::cout << "\n" << std::left << std::setw(KEY_WIDTH) << "turn:";
-    switch (turn())
+    switch (static_cast<uint8_t>(turn()))
     {
         case Color::Red   : std::cout << "\033[1;31mRed\033[0m   " << "\n"; break;
         case Color::Blue  : std::cout << "\033[1;34mBlue\033[0m  " << "\n"; break;
@@ -565,17 +622,20 @@ void Position::print() const
         default           : std::cout << "unknown"                 << "\n"; break;
     }
 
-    std::string ks = "";
-    std::string qs = "";
+    // std::string ks = "";
+    // std::string qs = "";
 
-    ks += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::rKS)) ? "1" : "0"; ks += ',';      
-    ks += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::bKS)) ? "1" : "0"; ks += ',';
-    ks += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::yKS)) ? "1" : "0"; ks += ',';
-    ks += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::gKS)) ? "1" : "0";
-    qs += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::rQS)) ? "1" : "0"; qs += ',';
-    qs += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::bQS)) ? "1" : "0"; qs += ',';
-    qs += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::yQS)) ? "1" : "0"; qs += ',';
-    qs += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::gQS)) ? "1" : "0";
+    // ks += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::rKS)) ? "1" : "0"; ks += ',';      
+    // ks += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::bKS)) ? "1" : "0"; ks += ',';
+    // ks += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::yKS)) ? "1" : "0"; ks += ',';
+    // ks += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::gKS)) ? "1" : "0";
+    // qs += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::rQS)) ? "1" : "0"; qs += ',';
+    // qs += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::bQS)) ? "1" : "0"; qs += ',';
+    // qs += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::yQS)) ? "1" : "0"; qs += ',';
+    // qs += (static_cast<uint8_t>(gs.castle) & static_cast<uint8_t>(Castle::gQS)) ? "1" : "0";
+
+    std::string ks = gs.castle.uci(Side::KingSide );
+    std::string qs = gs.castle.uci(Side::QueenSide);
 
     std::cout << std::left << std::setw(KEY_WIDTH) << "kingside:"  << ks << "\n"
               << std::left << std::setw(KEY_WIDTH) << "queenside:" << qs << "\n"
@@ -585,14 +645,14 @@ void Position::print() const
 
 
     for (Color color : {Color::Red, Color::Blue, Color::Yellow, Color::Green})
-        std::cout << square2UCI(enpass(color)) << (color == Color::Green ? "" : ",");
+        std::cout << enpass(color).uci() << (color == Color::Green ? "" : ",");
 
     std::cout << "\n";
     std::cout << std::left << std::setw(KEY_WIDTH)
               << "royals:";
 
     for (Color color : {Color::Red, Color::Blue, Color::Yellow, Color::Green})
-        std::cout << square2UCI(royal(color)) << (color == Color::Green ? "" : ",");
+        std::cout << royal(color).uci() << (color == Color::Green ? "" : ",");
 
     std::cout << std::endl;
 }

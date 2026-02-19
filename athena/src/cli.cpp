@@ -213,13 +213,13 @@ void CLI::handleFen()
 void CLI::handleMoveGen()
 {
 
-    Move moves[MOVE_NB];
-    std::size_t num = genAllPseudoMoves(pos_, moves);
-    for (std::size_t i = 0; i < num; i++)
-    {
-        std::cout << move2UCI(moves[i]) << std::endl;
-    }
-    std::cout << "total pseudo legal moves: " << num << std::endl;
+    // Move moves[MOVE_NB];
+    // std::size_t num = genAllPseudoMoves(pos_, moves);
+    // for (std::size_t i = 0; i < num; i++)
+    // {
+    //     std::cout << move2UCI(moves[i]) << std::endl;
+    // }
+    // std::cout << "total pseudo legal moves: " << num << std::endl;
 }
 
 } // namespace athena

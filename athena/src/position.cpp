@@ -3,7 +3,10 @@
 #include <iomanip>
 #include <cstring>
 #include "position.h"
+#include "attacks.h"
+#include "bitboard.h"
 #include "chess.h"
+#include "color.h"
 #include "utility.h"
 #include <string_view>
 #include "uci.h"
@@ -377,10 +380,14 @@ bool Position::inCheck(Color color) const {
 
 void Position::compute_masks()
 {
-    // const auto& t = turn();
-    // const auto& r = royal();
+    const auto& color = turn();
+    const auto& sq = royal(color);
 
     // auto& [checkmask, pinned] = masks_;
+
+    // Reset movegen masks
+    // checkmask_ = 0;
+    // pinned_ = 0;
 
     // Bitboard checkers = 0;
 
@@ -411,7 +418,32 @@ void Position::compute_masks()
     // Bitboard candidates =
     // bishop_attacks(sq, opponent(Piece::Bishop, Piece::Queen)) |
     //   rook_attacks(sq, opponent(Piece::Rook  , Piece::Queen));
-       
+
+    Bitboard bishop_candidates = bishop_attacks(sq) & pieces(Piece::Bishop) & colors(color);
+    while (!bishop_candidates.empty())
+    {
+        Square candidate;
+
+        count = between<Bishop>(sq, candidate) & occupany;
+
+        // Candidate is checker
+        if (count == 0)
+        {
+            checkers |= candidate;
+        }
+
+        else if (count == 1 && self)
+        {
+            pinned_square;
+
+            // Candidate is pinner
+            if (self)
+            {
+                pinned |= pinned_square;
+            }
+        }
+    }
+
     // // Compute checkmask
     // switch (checkers.count())
     // {

@@ -2,6 +2,7 @@
 
 #include <immintrin.h>
 #include "chess.h"
+#include "constants.h"
 
 namespace athena
 {
@@ -143,6 +144,15 @@ class alignas(CACHELINE_SIZE) Bitboard
 
     // Count the number of set bits
     int count() const noexcept;
+
+    // 
+    template<std::size_t chunk>
+    Square pop_lsb() noexcept
+    {
+        int b = __builtin_ctzll(chunks_[chunk]);
+        chunks_[chunk] &= chunks_[chunk] - 1;
+        return Square(chunk * CHUNK_SIZE + b);
+    }
 
     // hex
     // decimal

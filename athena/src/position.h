@@ -3,6 +3,7 @@
 #include "chess.h"
 #include "bitboard.h"
 #include "square.h"
+#include <cstdint>
 
 namespace athena
 {
@@ -49,6 +50,14 @@ class alignas(CACHELINE_SIZE) Position
 
     Color turn() const noexcept {
         return turn_;
+    }
+
+    Bitboard pieces(Piece piece) noexcept {
+        return pieces_[static_cast<uint8_t>(piece)];
+    }
+
+    Bitboard colors(Color color) noexcept {
+        return pieces_[static_cast<uint8_t>(color)];
     }
 
     void setPiece(Square sq, PieceClass pc) noexcept

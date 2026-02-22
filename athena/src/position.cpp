@@ -378,6 +378,45 @@ bool Position::inCheck(Color color) const {
     return inCheck(color, royal(color));
 }
 
+template<std::size_t chunk, uint8_t piece>
+void process_chunk_candidates(Position& pos, Color turn, Square royal_square, Bitboard& candidates, Bitboard& checkers) noexcept
+{
+    uint64_t& c = candidates.chunks_[chunk];
+
+    while (c)
+    {
+        Square candidate = candidates.pop_lsb<chunk>();
+        Bitboard between = between_mask<piece>(royal_square, candidate);
+        int count = between.count();
+
+        // Candidate is checker
+        if (count == 0)
+        {
+            checkers.set(candidate);
+        }
+
+        else if (count == 1)
+        {
+            Bitboard blocker = between & pos.colors(turn);
+
+            // Blocker is pinned
+            if (!blocker.empty())
+            {
+                pos.pinnedmask_ |= blocker;
+            }
+        }
+    }
+}
+
+template<uint8_t piece>
+void process_candidates(Position& pos, Square royal_square, Bitboard& candidates, Bitboard& checkers) noexcept
+{
+    process_chunk_candidates<0, piece>(pos, royal_square, candidates, checkers);
+    process_chunk_candidates<1, piece>(pos, royal_square, candidates, checkers);
+    process_chunk_candidates<2, piece>(pos, royal_square, candidates, checkers);
+    process_chunk_candidates<3, piece>(pos, royal_square, candidates, checkers);
+}
+
 void Position::compute_masks()
 {
     const auto& color = turn();
@@ -386,8 +425,8 @@ void Position::compute_masks()
     // auto& [checkmask, pinned] = masks_;
 
     // Reset movegen masks
-    // checkmask_ = 0;
-    // pinned_ = 0;
+    checkmask_  = 0;
+    pinnedmask_ = 0;
 
     // Bitboard checkers = 0;
 

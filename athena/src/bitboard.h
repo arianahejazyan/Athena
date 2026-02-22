@@ -14,6 +14,9 @@ class alignas(CACHELINE_SIZE) Bitboard
     friend Bitboard subtract(Square sq1, Square sq2) noexcept;
     friend Bitboard rook_attacks(Square sq, const Bitboard& occupied) noexcept;
 
+    template<std::size_t chunk, uint8_t piece>
+    friend void process_chunk_candidates(Position& pos, Color turn, Square royal_square, Bitboard& candidates, Bitboard& checkers) noexcept;
+
     // Default constructor
     constexpr Bitboard() = default;
 

@@ -102,7 +102,14 @@ class alignas(CACHELINE_SIZE) Position
     Color turn_;
 
     // store check and pinned masks respectively
-    std::pair<Bitboard, Bitboard> masks_;
+    // std::pair<Bitboard, Bitboard> masks_;
+    Bitboard checkmask_;
+    Bitboard pinnedmask_;
+
+    public:
+
+    template<std::size_t chunk, uint8_t piece>
+    friend void process_chunk_candidates(Position& pos, Color turn, Square royal_square, Bitboard& candidates, Bitboard& checkers) noexcept;
 };
 
 } // namespace athena

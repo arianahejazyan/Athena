@@ -9,7 +9,7 @@ namespace athena
 
 class Piece
 {
-    public: enum : uint8_t
+    public: enum : uint8_t // reorder NKPQRB
     {
         Pawn   = 0,
         Knight = 1,

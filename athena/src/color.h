@@ -9,6 +9,24 @@
 namespace athena
 {
 
+enum class Alliance : uint8_t
+{
+    RY = 0,
+    BG = 1,
+};
+
+// class Alliance
+// {
+//     public: enum : uint8_t
+//     {
+//         RY = 0,
+//         BG = 1,
+//     };
+
+//     private:
+//     uint8_t value_;
+// };
+
 class Color
 {
     public: enum : uint8_t
@@ -45,6 +63,9 @@ class Color
 
     // Return the previous color
     constexpr Color prev() const noexcept { return Color((value_ + 3) & 0b011); }
+
+    constexpr Color alliance() const noexcept { return Color(value_ & 0b1); }
+    constexpr Color opponent() const noexcept { return Color((value_ & 0b1) ^ 0b1); }
 
     // Return the UCI representation of the color
     std::string uci() const noexcept;
@@ -85,6 +106,12 @@ inline constexpr std::array<Color, GUIDES_SIZE> opponents(Color color) noexcept 
 
 inline constexpr std::array<Color, GUIDES_SIZE> teammates(Color color) noexcept {
     return GUILDS[static_cast<uint8_t>(color)];
+}
+
+consteval auto alliances_array()
+{
+    std::array<Alliance, ALLIANCE_NB> arr = {Alliance:: RY, Alliance::BG};
+    return arr;
 }
 
 } // namespace athena

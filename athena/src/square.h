@@ -6,6 +6,7 @@
 #include "constants.h"
 #include "offset.h"
 #include "color.h"
+#include "piece.h"
 
 namespace athena
 {
@@ -66,6 +67,17 @@ class Square
     explicit constexpr operator uint8_t() const {
         return value_;
     }
+
+    constexpr Square to14x14() const noexcept {
+        return Square(value_ - 17);
+    }
+
+    constexpr Square to16x16() const noexcept {
+        return Square(value_ + 17);
+    }
+
+    // corner
+    // edge
 
     // Used to check if pawns can double push
     template<uint8_t color>
@@ -228,6 +240,18 @@ inline bool Square::promotion<Color::Yellow>() const noexcept {
 template<>
 inline bool Square::promotion<Color::Green>() const noexcept {
     return file() == (FILE_NB - PROMOTION_RANK - 1);
+}
+
+// == == //
+
+consteval auto squares_array()
+{
+    std::array<Square, SQUARE_NB> arr {};
+
+    for (int i = 0; i < SQUARE_NB; i++)
+        arr[i] = Square(i);
+
+    return arr;
 }
 
 } // namespace athena

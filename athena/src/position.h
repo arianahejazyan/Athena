@@ -88,13 +88,16 @@ class alignas(CACHELINE_SIZE) Position
 
     private:
 
-    // compute check and pinned masks
-    void compute_masks();
+    // // compute check and pinned masks
+    // template<uint8_t color_value>
+    // void compute_masks();
 
     std::array<PieceClass, SQUARE_NB> board_;
     std::array<GameState, PLAY_NB> states_;
     std::array<Bitboard, 8> pieces_;
-    std::array<Bitboard, 8> colors_;
+    std::array<Bitboard, 4> colors_;
+
+    std::array<Bitboard, 2> alliance_;
     
     std::array<Square, COLOR_NB> royals_;
     std::array<Square, COLOR_NB> enpass_;
@@ -103,13 +106,13 @@ class alignas(CACHELINE_SIZE) Position
 
     // store check and pinned masks respectively
     // std::pair<Bitboard, Bitboard> masks_;
-    Bitboard checkmask_;
+    Bitboard checksmask_;
     Bitboard pinnedmask_;
 
     public:
 
-    template<std::size_t chunk, uint8_t piece>
-    friend void process_chunk_candidates(Position& pos, Color turn, Square royal_square, Bitboard& candidates, Bitboard& checkers) noexcept;
+    // template<std::size_t chunk, uint8_t piece>
+    // friend void process_chunk_candidates(Position& pos, Color turn, Square royal_square, Bitboard& candidates, Bitboard& checkers) noexcept;
 };
 
 } // namespace athena

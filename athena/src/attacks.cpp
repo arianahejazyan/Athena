@@ -1,5 +1,8 @@
 #include "attacks.h"
 #include "chess.h"
+#include "color.h"
+#include "constants.h"
+#include "offset.h"
 #include <cstdint>
 
 namespace athena
@@ -317,5 +320,31 @@ consteval auto fill_pext_table_vertical()
 
 constexpr std::array<std::array<Bitboard, 4096>, RANK_NB   > PEXT_TABLE_VERTICAL   = fill_pext_table_vertical();
 // constexpr std::array<std::array<uint64_t, 4096>, CHUNK_SIZE> PEXT_TABLE_HORIZONTAL;
+
+constexpr std::array<std::array<std::pair<Bitboard, Bitboard>, ALLIANCE_NB>, SQUARE_NB> PRECOMPUTED_PAWN_ATTACKS = []() consteval
+{
+    std::array<std::array<std::pair<Bitboard, Bitboard>, ALLIANCE_NB>, SQUARE_NB> table;
+
+    for (auto sq: squares_array())
+    {
+        if (sq.stone()) continue;
+        // sq = sq.to14x14();
+
+        for (auto alliance: alliances_array())
+        {
+            auto& pair = table[static_cast<uint8_t>(sq)][static_cast<uint8_t>(alliance)];
+            pair.first  = 0;
+            pair.second = 0;
+
+            // foo(offsets, bb);
+            // foo(offsets, bb);
+
+            for (auto offset: take_offsets(alliance == Alliance::RY ? Color::Red    : Color::Blue )) if (!((sq + offset).stone())) pair.first.set( sq + offset);
+            for (auto offset: take_offsets(alliance == Alliance::RY ? Color::Yellow : Color::Green)) pair.second.set(sq + offset);
+        }
+    }
+
+    return table;
+}();
 
 } // namespace athena

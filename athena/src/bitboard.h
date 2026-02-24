@@ -51,6 +51,15 @@ class alignas(CACHELINE_SIZE) Bitboard
         return *this;
     }
 
+    constexpr Bitboard& operator=(uint64_t value) noexcept
+    {
+        chunks_[0] = value;
+        chunks_[1] = value;
+        chunks_[2] = value;
+        chunks_[3] = value;
+        return *this;
+    }
+
     // constexpr Bitboard(const Bitboard& other) noexcept
     //     : chunks_{other.chunks_[0], other.chunks_[1], other.chunks_[2], other.chunks_[3]} {}
 

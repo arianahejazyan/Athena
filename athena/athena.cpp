@@ -2,6 +2,8 @@
 #include <iostream>
 #include "cli.h"
 #include "attacks.h"
+#include "src/attacks.h"
+#include "src/square.h"
 
 using namespace athena;
 
@@ -26,6 +28,9 @@ int main(int argc, char *argv[])
         std::cout << "info string unknown flag '" << name << "'" << std::endl;
         return 1;
     }
+
+    auto x = athena::pawn_attacks(Square::H2, Alliance::RY);
+    x.second.print();
 
     CLI cli;
     cli.launch();

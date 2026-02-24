@@ -1,10 +1,16 @@
 #pragma once
 
+#include <cstdint>
+
 namespace athena
 {
 
 constexpr std::size_t 
+SQUARE_DELTA   = 60,
+ALLIANCE_NB    = 2,
+REDUCE_SIZE    = 60,
 GUIDES_SIZE    = 2,
+GUILD_NB       = 2,
 RANK_NB        = 16,
 FILE_NB        = 16,
 SQUARE_NB      = 256,

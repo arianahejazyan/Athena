@@ -378,125 +378,116 @@ bool Position::inCheck(Color color) const {
     return inCheck(color, royal(color));
 }
 
-template<std::size_t chunk, uint8_t piece>
-void process_chunk_candidates(Position& pos, Color turn, Square royal_square, Bitboard& candidates, Bitboard& checkers) noexcept
-{
-    uint64_t& c = candidates.chunks_[chunk];
+// template<std::size_t chunk, uint8_t piece>
+// void process_chunk_candidates(Position& pos, Color turn, Square royal_square, Bitboard& candidates, Bitboard& checkers) noexcept
+// {
+//     uint64_t& c = candidates.chunks_[chunk];
 
-    while (c)
-    {
-        Square candidate = candidates.pop_lsb<chunk>();
-        Bitboard between = between_mask<piece>(royal_square, candidate);
-        int count = between.count();
+//     while (c)
+//     {
+//         Square candidate = candidates.pop_lsb<chunk>();
+//         Bitboard between = between_mask<piece>(royal_square, candidate);
+//         int count = between.count();
 
-        // Candidate is checker
-        if (count == 0)
-        {
-            checkers.set(candidate);
-        }
+//         // Candidate is checker
+//         if (count == 0)
+//         {
+//             checkers.set(candidate);
+//         }
 
-        else if (count == 1)
-        {
-            Bitboard blocker = between & pos.colors(turn);
+//         else if (count == 1)
+//         {
+//             Bitboard blocker = between & pos.colors(turn);
 
-            // Blocker is pinned
-            if (!blocker.empty())
-            {
-                pos.pinnedmask_ |= blocker;
-            }
-        }
-    }
-}
+//             // Blocker is pinned
+//             if (!blocker.empty())
+//             {
+//                 pos.pinnedmask_ |= blocker;
+//             }
+//         }
+//     }
+// }
 
-template<uint8_t piece>
-void process_candidates(Position& pos, Square royal_square, Bitboard& candidates, Bitboard& checkers) noexcept
-{
-    process_chunk_candidates<0, piece>(pos, royal_square, candidates, checkers);
-    process_chunk_candidates<1, piece>(pos, royal_square, candidates, checkers);
-    process_chunk_candidates<2, piece>(pos, royal_square, candidates, checkers);
-    process_chunk_candidates<3, piece>(pos, royal_square, candidates, checkers);
-}
+// template<uint8_t piece>
+// void process_candidates(Position& pos, Square royal_square, Bitboard& candidates, Bitboard& checkers) noexcept
+// {
+//     process_chunk_candidates<0, piece>(pos, royal_square, candidates, checkers);
+//     process_chunk_candidates<1, piece>(pos, royal_square, candidates, checkers);
+//     process_chunk_candidates<2, piece>(pos, royal_square, candidates, checkers);
+//     process_chunk_candidates<3, piece>(pos, royal_square, candidates, checkers);
+// }
 
-void Position::compute_masks()
-{
-    const auto& color = turn();
-    const auto& sq = royal(color);
+// template<uint8_t color_enum>
+// void Position::compute_check_and_pinned_masks(Square sq)
+// {
+//     constexpr Color color(color_enum);
 
-    // auto& [checkmask, pinned] = masks_;
+//     // // const auto& color = turn();
+//     // const auto& sq = royal(color);
 
-    // Reset movegen masks
-    checkmask_  = 0;
-    pinnedmask_ = 0;
+//     // auto& [checkmask, pinned] = masks_;
 
-    // Bitboard checkers = 0;
+//     // Reset masks
+//     checksmask_ = 0ULL;
+//     pinnedmask_ = 0ULL;
 
-    // // Checked by King or Knight
-    // auto [king, knight] = crawl_attacks(sq);
+//     // Crawl checkers
+//     const auto& [crawl_major, crawl_minor] = crawl_attacks(sq);
 
-    // king   &= opponent(Piece::King  );
-    // knight &= opponent(Piece::Knight);
+//     checksmask_ |= crawl_major & colors(color.opponent()) & pieces(Piece::King  );
+//     checksmask_ |= crawl_minor & colors(color.opponent()) & pieces(Piece::Knight);
 
-    // checkers |= king  ;
-    // checkers |= knight;
+//     // Pawn checkers
+//     const auto& [pawn_major, pawn_minor] = pawn_attacks<color.opponent().value()>(sq);
 
-    // // Checked by Bishop
-    // auto bishop = bishop_attacks(sq, occupied);
-    // bishop &= opponent(Piece::Queen, Piece::Bishop);
-    // checkers |= bishop;
+//     checksmask_ |= pawn_major & colors(color.alliance() == Alliance::RY ? Color::Green : Color::Yellow) & pieces(Piece::Pawn); // Improve cache locality
+//     checksmask_ |= pawn_minor & colors(color.alliance() == Alliance::RY ? Color::Blue  : Color::Red   ) & pieces(Piece::Pawn);
 
-    // // Checked by Rook
-    // auto rook = rook_attacks(sq, occupied);
-    // rook &= opponent(Piece::Queen, Piece::Rook);
-    // checkers |= rook;
+//     // Reorder NKPQBR
 
-    // // Checked by Pawn
-    // auto pawn = pawn_attacks(sq, color.oppo());
-    // pawn &= opponent(Piece::Pawn);
-    // checkers |= pawn;
+//     // Bitboard candidates =
+//     // bishop_attacks(sq, opponent(Piece::Bishop, Piece::Queen)) |
+//     //   rook_attacks(sq, opponent(Piece::Rook  , Piece::Queen));
 
-    // Bitboard candidates =
-    // bishop_attacks(sq, opponent(Piece::Bishop, Piece::Queen)) |
-    //   rook_attacks(sq, opponent(Piece::Rook  , Piece::Queen));
+//     // Bitboard bishop_candidates = bishop_attacks(sq) & pieces(Piece::Bishop) & colors(color);
+//     // while (!bishop_candidates.empty())
+//     // {
+//     //     Square candidate;
 
-    Bitboard bishop_candidates = bishop_attacks(sq) & pieces(Piece::Bishop) & colors(color);
-    while (!bishop_candidates.empty())
-    {
-        Square candidate;
+//     //     count = between<Bishop>(sq, candidate) & occupany;
 
-        count = between<Bishop>(sq, candidate) & occupany;
+//     //     // Candidate is checker
+//     //     if (count == 0)
+//     //     {
+//     //         checkers |= candidate;
+//     //     }
 
-        // Candidate is checker
-        if (count == 0)
-        {
-            checkers |= candidate;
-        }
+//     //     else if (count == 1 && self)
+//     //     {
+//     //         pinned_square;
 
-        else if (count == 1 && self)
-        {
-            pinned_square;
+//     //         // Candidate is pinner
+//     //         if (self)
+//     //         {
+//     //             pinned |= pinned_square;
+//     //         }
+//     //     }
+//     // }
 
-            // Candidate is pinner
-            if (self)
-            {
-                pinned |= pinned_square;
-            }
-        }
-    }
-
-    // // Compute checkmask
-    // switch (checkers.count())
-    // {
-    //     case 0:
-    //         checkmask = UINT64_MAX;
-    //         break;
-    //     case 1:
-    //         checkmask = checkers;
-    //         break;
-    //     case 2:
-    //         checkmask = 0;
-    //         break;
-    // }
-}
+//     // // Compute checkmask
+//     // switch (checkers.count())
+//     // {
+//     //     case 0:
+//     //         checkmask = UINT64_MAX;
+//     //         break;
+//     //     case 1:
+//     //         checkmask = checkers;
+//     //         break;
+//     //     case 2:
+//     //         checkmask = 0;
+//     //         break;
+//     // }
+// }
 
 std::string Position::fen() const//{'enPassant':('k3:k4','d3:','','')}
 {

@@ -2,6 +2,9 @@
 
 #include "bitboard.h"
 #include "chess.h"
+#include "color.h"
+#include "constants.h"
+#include <cstdint>
 
 namespace athena
 {
@@ -30,6 +33,8 @@ extern const std::array<Diagonal, SQUARE_NB> DIAGONAL;
 extern const std::array<Adjacent, SQUARE_NB> ADJACENT;
 
 
+
+extern const std::array<std::array<std::pair<Bitboard, Bitboard>, ALLIANCE_NB>, SQUARE_NB> PRECOMPUTED_PAWN_ATTACKS;
 
 // vertical
 // horizontal
@@ -111,6 +116,15 @@ inline Bitboard rook_attacks(Square sq) noexcept
     return 
     STRAIGHT[static_cast<uint8_t>(sq)].vertical | 
     STRAIGHT[static_cast<uint8_t>(sq)].horizontal;
+}
+
+inline Adjacent crawl_attacks(Square sq) noexcept
+{
+    return ADJACENT[static_cast<uint8_t>(sq)];
+}
+
+inline std::pair<Bitboard, Bitboard> pawn_attacks(Square sq, Alliance alliance) noexcept {
+    return PRECOMPUTED_PAWN_ATTACKS[static_cast<uint8_t>(sq)][static_cast<uint8_t>(alliance)];
 }
 
 // ===== between mask (template specialization) ===== //

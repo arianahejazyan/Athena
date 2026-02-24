@@ -321,6 +321,20 @@ consteval auto fill_pext_table_vertical()
 constexpr std::array<std::array<Bitboard, 4096>, RANK_NB   > PEXT_TABLE_VERTICAL   = fill_pext_table_vertical();
 // constexpr std::array<std::array<uint64_t, 4096>, CHUNK_SIZE> PEXT_TABLE_HORIZONTAL;
 
+consteval Bitboard compute_pawn_attack_mask(Square source, Color color)
+{
+    Bitboard mask(0);
+    for (auto offset: take_offsets(color))
+    {
+        Square target = source + offset;
+        if (target.valid()) 
+        {
+            mask.set(target);
+        } 
+    }
+    return mask;
+}
+
 constexpr std::array<std::array<std::pair<Bitboard, Bitboard>, ALLIANCE_NB>, SQUARE_NB> PRECOMPUTED_PAWN_ATTACKS = []() consteval
 {
     std::array<std::array<std::pair<Bitboard, Bitboard>, ALLIANCE_NB>, SQUARE_NB> table;
@@ -328,19 +342,12 @@ constexpr std::array<std::array<std::pair<Bitboard, Bitboard>, ALLIANCE_NB>, SQU
     for (auto sq: squares_array())
     {
         if (sq.stone()) continue;
-        // sq = sq.to14x14();
 
         for (auto alliance: alliances_array())
         {
             auto& pair = table[static_cast<uint8_t>(sq)][static_cast<uint8_t>(alliance)];
-            pair.first  = 0;
-            pair.second = 0;
-
-            // foo(offsets, bb);
-            // foo(offsets, bb);
-
-            for (auto offset: take_offsets(alliance == Alliance::RY ? Color::Red    : Color::Blue )) if (!((sq + offset).stone())) pair.first.set( sq + offset);
-            for (auto offset: take_offsets(alliance == Alliance::RY ? Color::Yellow : Color::Green)) pair.second.set(sq + offset);
+            pair.first  = compute_pawn_attack_mask(sq, alliance == Alliance::RY ? Color::Red    : Color::Blue );
+            pair.second = compute_pawn_attack_mask(sq, alliance == Alliance::RY ? Color::Yellow : Color::Green);
         }
     }
 

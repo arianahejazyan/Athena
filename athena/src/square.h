@@ -63,6 +63,9 @@ class Square
     // Stone operator
     inline constexpr bool stone() const noexcept;
 
+    // Checks if square is not stone
+    inline constexpr bool valid() const noexcept;
+
     // Conversion operator
     explicit constexpr operator uint8_t() const {
         return value_;
@@ -104,6 +107,11 @@ inline constexpr bool Square::stone() const noexcept
     return 
     (r == 0  || f == 0 ) || (r <= 3  && f <= 3 ) || (r >= 12 && f >= 12) ||
     (r == 15 || f == 15) || (r <= 3  && f >= 12) || (r >= 12 && f <= 3 );    
+}
+
+inline constexpr bool Square::valid() const noexcept
+{
+    return !stone();
 }
 
 // ===== operators ===== //

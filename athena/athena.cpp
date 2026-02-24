@@ -29,8 +29,8 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    auto x = athena::pawn_attacks(Square::H2, Alliance::RY);
-    x.second.print();
+    auto x = athena::pawn_attacks(Square::E5, Alliance::RY);
+    x.first.print();
 
     CLI cli;
     cli.launch();

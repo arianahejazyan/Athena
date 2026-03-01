@@ -2,6 +2,8 @@
 #include <iostream>
 #include <iomanip>
 #include <cstring>
+#include <cctype>
+#include <stdexcept>
 #include "position.h"
 #include "chess.h"
 #include "utility.h"
@@ -15,6 +17,11 @@ namespace athena
 void Position::init(FEN fen)
 {
     const auto tokens = tokenize(fen, '-');
+    if (tokens.size() < 6)
+    {
+        throw std::runtime_error("invalid FEN: expected at least 6 '-' separated fields");
+    }
+
     GameState& gs = states_[play_ = 0];
 
     // Reset gs variables
@@ -98,7 +105,7 @@ void Position::init(FEN fen)
             if (sq.stone()) continue;
 
             // Handling numbers
-            if (std::all_of(file.begin(), file.end(), ::isdigit))
+            if (std::all_of(file.begin(), file.end(), [](unsigned char c) { return std::isdigit(c) != 0; }))
             {
                 col += std::stoi(std::string(file)) - 1;
                 continue;

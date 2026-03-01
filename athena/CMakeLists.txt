@@ -53,7 +53,11 @@ project(Athena LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native -flto")
+
+option(ATHENA_ENABLE_NATIVE_ARCH "Enable native CPU tuning in Release builds" ON)
+option(ATHENA_ENABLE_IPO "Enable IPO/LTO in Release builds when supported" ON)
+option(ATHENA_ENABLE_ASAN "Enable AddressSanitizer" OFF)
+option(ATHENA_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
 
 file(GLOB_RECURSE ALL_SRC_FILES src/*.cpp)
 
@@ -61,7 +65,17 @@ add_library(athena_lib STATIC
     ${ALL_SRC_FILES}
 )
 
-target_compile_options(athena_lib PRIVATE -fconstexpr-ops-limit=1000000000)
+if(ATHENA_ENABLE_NATIVE_ARCH)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        target_compile_options(athena_lib PRIVATE $<$<CONFIG:Release>:-march=native>)
+    endif()
+endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(athena_lib PRIVATE -fconstexpr-ops-limit=1000000000)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(athena_lib PRIVATE -fconstexpr-steps=1000000000)
+endif()
 
 target_include_directories(athena_lib PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -72,6 +86,40 @@ add_executable(athena
 )
 
 target_link_libraries(athena PRIVATE athena_lib)
+
+if(ATHENA_ENABLE_NATIVE_ARCH)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        target_compile_options(athena PRIVATE $<$<CONFIG:Release>:-march=native>)
+    endif()
+endif()
+
+if(ATHENA_ENABLE_IPO)
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT ATHENA_IPO_SUPPORTED OUTPUT ATHENA_IPO_ERROR)
+    if(ATHENA_IPO_SUPPORTED)
+        set_property(TARGET athena_lib PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+        set_property(TARGET athena PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+    else()
+        message(STATUS "IPO/LTO not enabled: ${ATHENA_IPO_ERROR}")
+    endif()
+endif()
+
+if(ATHENA_ENABLE_ASAN OR ATHENA_ENABLE_UBSAN)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        set(ATHENA_SAN_FLAGS -fno-omit-frame-pointer)
+        if(ATHENA_ENABLE_ASAN)
+            list(APPEND ATHENA_SAN_FLAGS -fsanitize=address)
+        endif()
+        if(ATHENA_ENABLE_UBSAN)
+            list(APPEND ATHENA_SAN_FLAGS -fsanitize=undefined)
+        endif()
+        target_compile_options(athena_lib PRIVATE ${ATHENA_SAN_FLAGS})
+        target_compile_options(athena PRIVATE ${ATHENA_SAN_FLAGS})
+        target_link_options(athena PRIVATE ${ATHENA_SAN_FLAGS})
+    else()
+        message(WARNING "Sanitizers requested but unsupported compiler: ${CMAKE_CXX_COMPILER_ID}")
+    endif()
+endif()
 
 # Print compiler information
 message(STATUS "Compiler ID: ${CMAKE_CXX_COMPILER_ID}")

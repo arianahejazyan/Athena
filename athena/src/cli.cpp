@@ -1,12 +1,32 @@
 #include <iostream>
+#include <stdexcept>
+#include <chrono>
+#if defined(_WIN32)
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 #include "cli.h"
 #include "utility.h"
 #include "movegen.h"
 #include "uci.h"
 #include "perft.h"
+#include "attacks.h"
 
 namespace athena
 {
+
+namespace
+{
+bool stdin_is_tty() noexcept
+{
+#if defined(_WIN32)
+    return _isatty(_fileno(stdin)) != 0;
+#else
+    return isatty(fileno(stdin)) != 0;
+#endif
+}
+} // namespace
 
 // CommandLineInterface::CommandLineInterface()
 // {
@@ -42,8 +62,26 @@ CLI::CLI()
 
 void CLI::launch()
 {
-    while (std::getline(std::cin, line_)) 
+    const bool interactive = stdin_is_tty();
+
+    if (interactive)
     {
+        std::cout
+            << "Athena ready. Type 'help' for commands." << std::endl;
+    }
+
+    while (true)
+    {
+        if (interactive)
+        {
+            std::cout << "> " << std::flush;
+        }
+
+        if (!std::getline(std::cin, line_))
+        {
+            break;
+        }
+
         tokens_ = tokenize(std::string_view(line_), ' ');
         execute();
     }
@@ -70,7 +108,10 @@ void CLI::execute()
         if (name == "stop"      ) handleStop();       else 
         if (name == "quit"      ) handleQuit();       else 
         if (name == "perft"     ) handlePerft();      else 
+        if (name == "bench"     ) handleBench();      else
         if (name == "print"     ) handlePrint();      else
+        if (name == "board"     ) handlePrint();      else
+        if (name == "help"      ) handleHelp();       else
         if (name == "fen"       ) handleFen();        else
         if (name == "movegen"   ) handleMoveGen();    else
         {
@@ -132,26 +173,24 @@ void CLI::handleUCINewGame()
 
 void CLI::handlePos()
 {   
-    std::size_t index = 1;
-    FEN fen;
-
-    if (tokens_[index] == "fen")
+    if (tokens_.size() < 2 || tokens_[1] == "startpos")
     {
-        index++;
-        fen = tokens_[index];
+        pos_.init(STARTPOS);
+        return;
     }
 
-    else fen = STARTPOS;
+    if (tokens_[1] == "fen")
+    {
+        if (tokens_.size() < 3)
+        {
+            throw std::runtime_error("usage: pos [startpos | fen <FEN>]");
+        }
 
-    pos_.init(fen);
-    // index++;
-    // index++;
+        pos_.init(FEN(tokens_[2]));
+        return;
+    }
 
-    // while (index < tokens_.size())
-    // {
-    //     pos_.makemove(Move(tokens_[index], pos_));
-    //     index++;
-    // }
+    throw std::runtime_error("usage: pos [startpos | fen <FEN>]");
 }
 
 void CLI::handleGo()
@@ -169,10 +208,14 @@ void CLI::handleQuit()
 
 void CLI::handlePerft()
 {
-    std::size_t index = 1;
+    if (tokens_.size() < 2)
+    {
+        throw std::runtime_error("usage: perft <depth>");
+    }
+
     Perft perft;
 
-    int depth = std::stoi(std::string(tokens_[index]));
+    int depth = std::stoi(std::string(tokens_[1]));
     // index++;
 
     // bool split   = false;
@@ -203,6 +246,74 @@ void CLI::handlePerft()
 void CLI::handlePrint()
 {
     pos_.print();
+}
+
+void CLI::handleBench()
+{
+    if (tokens_.size() < 2 || tokens_[1] != "attacks")
+    {
+        throw std::runtime_error("usage: bench attacks [iterations]");
+    }
+
+    uint64_t iters = 1000000;
+    if (tokens_.size() >= 3)
+    {
+        iters = std::stoull(std::string(tokens_[2]));
+        if (iters == 0)
+        {
+            throw std::runtime_error("iterations must be > 0");
+        }
+    }
+
+    static const std::vector<Square> playableSquares = []() {
+        std::vector<Square> squares;
+        squares.reserve(196);
+        for (int rank = 1; rank <= 14; ++rank)
+        {
+            for (int file = 1; file <= 14; ++file)
+            {
+                Square sq(rank, file);
+                if (!sq.stone()) squares.push_back(sq);
+            }
+        }
+        return squares;
+    }();
+
+    Bitboard occupied(0, 0, 0, 0);
+    uint64_t checksum = 0;
+
+    const auto start = std::chrono::high_resolution_clock::now();
+
+    for (uint64_t i = 0; i < iters; ++i)
+    {
+        const Square sq1 = playableSquares[i % playableSquares.size()];
+        const Square sq2 = playableSquares[(i * 37 + 11) % playableSquares.size()];
+        occupied.set(sq2);
+
+        const Bitboard b = bishop_attacks(sq1, occupied);
+        const Bitboard r = rook_attacks(sq1, occupied);
+        checksum ^= b.combine();
+        checksum ^= (r.combine() << 1);
+
+        occupied.pop(sq2);
+    }
+
+    const auto end = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<double> elapsed = end - start;
+    const double seconds = elapsed.count();
+    const auto nps = static_cast<uint64_t>(static_cast<double>(iters) / seconds);
+
+    std::cout << "bench attacks iterations: " << iters << std::endl;
+    std::cout << "bench attacks seconds: " << seconds << std::endl;
+    std::cout << "bench attacks nps: " << nps << std::endl;
+    std::cout << "bench attacks checksum: " << checksum << std::endl;
+}
+
+void CLI::handleHelp()
+{
+    std::cout
+        << "commands: uci, isready, pos [startpos|fen <FEN>], fen, print, board, perft <depth>, bench attacks [iterations], quit"
+        << std::endl;
 }
 
 void CLI::handleFen()

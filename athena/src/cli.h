@@ -35,7 +35,9 @@ class CLI
 
     // Other commands
     void handlePerft();
+    void handleBench();
     void handlePrint();
+    void handleHelp();
     void handleFen();
     void handleMoveGen();
 

@@ -1,4 +1,0 @@
-/Users/andrewhinckley/Desktop/Athena/Athena/athena/build-sanitized/CMakeFiles/athena_lib.dir
-/Users/andrewhinckley/Desktop/Athena/Athena/athena/build-sanitized/CMakeFiles/athena.dir
-/Users/andrewhinckley/Desktop/Athena/Athena/athena/build-sanitized/CMakeFiles/edit_cache.dir
-/Users/andrewhinckley/Desktop/Athena/Athena/athena/build-sanitized/CMakeFiles/rebuild_cache.dir

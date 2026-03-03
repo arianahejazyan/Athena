@@ -1,5 +1,6 @@
 #include <iostream>
 #include "cli.h"
+#include "fen.h"
 #include "utility.h"
 #include "movegen.h"
 #include "uci.h"

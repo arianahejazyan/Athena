@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <immintrin.h>
 #include "chess.h"
 #include "constants.h"
@@ -14,8 +15,8 @@ class alignas(CACHELINE_SIZE) Bitboard
     friend Bitboard subtract(Square sq1, Square sq2) noexcept;
     friend Bitboard rook_attacks(Square sq, const Bitboard& occupied) noexcept;
 
-    template<std::size_t chunk, uint8_t piece>
-    friend void process_chunk_candidates(Position& pos, Color turn, Square royal_square, Bitboard& candidates, Bitboard& checkers) noexcept;
+    template<std::size_t chunk_id, Piece piece>
+    friend void process_candidates(Square sq, Bitboard& candidates, Bitboard& checkmask, Bitboard& pinnedmask, const Bitboard& blockers, const Bitboard& occupanys) noexcept;
 
     // Default constructor
     constexpr Bitboard() = default;
@@ -165,6 +166,21 @@ class alignas(CACHELINE_SIZE) Bitboard
         chunks_[chunk] &= chunks_[chunk] - 1;
         return Square(chunk * CHUNK_SIZE + b);
     }
+
+    Square lsb() const noexcept
+    {
+        for (std::size_t chunk_id = 0; chunk_id < CHUNK_NB; chunk_id++)
+        {
+            const auto chunk = chunks_[chunk_id];
+            if (chunk)
+                return __builtin_ctzll(chunk);
+        }
+
+        return Square::Offboard;
+    }
+
+    // pop_msb
+    // msb
 
     // hex
     // decimal

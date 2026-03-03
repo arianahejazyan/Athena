@@ -7,6 +7,11 @@ namespace athena
 
 constexpr std::size_t 
 SQUARE_DELTA   = 60,
+CHUNK_0 = 0,
+CHUNK_1 = 1,
+CHUNK_2 = 2,
+CHUNK_3 = 3,
+TEAM_NB        = 2,
 ALLIANCE_NB    = 2,
 REDUCE_SIZE    = 60,
 GUIDES_SIZE    = 2,

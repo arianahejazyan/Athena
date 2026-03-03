@@ -1,13 +1,10 @@
 #include "attacks.h"
-#include "chess.h"
-#include "color.h"
-#include "constants.h"
 #include "offset.h"
-#include <cstdint>
 
 namespace athena
 {
 
+// compute crawl attack mask
 
 constexpr std::array<Straight, SQUARE_NB> STRAIGHT = []() 
 {
@@ -335,19 +332,19 @@ consteval Bitboard compute_pawn_attack_mask(Square source, Color color)
     return mask;
 }
 
-constexpr std::array<std::array<std::pair<Bitboard, Bitboard>, ALLIANCE_NB>, SQUARE_NB> PRECOMPUTED_PAWN_ATTACKS = []() consteval
+constexpr std::array<std::array<std::pair<Bitboard, Bitboard>, TEAM_NB>, SQUARE_NB> PRECOMPUTED_PAWN_ATTACKS = []() consteval
 {
-    std::array<std::array<std::pair<Bitboard, Bitboard>, ALLIANCE_NB>, SQUARE_NB> table;
+    std::array<std::array<std::pair<Bitboard, Bitboard>, TEAM_NB>, SQUARE_NB> table;
 
     for (auto sq: squares_array())
     {
         if (sq.stone()) continue;
 
-        for (auto alliance: alliances_array())
+        for (auto team: team_array())
         {
-            auto& pair = table[static_cast<uint8_t>(sq)][static_cast<uint8_t>(alliance)];
-            pair.first  = compute_pawn_attack_mask(sq, alliance == Alliance::RY ? Color::Red    : Color::Blue );
-            pair.second = compute_pawn_attack_mask(sq, alliance == Alliance::RY ? Color::Yellow : Color::Green);
+            auto& pair = table[static_cast<uint8_t>(sq)][static_cast<uint8_t>(team)];
+            pair.first  = compute_pawn_attack_mask(sq, team == Team::RY ? Color::Red    : Color::Blue );
+            pair.second = compute_pawn_attack_mask(sq, team == Team::RY ? Color::Yellow : Color::Green);
         }
     }
 

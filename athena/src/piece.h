@@ -11,12 +11,12 @@ class Piece
 {
     public: enum : uint8_t // reorder NKPQRB
     {
-        Pawn   = 0,
+        King   = 0,
         Knight = 1,
-        Bishop = 2,
-        Rook   = 3,
-        Queen  = 4,
-        King   = 5,
+        Pawn   = 2,
+        Queen  = 3,
+        Bishop = 4,
+        Rook   = 5,
         Stone  = 6,
         Empty  = 7,
     };
@@ -38,7 +38,7 @@ class Piece
     // Return the UCI representation of the piece
     std::string uci() const noexcept;
 
-    private:
+    public:
     uint8_t value_;
 };
 

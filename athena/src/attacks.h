@@ -24,8 +24,8 @@ struct alignas(CACHELINE_SIZE) Diagonal
 
 struct alignas(CACHELINE_SIZE) Adjacent
 {
-    Bitboard knight;
     Bitboard king;
+    Bitboard knight;
 };
 
 extern const std::array<Straight, SQUARE_NB> STRAIGHT;
@@ -123,17 +123,18 @@ inline Adjacent crawl_attacks(Square sq) noexcept
     return ADJACENT[static_cast<uint8_t>(sq)];
 }
 
-inline std::pair<Bitboard, Bitboard> pawn_attacks(Square sq, Alliance alliance) noexcept {
-    return PRECOMPUTED_PAWN_ATTACKS[static_cast<uint8_t>(sq)][static_cast<uint8_t>(alliance)];
+template<Team team>
+inline std::pair<Bitboard, Bitboard> pawn_attacks(Square sq) noexcept {
+    return PRECOMPUTED_PAWN_ATTACKS[static_cast<uint8_t>(sq)][static_cast<uint8_t>(team)];
 }
 
 // ===== between mask (template specialization) ===== //
 
-template<uint8_t piece>
-inline Bitboard between_mask(Square sq1, Square sq2) noexcept;
+template<Piece piece>
+inline Bitboard compute_between_mask(Square sq1, Square sq2) noexcept;
 
 template<>
-inline Bitboard between_mask<Piece::Bishop>(Square sq1, Square sq2) noexcept
+inline Bitboard compute_between_mask<Piece::Bishop>(Square sq1, Square sq2) noexcept
 {
     return 
     bishop_attacks(sq1) & 
@@ -141,7 +142,7 @@ inline Bitboard between_mask<Piece::Bishop>(Square sq1, Square sq2) noexcept
 }
 
 template<>
-inline Bitboard between_mask<Piece::Rook>(Square sq1, Square sq2) noexcept
+inline Bitboard compute_between_mask<Piece::Rook>(Square sq1, Square sq2) noexcept
 {
     return 
     rook_attacks(sq1) & 

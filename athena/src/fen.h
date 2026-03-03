@@ -42,4 +42,21 @@ static constexpr FEN STARTPOS =
 "x,x,x,rR,rN,rB,rQ,rK,rB,rN,rR,x,x,x";
 #endif
 
+static constexpr FEN CUSTOM_FEN =
+"R-0,0,0,0-1,1,1,1-1,1,1,1-0,0,0,0-0-"
+"x,x,x,8,x,x,x/"
+"x,x,x,8,x,x,x/"
+"x,x,x,8,x,x,x/"
+"14/"
+"14/"
+"14/"
+"14/"
+"14/"
+"14/"
+"14/"
+"14/"
+"x,x,x,gR,1,bQ,6,x,x,x/"
+"x,x,x,rP,rB,6,x,x/"
+"x,x,x,rK,6,bQ,x,x,x";
+
 } // namespace athena

@@ -29,6 +29,7 @@ class CLI
     void handleSetOption();
     void handleUCINewGame();
     void handlePos();
+    void handleMove();
     void handleGo();
     void handleStop();
     void handleQuit();

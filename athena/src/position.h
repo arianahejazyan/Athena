@@ -51,6 +51,10 @@ class alignas(CACHELINE_SIZE) Position
         return turn_;
     }
 
+    void set_turn(Color color) noexcept {
+        turn_ = color;
+    }
+
     void setPiece(Square sq, PieceClass pc) noexcept
     {
         board_[static_cast<uint8_t>(sq)] = pc;

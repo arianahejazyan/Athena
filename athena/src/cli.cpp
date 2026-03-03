@@ -12,6 +12,7 @@
 #include "uci.h"
 #include "perft.h"
 #include "attacks.h"
+#include "move_parser.h"
 
 namespace athena
 {
@@ -104,6 +105,7 @@ void CLI::execute()
         if (name == "setoption" ) handleSetOption();  else 
         if (name == "ucinewgame") handleUCINewGame(); else 
         if (name == "pos"       ) handlePos();        else 
+        if (name == "move"      ) handleMove();       else
         if (name == "go"        ) handleGo();         else 
         if (name == "stop"      ) handleStop();       else 
         if (name == "quit"      ) handleQuit();       else 
@@ -195,6 +197,23 @@ void CLI::handlePos()
 
 void CLI::handleGo()
 {
+}
+
+void CLI::handleMove()
+{
+    if (tokens_.size() < 2)
+    {
+        throw std::runtime_error("usage: move <uci>");
+    }
+
+    Move move;
+    std::string error;
+    if (!parse_move_uci(pos_, tokens_[1], move, &error))
+    {
+        throw std::runtime_error(error);
+    }
+
+    pos_.makemove(move);
 }
 
 void CLI::handleStop()
@@ -312,7 +331,7 @@ void CLI::handleBench()
 void CLI::handleHelp()
 {
     std::cout
-        << "commands: uci, isready, pos [startpos|fen <FEN>], fen, print, board, perft <depth>, bench attacks [iterations], quit"
+        << "commands: uci, isready, pos [startpos|fen <FEN>], move <uci>, fen, print, board, perft <depth>, bench attacks [iterations], quit"
         << std::endl;
 }
 

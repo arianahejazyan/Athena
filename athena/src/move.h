@@ -33,7 +33,7 @@ class Move
     Move(Square source, Square target, MoveType type)
         : encoded_(static_cast<uint8_t>(source) | (static_cast<uint8_t>(target) << 24) | (static_cast<uint32_t>(type) << 8)) {}
 
-    consteval
+    constexpr
     Move(Square source, Square target, Side side)
         : encoded_(static_cast<uint8_t>(source) | (static_cast<uint8_t>(target) << 24) | (static_cast<uint32_t>(MoveType::Castle) << 8) | (static_cast<uint8_t>(side) << 18)) {}
 

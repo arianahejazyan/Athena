@@ -168,7 +168,9 @@ void Position::makemove(Move move)
     // Handle movetypes
     if (type == MoveType::Stride)
     {
-        enpass_[static_cast<uint8_t>(turn_)] = (source + target) >> 1;
+        const int source_idx = static_cast<uint8_t>(source);
+        const int target_idx = static_cast<uint8_t>(target);
+        enpass_[static_cast<uint8_t>(turn_)] = Square(static_cast<uint8_t>((source_idx + target_idx) / 2));
     }
     
     else if (type == MoveType::Enpass)

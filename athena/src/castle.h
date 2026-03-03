@@ -80,7 +80,7 @@ class Castle
 //     return (static_cast<uint8_t>(castle) & static_cast<uint8_t>(buildCastle(color, side))) != 0;
 // }
 
-consteval std::array<Square, 4> castle_squares(Color color, Side side)
+constexpr std::array<Square, 4> castle_squares(Color color, Side side)
 {
     #ifdef GAME_SETUP_MODERN
     std::array<std::array<Square, 4>, COLOR_NB> KINGSIDE_SQUARES = 
@@ -102,17 +102,17 @@ consteval std::array<Square, 4> castle_squares(Color color, Side side)
     std::array<std::array<Square, 4>, COLOR_NB> KINGSIDE_SQUARES = 
     {{
         {Square::I2 , Square::K2 , Square::L2 , Square::J2 },
-        {Square::B9 , Square::B11, Square::B12, Square::B10},
+        {Square::B8 , Square::B6 , Square::B5 , Square::B7 },
         {Square::H15, Square::F15, Square::E15, Square::G15}, 
-        {Square::O8 , Square::O6 , Square::O5 , Square::O7 }, 
+        {Square::O9 , Square::O11, Square::O12, Square::O10}, 
     }};
 
     std::array<std::array<Square, 4>, COLOR_NB> QUEENSIDE_SQUARES = 
     {{
         {Square::I2 , Square::G2 , Square::E2 , Square::H2 },
-        {Square::B9 , Square::B7 , Square::B5 , Square::B8 },
+        {Square::B8 , Square::B10, Square::B12, Square::B9 },
         {Square::H15, Square::J15, Square::L15, Square::I15},
-        {Square::O8 , Square::O10, Square::O12, Square::O9 },
+        {Square::O9 , Square::O7 , Square::O5 , Square::O8 },
     }};
     #endif
 
@@ -122,7 +122,7 @@ consteval std::array<Square, 4> castle_squares(Color color, Side side)
     QUEENSIDE_SQUARES[static_cast<uint8_t>(color)];
 }
 
-consteval std::array<Square, 3> path_squares(Color color, Side side)
+constexpr std::array<Square, 3> path_squares(Color color, Side side)
 {
     #ifdef GAME_SETUP_MODERN
     std::array<std::array<Square, 3>, COLOR_NB> KINGSIDE_SQUARES = 
@@ -144,17 +144,17 @@ consteval std::array<Square, 3> path_squares(Color color, Side side)
     std::array<std::array<Square, 3>, COLOR_NB> KINGSIDE_SQUARES = 
     {{
         {Square::J2 , Square::K2 , Square::K2 },
-        {Square::B10, Square::B11, Square::B11},
+        {Square::B6 , Square::B7 , Square::B7 }, 
         {Square::F15, Square::G15, Square::G15}, 
-        {Square::O6 , Square::O7 , Square::O7 }, 
+        {Square::O10, Square::O11, Square::O11}, 
     }};
 
     std::array<std::array<Square, 3>, COLOR_NB> QUEENSIDE_SQUARES = 
     {{
         {Square::F2 , Square::G2 , Square::H2 },
-        {Square::B6 , Square::B7 , Square::B8 },
+        {Square::B9 , Square::B10, Square::B11},
         {Square::I15, Square::J15, Square::K15},
-        {Square::O9 , Square::O10, Square::O11},
+        {Square::O6 , Square::O7 , Square::O8 },
     }};
     #endif
 
@@ -164,7 +164,7 @@ consteval std::array<Square, 3> path_squares(Color color, Side side)
     QUEENSIDE_SQUARES[static_cast<uint8_t>(color)];
 }
 
-consteval std::array<Square, 2> safe_squares(Color color, Side side)
+constexpr std::array<Square, 2> safe_squares(Color color, Side side)
 {
     #ifdef GAME_SETUP_MODERN
     std::array<std::array<Square, 2>, COLOR_NB> KINGSIDE_SQUARES = 
@@ -186,9 +186,9 @@ consteval std::array<Square, 2> safe_squares(Color color, Side side)
     std::array<std::array<Square, 2>, COLOR_NB> KINGSIDE_SQUARES = 
     {{
         {Square::I2 , Square::J2 },
-        {Square::B9 , Square::B10},
+        {Square::B7 , Square::B8 }, 
         {Square::G15, Square::H15},
-        {Square::O7 , Square::O8 }, 
+        {Square::O9 , Square::O10}, 
     }};
 
     std::array<std::array<Square, 2>, COLOR_NB> QUEENSIDE_SQUARES = 

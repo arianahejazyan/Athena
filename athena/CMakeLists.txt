@@ -58,6 +58,7 @@ option(ATHENA_ENABLE_NATIVE_ARCH "Enable native CPU tuning in Release builds" ON
 option(ATHENA_ENABLE_IPO "Enable IPO/LTO in Release builds when supported" ON)
 option(ATHENA_ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(ATHENA_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
+option(ATHENA_BUILD_SDL3_GUI "Build SDL3 GUI application" ON)
 
 file(GLOB_RECURSE ALL_SRC_FILES src/*.cpp)
 
@@ -81,15 +82,29 @@ target_include_directories(athena_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-add_executable(athena 
+add_executable(athenacli 
     athena.cpp
 )
 
-target_link_libraries(athena PRIVATE athena_lib)
+target_link_libraries(athenacli PRIVATE athena_lib)
+
+if(ATHENA_BUILD_SDL3_GUI)
+    find_package(SDL3 QUIET)
+    if(SDL3_FOUND)
+        add_executable(athena athena_gui.cpp)
+        target_link_libraries(athena PRIVATE athena_lib SDL3::SDL3)
+        target_compile_features(athena PRIVATE cxx_std_23)
+    else()
+        message(STATUS "SDL3 not found: athena target (GUI) will not be built")
+    endif()
+endif()
 
 if(ATHENA_ENABLE_NATIVE_ARCH)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
-        target_compile_options(athena PRIVATE $<$<CONFIG:Release>:-march=native>)
+        target_compile_options(athenacli PRIVATE $<$<CONFIG:Release>:-march=native>)
+        if(TARGET athena)
+            target_compile_options(athena PRIVATE $<$<CONFIG:Release>:-march=native>)
+        endif()
     endif()
 endif()
 
@@ -98,7 +113,10 @@ if(ATHENA_ENABLE_IPO)
     check_ipo_supported(RESULT ATHENA_IPO_SUPPORTED OUTPUT ATHENA_IPO_ERROR)
     if(ATHENA_IPO_SUPPORTED)
         set_property(TARGET athena_lib PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
-        set_property(TARGET athena PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+        set_property(TARGET athenacli PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+        if(TARGET athena)
+            set_property(TARGET athena PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+        endif()
     else()
         message(STATUS "IPO/LTO not enabled: ${ATHENA_IPO_ERROR}")
     endif()
@@ -114,8 +132,12 @@ if(ATHENA_ENABLE_ASAN OR ATHENA_ENABLE_UBSAN)
             list(APPEND ATHENA_SAN_FLAGS -fsanitize=undefined)
         endif()
         target_compile_options(athena_lib PRIVATE ${ATHENA_SAN_FLAGS})
-        target_compile_options(athena PRIVATE ${ATHENA_SAN_FLAGS})
-        target_link_options(athena PRIVATE ${ATHENA_SAN_FLAGS})
+        target_compile_options(athenacli PRIVATE ${ATHENA_SAN_FLAGS})
+        target_link_options(athenacli PRIVATE ${ATHENA_SAN_FLAGS})
+        if(TARGET athena)
+            target_compile_options(athena PRIVATE ${ATHENA_SAN_FLAGS})
+            target_link_options(athena PRIVATE ${ATHENA_SAN_FLAGS})
+        endif()
     else()
         message(WARNING "Sanitizers requested but unsupported compiler: ${CMAKE_CXX_COMPILER_ID}")
     endif()

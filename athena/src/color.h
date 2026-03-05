@@ -152,4 +152,16 @@ consteval std::array<Team, TEAM_NB> team_array()
     return {Team::RY, Team::BG};
 }
 
+inline constexpr std::array<Color, COLOR_NB> COLOR_ARRAY =
+{
+    Color::Red   , 
+    Color::Blue  , 
+    Color::Yellow, 
+    Color::Green ,
+};
+
+inline constexpr std::array<Color, COLOR_NB> color_array() noexcept { 
+    return COLOR_ARRAY;
+}
+
 } // namespace athena

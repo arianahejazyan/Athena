@@ -40,6 +40,10 @@ class alignas(CACHELINE_SIZE) Position
         return states_[play_];
     }
 
+    Square royal() const noexcept {
+        return royals_[static_cast<uint8_t>(turn_)];
+    }
+
     Square royal(Color color) const noexcept {
         return royals_[static_cast<uint8_t>(color)];
     }
@@ -65,15 +69,15 @@ class alignas(CACHELINE_SIZE) Position
         return pieces_[static_cast<uint8_t>(color)];
     }
 
-    Bitboard bitboard(Piece piece) noexcept {
+    Bitboard bitboard(Piece piece) const noexcept {
         return pieces_[static_cast<uint8_t>(piece)];
     }
 
-    Bitboard bitboard(Color color) noexcept {
+    Bitboard bitboard(Color color) const noexcept {
         return colors_[static_cast<uint8_t>(color)];
     }
 
-    Bitboard bitboard(Team team) noexcept {
+    Bitboard bitboard(Team team) const noexcept {
         return teams_[static_cast<uint8_t>(team)];
     }
 
@@ -99,8 +103,8 @@ class alignas(CACHELINE_SIZE) Position
         board_[static_cast<uint8_t>(sq)] = PieceClass::Empty();
     }
 
-    void makemove(Move move);
-    void undomove(Move move);
+    void makemove(Move move, const GameSetup setup);
+    void undomove(Move move, const GameSetup setup);
 
     bool inCheck(Color color) const;
     bool inCheck(Color color, Square sq) const;
@@ -129,7 +133,7 @@ class alignas(CACHELINE_SIZE) Position
     Color turn_;
 
     // store check and pinned masks respectively
-    std::pair<Bitboard, Bitboard> check_pinned_masks_;
+    std::pair<Bitboard, Bitboard> check_pinned_masks_; // array
     // Bitboard checksmask_;
     // Bitboard pinnedmask_;
 

@@ -11,13 +11,17 @@ namespace athena
 // Forward declaration
 class Position;
 
+// WARNING: Evolve can simultaneously be Enpass too
 enum class MoveType : uint8_t
 {
-    Simple = 0,
-    Stride = 1,
-    Enpass = 2,
-    Castle = 3,
-    Evolve = 4,
+    Crawl  = 0,
+    Slide  = 1,
+    Push   = 2,
+    Take   = 3,
+    Stride = 4,
+    Evolve = 5,
+    Enpass = 6,
+    Castle = 7,
 };
 
 enum class MoveFlag : uint8_t
@@ -30,10 +34,9 @@ class Move
 {
     public:
 
-    Move(Square source, Square target, MoveType type)
+    Move(Square source, Square target, MoveFlag flag, MoveType type)
         : encoded_(static_cast<uint8_t>(source) | (static_cast<uint8_t>(target) << 24) | (static_cast<uint32_t>(type) << 8)) {}
 
-    consteval
     Move(Square source, Square target, Side side)
         : encoded_(static_cast<uint8_t>(source) | (static_cast<uint8_t>(target) << 24) | (static_cast<uint32_t>(MoveType::Castle) << 8) | (static_cast<uint8_t>(side) << 18)) {}
 

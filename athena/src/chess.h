@@ -16,4 +16,8 @@
 namespace athena
 {
 
+// setting
+// config
+// UCI option
+
 } // namespace athena

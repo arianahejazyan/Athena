@@ -6,6 +6,7 @@
 #include "position.h"
 #include "attacks.h"
 #include "bitboard.h"
+#include "castle.h"
 #include "chess.h"
 #include "color.h"
 #include "piece.h"
@@ -128,7 +129,7 @@ void Position::init(FEN fen)
     // teams_[1].print();
 }
 
-void Position::makemove(Move move)
+void Position::makemove(Move move, const GameSetup setup) // template
 {
     play_++;
 
@@ -161,8 +162,8 @@ void Position::makemove(Move move)
     
     // Update castling rights
     nextGS.castle = currGS.castle;
-    nextGS.castle &= castling_rights(source);
-    nextGS.castle &= castling_rights(target);
+    nextGS.castle &= castling_rights(source, setup);
+    nextGS.castle &= castling_rights(target, setup);
 
     if (attacker.piece() == Piece::King) {
         royals_[static_cast<uint8_t>(turn_)] = target;
@@ -187,27 +188,27 @@ void Position::makemove(Move move)
         
     else if (type == MoveType::Castle)
     {
-        std::array<Square, 4> squares {};
+        CastleSquares squares {};
         if (move.castle() == Side::KingSide)
         {
             squares =
-            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::KingSide) : 
-            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::KingSide) : 
-            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::KingSide) : 
-            turn_ == Color::Green  ? castle_squares(Color::Green , Side::KingSide) : std::array<Square, 4>();
+            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::KingSide, setup) : 
+            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::KingSide, setup) : 
+            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::KingSide, setup) : 
+            turn_ == Color::Green  ? castle_squares(Color::Green , Side::KingSide, setup) : CastleSquares();
         }
 
         else
         {
             squares =
-            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::QueenSide) : 
-            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::QueenSide) : 
-            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::QueenSide) : 
-            turn_ == Color::Green  ? castle_squares(Color::Green , Side::QueenSide) : std::array<Square, 4>();
+            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::QueenSide, setup) : 
+            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::QueenSide, setup) : 
+            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::QueenSide, setup) : 
+            turn_ == Color::Green  ? castle_squares(Color::Green , Side::QueenSide, setup) : CastleSquares();
         }
 
-        board_[static_cast<uint8_t>(squares[2])] = PieceClass::Empty();
-        board_[static_cast<uint8_t>(squares[3])] = PieceClass(turn_, Piece::Rook);   
+        board_[squares.rook_source.value_] = PieceClass::Empty();
+        board_[squares.rook_target.value_] = PieceClass(turn_, Piece::Rook);   
     }
 
     else if (type == MoveType::Evolve) 
@@ -223,7 +224,7 @@ void Position::makemove(Move move)
     turn_ = turn_.next();
 }
 
-void Position::undomove(Move move)
+void Position::undomove(Move move, const GameSetup setup)
 {
     play_--;
 
@@ -264,27 +265,27 @@ void Position::undomove(Move move)
         
     else if (type == MoveType::Castle)
     {
-        std::array<Square, 4> squares {};
+        CastleSquares squares {};
         if (move.castle() == Side::KingSide)
         {
             squares =
-            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::KingSide) : 
-            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::KingSide) : 
-            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::KingSide) : 
-            turn_ == Color::Green  ? castle_squares(Color::Green , Side::KingSide) : std::array<Square, 4>();
+            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::KingSide, setup) : 
+            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::KingSide, setup) : 
+            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::KingSide, setup) : 
+            turn_ == Color::Green  ? castle_squares(Color::Green , Side::KingSide, setup) : CastleSquares();
         }
 
         else
         {
             squares =
-            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::QueenSide) : 
-            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::QueenSide) : 
-            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::QueenSide) : 
-            turn_ == Color::Green  ? castle_squares(Color::Green , Side::QueenSide) : std::array<Square, 4>();
+            turn_ == Color::Red    ? castle_squares(Color::Red   , Side::QueenSide, setup) : 
+            turn_ == Color::Blue   ? castle_squares(Color::Blue  , Side::QueenSide, setup) : 
+            turn_ == Color::Yellow ? castle_squares(Color::Yellow, Side::QueenSide, setup) : 
+            turn_ == Color::Green  ? castle_squares(Color::Green , Side::QueenSide, setup) : CastleSquares();
         }
 
-        board_[static_cast<uint8_t>(squares[2])] = PieceClass(turn_, Piece::Rook);
-        board_[static_cast<uint8_t>(squares[3])] = PieceClass::Empty();   
+        board_[squares.rook_source.value_] = PieceClass(turn_, Piece::Rook);
+        board_[squares.rook_target.value_] = PieceClass::Empty();   
     }
 
     else if (type == MoveType::Evolve)

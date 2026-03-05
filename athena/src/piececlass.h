@@ -38,7 +38,7 @@ class PieceClass
     uint8_t encoded_;
 
     public:
-    static consteval PieceClass Stone() { return PieceClass(Color::None, Piece::Stone); };
+    static consteval PieceClass Stone() { return PieceClass(Color::None, Piece::Stone); }; // stone()
     static consteval PieceClass Empty() { return PieceClass(Color::None, Piece::Empty); };
 };
 

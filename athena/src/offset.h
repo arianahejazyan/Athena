@@ -26,7 +26,7 @@ class Offset
     constexpr Offset() = default;
 
     // Constructor
-    constexpr Offset(int value)
+    constexpr Offset(int value) noexcept
         : value_(value) {}
 
     // Addition operator
@@ -39,7 +39,7 @@ class Offset
         return value_;
     }
 
-    private:
+    public:
     int value_;
 };
 

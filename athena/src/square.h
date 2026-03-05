@@ -71,29 +71,29 @@ class Square
         return value_;
     }
 
-    constexpr Square to14x14() const noexcept {
-        return Square(value_ - 17);
-    }
+    // constexpr Square to14x14() const noexcept {
+    //     return Square(value_ - 17);
+    // }
 
-    constexpr Square to16x16() const noexcept {
-        return Square(value_ + 17);
-    }
+    // constexpr Square to16x16() const noexcept {
+    //     return Square(value_ + 17);
+    // }
 
     // corner
     // edge
 
-    // Used to check if pawns can double push
-    template<uint8_t color>
-    constexpr bool homerank() const noexcept;
+    // // Used to check if pawns can double push
+    // template<uint8_t color>
+    // constexpr bool homerank() const noexcept;
 
-    // Used to check if pawns can promote
-    template<uint8_t color>
-    constexpr bool promotion() const noexcept;
+    // // Used to check if pawns can promote
+    // template<uint8_t color>
+    // constexpr bool promotion() const noexcept;
 
     // Return the UCI representation of the square
-    std::string uci(bool expanded = false) const noexcept;
+    std::string uci(bool expanded = false) const noexcept; // board16x16
 
-    private:
+    public:
     uint8_t value_;
 };
 
@@ -206,60 +206,61 @@ inline constexpr Square& operator>>=(Square& lhs, int rhs) noexcept {
     return lhs;
 }
 
-// ====== homerank (template specialization) ====== //
+// // ====== homerank (template specialization) ====== //
 
-template<>
-inline bool Square::homerank<Color::Red>() const noexcept {
-    return rank() == HOME_RANK || rank() == HOME_RANK - 1;
-}
+// template<>
+// inline bool Square::homerank<Color::Red>() const noexcept {
+//     return rank() == HOME_RANK || rank() == HOME_RANK - 1;
+// }
 
-template<>
-inline bool Square::homerank<Color::Blue>() const noexcept {
-    return file() == HOME_RANK || file() == HOME_RANK - 1;
-}
+// template<>
+// inline bool Square::homerank<Color::Blue>() const noexcept {
+//     return file() == HOME_RANK || file() == HOME_RANK - 1;
+// }
 
-template<>
-inline bool Square::homerank<Color::Yellow>() const noexcept {
-    return rank() == (RANK_NB - HOME_RANK) || rank() == (RANK_NB - HOME_RANK - 1);
-}
+// template<>
+// inline bool Square::homerank<Color::Yellow>() const noexcept {
+//     return rank() == (RANK_NB - HOME_RANK) || rank() == (RANK_NB - HOME_RANK - 1);
+// }
 
-template<>
-inline bool Square::homerank<Color::Green>() const noexcept {
-    return file() == (FILE_NB - HOME_RANK) || file() == (FILE_NB - HOME_RANK - 1);
-}
+// template<>
+// inline bool Square::homerank<Color::Green>() const noexcept {
+//     return file() == (FILE_NB - HOME_RANK) || file() == (FILE_NB - HOME_RANK - 1);
+// }
 
-// ====== promotion (template specialization) ====== //
+// // ====== promotion (template specialization) ====== //
 
-template<>
-inline bool Square::promotion<Color::Red>() const noexcept {
-    return rank() == PROMOTION_RANK;
-}
+// template<>
+// inline bool Square::promotion<Color::Red>() const noexcept {
+//     return rank() == PROMOTION_RANK;
+// }
 
-template<>
-inline bool Square::promotion<Color::Blue>() const noexcept {
-    return file() == PROMOTION_RANK;
-}
+// template<>
+// inline bool Square::promotion<Color::Blue>() const noexcept {
+//     return file() == PROMOTION_RANK;
+// }
 
-template<>
-inline bool Square::promotion<Color::Yellow>() const noexcept {
-    return rank() == (RANK_NB - PROMOTION_RANK - 1);
-}
+// template<>
+// inline bool Square::promotion<Color::Yellow>() const noexcept {
+//     return rank() == (RANK_NB - PROMOTION_RANK - 1);
+// }
 
-template<>
-inline bool Square::promotion<Color::Green>() const noexcept {
-    return file() == (FILE_NB - PROMOTION_RANK - 1);
-}
+// template<>
+// inline bool Square::promotion<Color::Green>() const noexcept {
+//     return file() == (FILE_NB - PROMOTION_RANK - 1);
+// }
 
 // == == //
 
-consteval auto squares_array()
+inline constexpr std::array<Square, SQUARE_NB> SQUARS_TABLE = []()
 {
     std::array<Square, SQUARE_NB> arr {};
-
-    for (int i = 0; i < SQUARE_NB; i++)
-        arr[i] = Square(i);
-
+    for (int i = 0; i < SQUARE_NB; i++) arr[i] = Square(i);
     return arr;
+}();
+
+inline constexpr auto squares_array() noexcept {
+    return SQUARS_TABLE;
 }
 
 } // namespace athena

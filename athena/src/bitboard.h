@@ -83,7 +83,7 @@ class alignas(CACHELINE_SIZE) Bitboard
         return *this;
     }
 
-    Bitboard operator~() const noexcept
+    constexpr Bitboard operator~() const noexcept
     {
         return Bitboard(
             ~chunks_[0], 
@@ -92,31 +92,31 @@ class alignas(CACHELINE_SIZE) Bitboard
             ~chunks_[3]);
     }
 
-    Bitboard operator&(const Bitboard& other) const noexcept {
+    constexpr Bitboard operator&(const Bitboard& other) const noexcept {
         Bitboard result(*this);
         result &= other;
         return result;
     }
 
-    Bitboard operator|(const Bitboard& other) const noexcept {
+    constexpr Bitboard operator|(const Bitboard& other) const noexcept {
         Bitboard result(*this);
         result |= other;
         return result;
     }
 
-    Bitboard operator&(uint64_t mask) const noexcept {
+    constexpr Bitboard operator&(uint64_t mask) const noexcept {
         Bitboard result(*this);
         result &= mask;
         return result;
     }
 
-    Bitboard operator|(uint64_t mask) const noexcept {
+    constexpr Bitboard operator|(uint64_t mask) const noexcept {
         Bitboard result(*this);
         result |= mask;
         return result;
     }
 
-    Bitboard& operator&=(const Bitboard& other) noexcept
+    constexpr Bitboard& operator&=(const Bitboard& other) noexcept
     {
         for (std::size_t i = 0; i < CHUNK_NB; i++) {
             chunks_[i] &= other.chunks_[i];
@@ -124,7 +124,7 @@ class alignas(CACHELINE_SIZE) Bitboard
         return *this;
     }
 
-    Bitboard& operator|=(const Bitboard& other) noexcept
+    constexpr Bitboard& operator|=(const Bitboard& other) noexcept
     {
         for (std::size_t i = 0; i < CHUNK_NB; i++) {
             chunks_[i] |= other.chunks_[i];
@@ -137,7 +137,7 @@ class alignas(CACHELINE_SIZE) Bitboard
     void operator>>(int s) noexcept;
 
     // Shift each 64-bit chunk dependently (cross-chunk carry)
-    template<int offset>
+    template<Offset offset>
     void shift() noexcept;
 
     // Set the bit at the given square
@@ -159,12 +159,12 @@ class alignas(CACHELINE_SIZE) Bitboard
     int count() const noexcept;
 
     // 
-    template<std::size_t chunk>
+    template<std::size_t chunk_id>
     Square pop_lsb() noexcept
     {
-        int b = __builtin_ctzll(chunks_[chunk]);
-        chunks_[chunk] &= chunks_[chunk] - 1;
-        return Square(chunk * CHUNK_SIZE + b);
+        int b = __builtin_ctzll(chunks_[chunk_id]);
+        chunks_[chunk_id] &= chunks_[chunk_id] - 1;
+        return Square(chunk_id * CHUNK_SIZE + b);
     }
 
     Square lsb() const noexcept
@@ -184,6 +184,9 @@ class alignas(CACHELINE_SIZE) Bitboard
 
     // hex
     // decimal
+
+    template<std::size_t chunk_id>
+    uint64_t& chunk() noexcept { return chunks_[chunk_id]; }
 
     void print(bool debug = true) const;
 
@@ -258,6 +261,48 @@ inline Bitboard subtract(Square sq1, Square sq2) noexcept
              __builtin_sub_overflow(bb1.chunks_[3], bb2.chunks_[3] + borrow, &result.chunks_[3]);
 
     return result;
+}
+
+consteval Bitboard rank_bitboard(int rank)
+{
+    Bitboard bb(0ULL);
+    for (int file = 0; file < FILE_NB; file++) bb.set(Square(rank, file));
+    return bb;
+}
+
+consteval Bitboard file_bitboard(int file)
+{
+    Bitboard bb(0ULL);
+    for (int rank = 0; rank < RANK_NB; rank++) bb.set(Square(rank, file));
+    return bb;
+}
+
+inline constexpr std::array<Bitboard, COLOR_NB> HOMERANK_BITBOARD_TABLE = []()
+{
+    std::array<Bitboard, COLOR_NB> arr {};
+    arr[Color::Red   ] = rank_bitboard(          HOMERANK) | rank_bitboard(          HOMERANK + 1);
+    arr[Color::Blue  ] = file_bitboard(          HOMERANK) | file_bitboard(          HOMERANK + 1);
+    arr[Color::Yellow] = rank_bitboard(RANK_NB - HOMERANK) | rank_bitboard(RANK_NB - HOMERANK - 1);
+    arr[Color::Green ] = file_bitboard(FILE_NB - HOMERANK) | file_bitboard(FILE_NB - HOMERANK - 1);
+    return arr;    
+}();
+
+inline constexpr std::array<Bitboard, COLOR_NB> PROMOTION_BITBOARD_TABLE = []()
+{
+    std::array<Bitboard, COLOR_NB> arr {};
+    arr[Color::Red   ] = rank_bitboard(          PROMOTIONRANK - 1);
+    arr[Color::Blue  ] = file_bitboard(          PROMOTIONRANK - 1);
+    arr[Color::Yellow] = rank_bitboard(RANK_NB - PROMOTIONRANK + 1);
+    arr[Color::Green ] = file_bitboard(FILE_NB - PROMOTIONRANK + 1);
+    return arr;  
+}();
+
+inline constexpr Bitboard homerank_bitboard(Color color) noexcept {
+    return HOMERANK_BITBOARD_TABLE[color.value_];
+}
+
+inline constexpr Bitboard promotion_bitboard(Color color) noexcept {
+    return PROMOTION_BITBOARD_TABLE[color.value_];
 }
 
 // ===== shift (template specialization) ===== //

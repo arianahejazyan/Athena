@@ -297,7 +297,7 @@ inline constexpr std::array<Bitboard, COLOR_NB> PROMOTION_BITBOARD_TABLE = []()
     return arr;  
 }();
 
-inline constexpr Bitboard homerank_bitboard(Color color) noexcept {
+inline constexpr Bitboard homerank_bitboard(Color color) noexcept { // Bitboard::homerank
     return HOMERANK_BITBOARD_TABLE[color.value_];
 }
 

@@ -13,7 +13,7 @@
 
 using namespace athena;
 
-int main(int argc, char *argv[])
+int main(int argc, char *argv[]) // ccheck bitboard temperoray
 {
     if (argc > 1)
     {
@@ -50,6 +50,9 @@ int main(int argc, char *argv[])
     {
         std::cout << "["<<i<<"] " << moves[i].uci(true) << std::endl;
     }
+
+    // auto x = homerank_bitboard(Color::Red);
+    // x.print();
 
     // Square sq = Square::E2;
     // Bitboard occ(0);

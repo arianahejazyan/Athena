@@ -146,7 +146,7 @@ Move* generate_push_moves(const Position& pos, Move* moves, Bitboard& pawn, cons
     constexpr auto double_push_offset = push_offsets(color)[1];
 
     pawn.shift<single_push_offset>();
-    auto push = pawn & occupancy & homerank_bitboard(color);
+    auto push = pawn & ~occupancy & homerank_bitboard(color);
     push.shift<single_push_offset>();
     pawn &= mask;
     push &= mask;

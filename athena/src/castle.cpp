@@ -5,9 +5,9 @@ namespace athena
 
 Castle::Castle(std::string_view castle, Side side) noexcept : value_(0)
 {
-    if (castle[0] == '1') value_ |= Castle(Color::Red   , side).value_; else
-    if (castle[2] == '1') value_ |= Castle(Color::Blue  , side).value_; else
-    if (castle[4] == '1') value_ |= Castle(Color::Yellow, side).value_; else
+    if (castle[0] == '1') value_ |= Castle(Color::Red   , side).value_;
+    if (castle[2] == '1') value_ |= Castle(Color::Blue  , side).value_;
+    if (castle[4] == '1') value_ |= Castle(Color::Yellow, side).value_;
     if (castle[6] == '1') value_ |= Castle(Color::Green , side).value_;
 }
 

@@ -31,18 +31,6 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // auto x = athena::pawn_attacks(Square::E5, Alliance::RY);
-    // x.first.print();
-
-    Position pos;
-    pos.init(CUSTOM_FEN);
-    pos.print();
-
-    pos.compute_check_and_pinned_masks<Color::Red>();
-    pos.check_pinned_masks_.first.print();
-    pos.check_pinned_masks_.second.print();
-    
-
     CLI cli;
     cli.launch();
 

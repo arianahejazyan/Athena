@@ -305,6 +305,21 @@ inline constexpr Bitboard promotion_bitboard(Color color) noexcept {
     return PROMOTION_BITBOARD_TABLE[color.value_];
 }
 
+inline consteval Bitboard valid_bitboard() noexcept
+{
+    Bitboard bb(0);
+    for (auto sq: squares_array()) if (sq.valid()) bb.set(sq);
+    return bb;
+}
+
+// Bitboard::stone()
+inline consteval Bitboard stone_bitboard() noexcept 
+{
+    Bitboard bb(0);
+    for (auto sq: squares_array()) if (sq.stone()) bb.set(sq);
+    return bb;
+}
+
 // ===== shift (template specialization) ===== //
 
 template<>

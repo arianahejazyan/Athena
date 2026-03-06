@@ -35,24 +35,24 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Position pos;
-    // pos.init(STARTPOS);
-    // pos.print();
+    Position pos;
+    pos.init(STARTPOS);
+    pos.print();
 
-    // pos.movegen();
-    // Move moves[MOVE_NB];
-    // std::size_t n = 0;
-    // n += generate_noisy_moves(pos, moves + n, GameSetup::Modern);
-    // n += generate_quiet_moves(pos, moves + n, GameSetup::Modern);
-    // std::cout << n << std::endl;
+    pos.movegen();
+    Move moves[MOVE_NB];
+    std::size_t n = 0;
+    n += generate_noisy_moves(pos, moves + n, GameSetup::Modern);
+    n += generate_quiet_moves(pos, moves + n, GameSetup::Modern);
+    std::cout << n << std::endl;
 
-    // for (std::size_t i = 0; i < n; i++)
-    // {
-    //     std::cout << "["<<i<<"] " << moves[i].uci(true) << std::endl;
-    // }
+    for (std::size_t i = 0; i < n; i++)
+    {
+        std::cout << "["<<i<<"] " << moves[i].uci(true) << std::endl;
+    }
 
-    Square sq = Square::H7;
-    Bitboard occ(0);
+    // Square sq = Square::E2;
+    // Bitboard occ(0);
     // occ |= rank_bitboard(1);
     // occ |= rank_bitboard(2);
     // occ |= rank_bitboard(13);
@@ -61,13 +61,13 @@ int main(int argc, char *argv[])
     // occ |= file_bitboard(2);
     // occ |= file_bitboard(13);
     // occ |= file_bitboard(14);
-    occ.set(sq);
-    occ.set(Square::J7);
-    occ.set(Square::H10);
-    occ.set(Square::H3);
-    Bitboard attacks = rook_attacks(sq, occ);
-    occ.print();
-    attacks.print();
+    // // occ.set(sq);
+    // // occ.set(Square::J7);
+    // // occ.set(Square::H10);
+    // // occ.set(Square::H3);
+    // Bitboard attacks = rook_attacks(sq, occ);
+    // occ.print();
+    // attacks.print();
 
     CLI cli;
     cli.launch();

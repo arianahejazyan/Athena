@@ -318,26 +318,44 @@ consteval auto fill_pext_table_vertical() // key
 constexpr std::array<std::array<Bitboard, 4096>, RANK_NB   > PEXT_TABLE_VERTICAL   = fill_pext_table_vertical();
 // constexpr std::array<std::array<uint64_t, 4096>, CHUNK_SIZE> PEXT_TABLE_HORIZONTAL;
 
-constexpr std::array<Bitboard, FILE_NB - 2> VERTICAL_MASK_TABLE = []()
-{
-    std::array<Bitboard, FILE_NB - 2> table {};
-    for (int file =0; file < FILE_NB; file++)
-    {
-        if (file == 0 || file == 15) continue;
-        if (file <= 3 || file >= 12) table[file - 1] = Bitboard(0ULL      , UINT64_MAX, UINT64_MAX, 0ULL      );
-        if (file >= 4 && file <= 11) table[file - 1] = Bitboard(UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX);
-    }
-    return table;
-}();
-
-// constexpr std::array<Bitboard, FILE_NB - 2> VERTICAL_MASK_TABLE = []() consteval
+// constexpr std::array<Bitboard, FILE_NB - 2> VERTICAL_MASK_TABLE = []()
 // {
 //     std::array<Bitboard, FILE_NB - 2> table {};
-//     for (auto file: file_array)
+//     for (int file =0; file < FILE_NB; file++)
 //     {
 //         if (file == 0 || file == 15) continue;
-//         if (file <= 3 || file >= 12) table[(file - 1).value_] = Bitboard(0ULL      , UINT64_MAX, UINT64_MAX, 0ULL      );
-//         if (file >= 4 && file <= 11) table[(file - 1).value_] = Bitboard(UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX);
+//         if (file <= 3 || file >= 12) table[file - 1] = Bitboard(0ULL      , UINT64_MAX, UINT64_MAX, 0ULL      );
+//         if (file >= 4 && file <= 11) table[file - 1] = Bitboard(UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX);
+//     }
+//     return table;
+// }();
+
+// // constexpr std::array<Bitboard, FILE_NB - 2> VERTICAL_MASK_TABLE = []() consteval
+// // {
+// //     std::array<Bitboard, FILE_NB - 2> table {};
+// //     for (auto file: file_array)
+// //     {
+// //         if (file == 0 || file == 15) continue;
+// //         if (file <= 3 || file >= 12) table[(file - 1).value_] = Bitboard(0ULL      , UINT64_MAX, UINT64_MAX, 0ULL      );
+// //         if (file >= 4 && file <= 11) table[(file - 1).value_] = Bitboard(UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX);
+// //     }
+// //     return table;
+// // }();
+
+// constexpr std::array<std::pair<Bitboard, Bitboard>, SQUARE_NB - 40> STONE_MASK_TABLE = []()
+// {
+//     std::array<std::pair<Bitboard, Bitboard>, SQUARE_NB - 40> table {};
+//     for (auto sq: square_array())
+//     {
+//         if (Square::E2 > sq || sq > Square::L15) continue;
+//         const auto rank = sq.rank();
+//         const auto file = sq.file();
+//         if (file == 0 || file == 15) continue;
+//         if (rank == 0 || rank == 15) continue;
+//         if (file <= 3 || file >= 12) table[(sq - 20).value_].first  = Bitboard(0ULL      , UINT64_MAX, UINT64_MAX, 0ULL      );
+//         if (file >= 4 && file <= 11) table[(sq - 20).value_].first  = Bitboard(UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX);
+//         if (rank <= 3 || rank >= 12) table[(sq - 20).value_].second = Bitboard(0ULL      , UINT64_MAX, UINT64_MAX, 0ULL      );
+//         if (rank >= 4 && rank <= 11) table[(sq - 20).value_].second = Bitboard(UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX);
 //     }
 //     return table;
 // }();

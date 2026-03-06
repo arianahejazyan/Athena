@@ -276,7 +276,7 @@ consteval std::array<std::array<uint64_t, 1024>, SQUARE_NB> fill_anti_pext_table
 constexpr std::array<std::array<uint64_t, 1024>, SQUARE_NB> PEXT_TABLE_DIAG = fill_diag_pext_table();
 constexpr std::array<std::array<uint64_t, 1024>, SQUARE_NB> PEXT_TABLE_ANTI = fill_anti_pext_table();
 
-consteval auto fill_pext_table_vertical()
+consteval auto fill_pext_table_vertical() // key
 {
     std::array<std::array<Bitboard, 4096>, RANK_NB> table {};
 
@@ -295,7 +295,7 @@ consteval auto fill_pext_table_vertical()
                 if (x == 0) break;
                 mask.set(Square(x, 0));
                 if (x == 1) break;
-                if (occupied & (1ULL << x)) break;
+                if ((occupied << 2) & (1ULL << x)) break;
             }
 
             int y = r;
@@ -305,7 +305,7 @@ consteval auto fill_pext_table_vertical()
                 if (y == 15) break;
                 mask.set(Square(y, 0));
                 if (y == 14) break;
-                if (occupied & (1ULL << y)) break;
+                if ((occupied << 2) & (1ULL << y)) break;
             }
 
             table[r][occupied] = mask;
@@ -317,6 +317,30 @@ consteval auto fill_pext_table_vertical()
 
 constexpr std::array<std::array<Bitboard, 4096>, RANK_NB   > PEXT_TABLE_VERTICAL   = fill_pext_table_vertical();
 // constexpr std::array<std::array<uint64_t, 4096>, CHUNK_SIZE> PEXT_TABLE_HORIZONTAL;
+
+constexpr std::array<Bitboard, FILE_NB - 2> VERTICAL_MASK_TABLE = []()
+{
+    std::array<Bitboard, FILE_NB - 2> table {};
+    for (int file =0; file < FILE_NB; file++)
+    {
+        if (file == 0 || file == 15) continue;
+        if (file <= 3 || file >= 12) table[file - 1] = Bitboard(0ULL      , UINT64_MAX, UINT64_MAX, 0ULL      );
+        if (file >= 4 && file <= 11) table[file - 1] = Bitboard(UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX);
+    }
+    return table;
+}();
+
+// constexpr std::array<Bitboard, FILE_NB - 2> VERTICAL_MASK_TABLE = []() consteval
+// {
+//     std::array<Bitboard, FILE_NB - 2> table {};
+//     for (auto file: file_array)
+//     {
+//         if (file == 0 || file == 15) continue;
+//         if (file <= 3 || file >= 12) table[(file - 1).value_] = Bitboard(0ULL      , UINT64_MAX, UINT64_MAX, 0ULL      );
+//         if (file >= 4 && file <= 11) table[(file - 1).value_] = Bitboard(UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX);
+//     }
+//     return table;
+// }();
 
 consteval Bitboard compute_pawn_attack_mask(Square source, Color color)
 {

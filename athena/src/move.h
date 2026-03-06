@@ -77,7 +77,7 @@ class Move
     }
 
     // UCI Conversion
-    std::string uci() const noexcept;
+    std::string uci(bool board16x16 = false) const noexcept;
 
     // Conversion operator
     explicit constexpr operator uint32_t() const noexcept { return encoded_; }

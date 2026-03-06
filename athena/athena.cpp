@@ -1,11 +1,15 @@
+#include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include "cli.h"
 #include "attacks.h"
 #include "src/attacks.h"
+#include "src/bitboard.h"
+#include "src/constants.h"
 #include "src/fen.h"
 #include "src/position.h"
 #include "src/square.h"
+#include "movegen.h"
 
 using namespace athena;
 
@@ -30,6 +34,40 @@ int main(int argc, char *argv[])
         std::cout << "info string unknown flag '" << name << "'" << std::endl;
         return 1;
     }
+
+    // Position pos;
+    // pos.init(STARTPOS);
+    // pos.print();
+
+    // pos.movegen();
+    // Move moves[MOVE_NB];
+    // std::size_t n = 0;
+    // n += generate_noisy_moves(pos, moves + n, GameSetup::Modern);
+    // n += generate_quiet_moves(pos, moves + n, GameSetup::Modern);
+    // std::cout << n << std::endl;
+
+    // for (std::size_t i = 0; i < n; i++)
+    // {
+    //     std::cout << "["<<i<<"] " << moves[i].uci(true) << std::endl;
+    // }
+
+    Square sq = Square::H7;
+    Bitboard occ(0);
+    // occ |= rank_bitboard(1);
+    // occ |= rank_bitboard(2);
+    // occ |= rank_bitboard(13);
+    // occ |= rank_bitboard(14);
+    // occ |= file_bitboard(1);
+    // occ |= file_bitboard(2);
+    // occ |= file_bitboard(13);
+    // occ |= file_bitboard(14);
+    occ.set(sq);
+    occ.set(Square::J7);
+    occ.set(Square::H10);
+    occ.set(Square::H3);
+    Bitboard attacks = rook_attacks(sq, occ);
+    occ.print();
+    attacks.print();
 
     CLI cli;
     cli.launch();

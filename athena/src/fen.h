@@ -6,7 +6,7 @@
 namespace athena
 {
 
-using FEN = std::string_view;
+using FEN = std::string_view; // needs to be FEN::STARTPOS
 static constexpr FEN STARTPOS =
 #ifdef GAME_SETUP_MODERN
 "R-0,0,0,0-1,1,1,1-1,1,1,1-0,0,0,0-0-"

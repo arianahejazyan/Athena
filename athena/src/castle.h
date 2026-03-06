@@ -160,7 +160,7 @@ inline constexpr CastleSquares castle_squares(Color color, Side side, GameSetup 
 //     QUEENSIDE_SQUARES[static_cast<uint8_t>(color)];
 // }
 
-consteval std::array<Square, 3> path_squares(Color color, Side side)
+consteval std::array<Square, 3> path_squares(Color color, Side side) // fix this
 {
     #ifdef GAME_SETUP_MODERN
     std::array<std::array<Square, 3>, COLOR_NB> KINGSIDE_SQUARES = 

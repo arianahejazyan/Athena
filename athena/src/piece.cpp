@@ -17,7 +17,7 @@ Piece::Piece(std::string_view piece) noexcept
     }
 }
 
-std::string Piece::uci() const noexcept
+std::string Piece::uci() const noexcept // return char?
 {
     switch (value_)
     {

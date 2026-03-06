@@ -17,8 +17,8 @@ class Piece
         Queen  = 3,
         Bishop = 4,
         Rook   = 5,
-        Stone  = 6,
-        Empty  = 7,
+        Stone  = 6, // rm
+        Empty  = 7, // rm
     };
 
     public:
@@ -37,6 +37,8 @@ class Piece
 
     // Return the UCI representation of the piece
     std::string uci() const noexcept;
+
+    // Piece::array();
 
     public:
     uint8_t value_;

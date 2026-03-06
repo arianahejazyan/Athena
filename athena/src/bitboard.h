@@ -263,7 +263,7 @@ inline Bitboard subtract(Square sq1, Square sq2) noexcept
     return result;
 }
 
-consteval Bitboard rank_bitboard(int rank)
+consteval Bitboard rank_bitboard(int rank) //valid & stone_bitboard
 {
     Bitboard bb(0ULL);
     for (int file = 0; file < FILE_NB; file++) bb.set(Square(rank, file));

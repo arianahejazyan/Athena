@@ -10,6 +10,7 @@
 #include "piececlass.h"
 #include "position.h"
 #include <cstddef>
+#include <iostream>
 
 namespace athena
 {
@@ -99,7 +100,7 @@ Move* generate_rook_moves(const Position& pos, Move* moves, Bitboard& sources, c
     while(chunk)
     {
         const auto source = sources.pop_lsb<chunk_id>();
-        auto targets = rook_attacks(source, occupancy);
+        auto targets = rook_attacks(source, occupancy); // std::cout << "square: " << source.uci(true) << std::endl; occupancy.print(); targets.print(); mask.print();
         targets &= mask;
 
         moves = add_moves<CHUNK_0>(moves, source, targets, flag, MoveType::Slide);
@@ -288,7 +289,7 @@ template<MoveFlag flag, Color color>
 std::size_t generate_moves(const Position& pos, Move* moves, GameSetup setup) noexcept
 {
     const Move* start = moves;
-    const auto& [checkmask, _] = pos.check_pinned_masks_;
+    const auto& [checkmask, _] = pos.check_pinned_masks_[pos.play_];
 
     // Compute occupancy mask
     const auto occupancy = 
@@ -306,8 +307,10 @@ std::size_t generate_moves(const Position& pos, Move* moves, GameSetup setup) no
     // Handle checks
     mask &= checkmask;
 
+    const Bitboard us = pos.bitboard(color);
     // 
     auto knights = pos.bitboard(Piece(Piece::Knight));
+    knights &= us;
     moves = generate_knight_moves<CHUNK_0>(pos, moves, knights, mask, flag);
     moves = generate_knight_moves<CHUNK_1>(pos, moves, knights, mask, flag);
     moves = generate_knight_moves<CHUNK_2>(pos, moves, knights, mask, flag);
@@ -320,6 +323,7 @@ std::size_t generate_moves(const Position& pos, Move* moves, GameSetup setup) no
 
     //
     bishops |= queens;
+    bishops &= us;
     moves = generate_bishop_moves<CHUNK_0>(pos, moves, bishops, mask, occupancy, flag);
     moves = generate_bishop_moves<CHUNK_1>(pos, moves, bishops, mask, occupancy, flag);
     moves = generate_bishop_moves<CHUNK_2>(pos, moves, bishops, mask, occupancy, flag);
@@ -327,13 +331,15 @@ std::size_t generate_moves(const Position& pos, Move* moves, GameSetup setup) no
 
     //
     rooks |= queens;
+    rooks &= us;
     moves = generate_rook_moves<CHUNK_0>(pos, moves, rooks, mask, occupancy, flag);
     moves = generate_rook_moves<CHUNK_1>(pos, moves, rooks, mask, occupancy, flag);
     moves = generate_rook_moves<CHUNK_2>(pos, moves, rooks, mask, occupancy, flag);
     moves = generate_rook_moves<CHUNK_3>(pos, moves, rooks, mask, occupancy, flag);
 
     // 
-    const auto& pawns = pos.bitboard(Piece(Piece::Pawn));
+    auto pawns = pos.bitboard(Piece(Piece::Pawn));
+    pawns &= us;
     auto nonevolve = (pawns & ~promotion_bitboard(color));
     auto    evolve = (pawns &  promotion_bitboard(color));
 

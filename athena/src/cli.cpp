@@ -1,5 +1,6 @@
 #include <iostream>
 #include "cli.h"
+#include "constants.h"
 #include "fen.h"
 #include "utility.h"
 #include "movegen.h"
@@ -196,7 +197,7 @@ void CLI::handlePerft()
     Perft::Options options;
     options.depth = depth;
 
-    perft.run(pos_, options);
+    perft.run(pos_, options, GameSetup::Modern);
     
     std::cout << "perft completed" << std::endl;
 }

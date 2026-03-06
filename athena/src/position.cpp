@@ -455,7 +455,7 @@ void Position::compute_check_and_pinned_masks()
 //     // // const auto& color = turn();
 //     // const auto& sq = royal(color);
 
-    auto& [checkmask, pinnedmask] = check_pinned_masks_;
+    auto& [checkmask, pinnedmask] = check_pinned_masks_[play_];
      checkmask = 0ULL;
     pinnedmask = 0ULL;
 

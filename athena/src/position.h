@@ -2,6 +2,7 @@
 
 #include "chess.h"
 #include "bitboard.h"
+#include "constants.h"
 #include "square.h"
 #include <cstdint>
 
@@ -25,6 +26,7 @@ class alignas(CACHELINE_SIZE) Position
 {
     public:
     Position() = default;
+    // Position(const GameSetup& setup): setup_(setup) {} // fix
 
     void init(FEN fen);
 
@@ -118,6 +120,8 @@ class alignas(CACHELINE_SIZE) Position
     // compute check and pinned masks
     public:
 
+    // const GameSetup& setup_;
+
     template<Color color>
     void compute_check_and_pinned_masks();
 
@@ -133,11 +137,26 @@ class alignas(CACHELINE_SIZE) Position
     Color turn_;
 
     // store check and pinned masks respectively
-    std::pair<Bitboard, Bitboard> check_pinned_masks_; // array
+    // std::pair<Bitboard, Bitboard> check_pinned_masks_; // array
     // Bitboard checksmask_;
     // Bitboard pinnedmask_;
 
+    std::array<std::pair<Bitboard, Bitboard>, PLAY_NB> check_pinned_masks_; // array
+
     public:
+
+    void movegen() noexcept
+    {
+        const auto color = turn();
+        switch (color.value_) 
+        {
+            case Color::Red   : compute_check_and_pinned_masks<Color::Red   >(); break;
+            case Color::Blue  : compute_check_and_pinned_masks<Color::Blue  >(); break;
+            case Color::Yellow: compute_check_and_pinned_masks<Color::Yellow>(); break;
+            case Color::Green : compute_check_and_pinned_masks<Color::Green >(); break;
+            default: break;
+        }
+    }
 
     // template<std::size_t chunk, uint8_t piece>
     // friend void process_chunk_candidates(Position& pos, Color turn, Square royal_square, Bitboard& candidates, Bitboard& checkers) noexcept;

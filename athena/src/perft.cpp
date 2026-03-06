@@ -1,4 +1,5 @@
 #include "perft.h"
+#include "constants.h"
 #include "movegen.h"
 #include "position.h"
 // #include <vector>
@@ -24,7 +25,7 @@ std::string formatInt(uint64_t num)
     return numStr;
 }
 
-void Perft::run(const Position& pos, const Options& options)
+void Perft::run(const Position& pos, const Options& options, const GameSetup setup)
 {
     Position position = pos;
     options_ = options;
@@ -67,7 +68,7 @@ void Perft::run(const Position& pos, const Options& options)
     // }
 
     std::chrono::high_resolution_clock::time_point tic = std::chrono::high_resolution_clock::now();
-    uint64_t nodes = perft(position, options_.depth);
+    uint64_t nodes = perft(position, options_.depth, setup);
     std::chrono::high_resolution_clock::time_point toc = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double> elapsed = toc - tic;
@@ -78,33 +79,35 @@ void Perft::run(const Position& pos, const Options& options)
     std::cout << "nps: "   << formatInt(static_cast<uint64_t>(nodes / seconds)) << std::endl;
 }
 
-uint64_t Perft::perft(Position& pos, int depth)
+uint64_t Perft::perft(Position& pos, int depth, const GameSetup setup)
 {
-    // if (depth == 0)
-    //     return 1;
+    if (depth == 0)
+        return 1;
 
-    // Move moves[MOVE_NB];
-    // std::size_t num = genAllPseudoMoves(pos, moves);
-
-    // // if (depth == 1)
-    // // {
-    // //     return num;
-    // // }
+    Move moves[MOVE_NB];
+    std::size_t n = 0;
+    n = generate_noisy_moves(pos, moves + n, setup);
+    n = generate_quiet_moves(pos, moves + n, setup);
+    
+    // if (depth == 1)
+    // {
+    //     return num;
+    // }
 
     uint64_t nodes = 0;
-    // for (std::size_t i = 0; i < num; ++i)
-    // {
-    //     pos.makemove(moves[i]);
+    for (std::size_t i = 0; i < n; ++i)
+    {
+        pos.makemove(moves[i], setup);
 
-    //     if (pos.inCheck(pos.turn()))
-    //     {
-    //         pos.undomove(moves[i]);
-    //         continue;
-    //     }
+        // if (pos.inCheck(pos.turn()))
+        // {
+        //     pos.undomove(moves[i], setup);
+        //     continue;
+        // }
 
-    //     nodes += perft(pos, depth - 1);
-    //     pos.undomove(moves[i]);
-    // }
+        nodes += perft(pos, depth - 1, setup);
+        pos.undomove(moves[i], setup);
+    }
 
     return nodes;
 }

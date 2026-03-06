@@ -57,8 +57,10 @@ inline Bitboard bishop_attacks(Square sq, const Bitboard& occupied) noexcept
 }
 
 // Rook PEXT tables
-extern const std::array<std::array<Bitboard, 4096>, RANK_NB   > PEXT_TABLE_VERTICAL;
-extern const std::array<std::array<uint64_t, 4096>, CHUNK_SIZE> PEXT_TABLE_HORIZONTAL;
+extern const std::array<std::array<Bitboard, 4096>, RANK_NB    > PEXT_TABLE_VERTICAL; // reduce size
+extern const std::array<std::array<uint64_t, 4096>, CHUNK_SIZE > PEXT_TABLE_HORIZONTAL;
+
+extern const std::array<Bitboard, FILE_NB - 2> VERTICAL_MASK_TABLE;
 
 inline Bitboard rook_attacks(Square sq, const Bitboard& occupied) noexcept
 {
@@ -73,7 +75,9 @@ inline Bitboard rook_attacks(Square sq, const Bitboard& occupied) noexcept
 
     // attacks |= PEXT_TABLE_VERTICAL[r][_pext_u32(_mm256_movemask_epi8(s), 0xAAAAAAAAU)];
 
-    Bitboard vertical = PEXT_TABLE_VERTICAL[r][_pext_u32(_mm256_movemask_epi8(s), 0xAAAAAAAAU)];
+    // Bitboard vertical = PEXT_TABLE_VERTICAL[r][_pext_u32(_mm256_movemask_epi8(s), 0xAAAAAAAAU)];
+    Bitboard vertical = PEXT_TABLE_VERTICAL[r][_pext_u32(_mm256_movemask_epi8(s), 0x0AAAAAA0U)];
+    vertical &= VERTICAL_MASK_TABLE[f - 1];
     
     // Shift left by f amount without cross-chunk calculation
     __m256i vertical_v = _mm256_loadu_si256((const __m256i*)vertical.chunks_);
@@ -84,20 +88,20 @@ inline Bitboard rook_attacks(Square sq, const Bitboard& occupied) noexcept
     _mm256_storeu_si256((__m256i*)temp, shifted);
     attacks |= Bitboard(temp[0], temp[1], temp[2], temp[3]);
 
-    // Horizontal attacks
-    const auto chk = sq.chunk();
-    const auto idx = sq.index();
+    // // Horizontal attacks
+    // const auto chk = sq.chunk();
+    // const auto idx = sq.index();
 
-    const auto shift = (r & 0b11) * FILE_NB;
-    const auto occ = occupied.chunks_[chk] >> shift;
+    // const auto shift = (r & 0b11) * FILE_NB;
+    // const auto occ = occupied.chunks_[chk] >> shift;
 
-    const auto upper = occ & (0xFFFFULL << (1  + f));
-    const auto lower = occ & (0xFFFFULL >> (16 - f));
+    // const auto upper = occ & (0xFFFFULL << (1  + f));
+    // const auto lower = occ & (0xFFFFULL >> (16 - f));
 
-    const auto ms1B = 0x8000000000000000ULL >> _lzcnt_u64(lower | 1);
-    const auto diff = upper ^ (upper - ms1B);
+    // const auto ms1B = 0x8000000000000000ULL >> _lzcnt_u64(lower | 1);
+    // const auto diff = upper ^ (upper - ms1B);
 
-    attacks.chunks_[chk] |= (diff & (0x7FFEULL ^ (1 << f))) << shift;
+    // attacks.chunks_[chk] |= (diff & (0x7FFEULL ^ (1 << f))) << shift;
 
     // attacks.chunks()[chk] |= PEXT_TABLE_HORIZONTAL[idx][_pext_u64(occupied.chunks()[chk], STRAIGHT[static_cast<uint8_t>(sq)].horizontal.chunks()[chk])];
 

@@ -35,21 +35,21 @@ int main(int argc, char *argv[]) // ccheck bitboard temperoray
         return 1;
     }
 
-    Position pos;
-    pos.init(STARTPOS);
-    pos.print();
+    // Position pos;
+    // pos.init(STARTPOS);
+    // pos.print();
 
-    pos.movegen();
-    Move moves[MOVE_NB];
-    std::size_t n = 0;
-    n += generate_noisy_moves(pos, moves + n, GameSetup::Modern);
-    n += generate_quiet_moves(pos, moves + n, GameSetup::Modern);
-    std::cout << n << std::endl;
+    // pos.movegen();
+    // Move moves[MOVE_NB];
+    // std::size_t n = 0;
+    // n += generate_noisy_moves(pos, moves + n, GameSetup::Modern);
+    // n += generate_quiet_moves(pos, moves + n, GameSetup::Modern);
+    // std::cout << n << std::endl;
 
-    for (std::size_t i = 0; i < n; i++)
-    {
-        std::cout << "["<<i<<"] " << moves[i].uci(true) << std::endl;
-    }
+    // for (std::size_t i = 0; i < n; i++)
+    // {
+    //     std::cout << "["<<i<<"] " << moves[i].uci(true) << std::endl;
+    // }
 
     // auto x = homerank_bitboard(Color::Red);
     // x.print();
@@ -71,6 +71,36 @@ int main(int argc, char *argv[]) // ccheck bitboard temperoray
     // Bitboard attacks = rook_attacks(sq, occ);
     // occ.print();
     // attacks.print();
+
+    // Position pos;
+    // pos.init(STARTPOS);
+
+    // pos.movegen();
+    // Move moves[MOVE_NB];
+    // std::size_t n = 0;
+    // n += generate_noisy_moves(pos, moves + n, GameSetup::Modern);
+    // n += generate_quiet_moves(pos, moves + n, GameSetup::Modern);
+    // // std::cout << n << std::endl;
+
+    // auto move = moves[0];
+    // pos.print();
+    // pos.teams_[0].print();
+    // pos.teams_[1].print();
+    // pos.pieces_[1].print();
+    // pos.colors_[0].print();
+    // pos.makemove(move, GameSetup::Modern);
+    // pos.print();
+    // pos.teams_[0].print();
+    // pos.teams_[1].print();
+    // pos.pieces_[1].print();
+    // pos.colors_[0].print();
+    // pos.undomove(move, GameSetup::Modern);
+    // pos.print();
+    // pos.teams_[0].print();
+    // pos.teams_[1].print();
+    // pos.pieces_[1].print();
+    // pos.colors_[0].print();
+
 
     CLI cli;
     cli.launch();

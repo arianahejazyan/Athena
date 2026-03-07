@@ -19,7 +19,7 @@
 namespace athena
 {
 
-void Position::init(FEN fen)
+void Position::init(FEN fen) noexcept
 {
     const auto tokens = tokenize(fen, '-');
     GameState& gs = states_[play_ = 0];
@@ -149,8 +149,7 @@ void Position::makemove(Move move, const GameSetup setup) // template
 
     if (defender != PieceClass::Empty())
     {
-        pieces_[static_cast<uint8_t>(defender.piece())].pop(target);
-        colors_[static_cast<uint8_t>(defender.color())].pop(target);
+        popPiece(target);
     }
 
     popPiece(source);
@@ -242,8 +241,13 @@ void Position::undomove(Move move, const GameSetup setup)
     auto attacker = board_[static_cast<uint8_t>(target)];
     auto defender = currGS.capture;
 
-    setPiece(target, defender);
+    popPiece(target);
     setPiece(source, attacker);
+
+    if (defender != PieceClass::Empty())
+    {
+        setPiece(target, defender);
+    }
 
     // Update enpassant
     enpass_[static_cast<uint8_t>(turn_)] = currGS.enpass;

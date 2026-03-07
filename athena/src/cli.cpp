@@ -196,10 +196,11 @@ void CLI::handlePerft()
 
     Perft::Options options;
     options.depth = depth;
+    options.split = false;
 
     perft.run(pos_, options, GameSetup::Modern);
     
-    std::cout << "perft completed" << std::endl;
+    // std::cout << "perft completed" << std::endl;
 }
 
 void CLI::handlePrint()

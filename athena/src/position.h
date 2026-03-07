@@ -28,7 +28,7 @@ class alignas(CACHELINE_SIZE) Position
     Position() = default;
     // Position(const GameSetup& setup): setup_(setup) {} // fix
 
-    void init(FEN fen);
+    void init(FEN fen) noexcept;
 
     PieceClass board(Square sq) const noexcept {
         return board_[static_cast<uint8_t>(sq)];
@@ -111,7 +111,7 @@ class alignas(CACHELINE_SIZE) Position
     bool inCheck(Color color) const;
     bool inCheck(Color color, Square sq) const;
 
-    void print() const;
+    void print() const; // board16x16 = false
 
     std::string fen() const;
 
@@ -127,7 +127,7 @@ class alignas(CACHELINE_SIZE) Position
 
     std::array<PieceClass, SQUARE_NB> board_;
     std::array<GameState, PLAY_NB> states_;
-    std::array<Bitboard, 8> pieces_;
+    std::array<Bitboard, 6> pieces_;
     std::array<Bitboard, 4> colors_;
     std::array<Bitboard, 2> teams_;
     

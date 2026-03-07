@@ -8,6 +8,7 @@
 // #include <iomanip>
 // #include "utility.h"
 #include <chrono>
+#include <cstdint>
 #include <iostream>
 
 namespace athena
@@ -31,31 +32,41 @@ void Perft::run(const Position& pos, const Options& options, const GameSetup set
     options_ = options;
     // records_.clear();
 
-    // if (options_.split)
-    // {
-        // Position x = pos;
+    if (options_.split)
+    {
+        Position x = pos;
 
-        // Move moves[MOVE_NB];
-        // std::size_t num = genAllPseudoMoves(pos, moves);
+        uint64_t count = 0;
 
-        // for (std::size_t i = 0; i < num; ++i)
-        // {
-        //     Position x = pos;
-        //     x.makemove(moves[i]);
+        x.movegen();
+        Move moves[MOVE_NB];
+        std::size_t n = 0;
+        n = generate_noisy_moves(x, moves + n, setup);
+        n = generate_quiet_moves(x, moves + n, setup);
+
+        for (std::size_t i = 0; i < n; ++i)
+        {
+            Position x = pos;
+            x.makemove(moves[i], setup);
             
-        //     if (x.inCheck(x.turn()))
-        //     {
-        //         x.undomove(moves[i]);
-        //         continue;
-        //     }
+            // if (x.inCheck(x.turn()))
+            // {
+            //     x.undomove(moves[i]);
+            //     continue;
+            // }
 
-        //     uint64_t nodes = perft(x, options_.depth - 1);
-        //     records_[options_.depth].nodes += nodes;
-        //     records_[options_.depth].delta += nodes;
+            uint64_t nodes = perft(x, options_.depth - 1, setup);
+            // records_[options_.depth].nodes += nodes;
+            // records_[options_.depth].delta += nodes;
+            count += nodes;
 
-        //     x.undomove(moves[i]);
-        // }
-    // }
+            std::cout << moves[i].uci(true) << ": " << nodes << std::endl;
+
+            x.undomove(moves[i], setup);
+        }
+        std::cout << "total: " << count <<std::endl;
+        return;
+    }
 
     // else if (options_.tabular)
     // {
@@ -84,14 +95,15 @@ uint64_t Perft::perft(Position& pos, int depth, const GameSetup setup)
     if (depth == 0)
         return 1;
 
+    pos.movegen();
     Move moves[MOVE_NB];
     std::size_t n = 0;
     n = generate_noisy_moves(pos, moves + n, setup);
     n = generate_quiet_moves(pos, moves + n, setup);
-    
+
     // if (depth == 1)
     // {
-    //     return num;
+    //     return n;
     // }
 
     uint64_t nodes = 0;

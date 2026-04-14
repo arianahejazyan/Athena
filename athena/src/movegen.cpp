@@ -10,6 +10,7 @@
 #include "piececlass.h"
 #include "position.h"
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 
 namespace athena
@@ -285,11 +286,18 @@ Move* generate_castle_moves(const Position& pos, Move* moves, GameSetup setup) n
     return moves;
 }
 
+Square pop_lsb(uint64_t& chunk, std::size_t chunk_id) noexcept
+{
+    int b = __builtin_ctzll(chunk);
+    chunk &= chunk - 1;
+    return Square(chunk_id * CHUNK_SIZE + b);
+}
+
 template<MoveFlag flag, Color color>
 std::size_t generate_moves(const Position& pos, Move* moves, GameSetup setup) noexcept
 {
-    const Move* start = moves;
-    const auto& [checkmask, _] = pos.check_pinned_masks_[pos.play_];
+    Move* start = moves;
+    const auto& [checkmask, pinnedmask] = pos.check_pinned_masks_[pos.play_];
 
     // Compute occupancy mask
     const auto occupancy = 
@@ -351,6 +359,22 @@ std::size_t generate_moves(const Position& pos, Move* moves, GameSetup setup) no
     if constexpr (flag == MoveFlag::Noisy) moves = generate_enpass_moves<color>(pos, moves, evolve);
     if constexpr (flag == MoveFlag::Noisy) moves = generate_evolve_moves<color>(pos, moves, evolve);
     if constexpr (flag == MoveFlag::Quiet) moves = generate_castle_moves<color>(pos, moves, setup );
+
+    // Set pinned pieces moves as pseudo
+    // if (!pinnedmask.empty())
+    // {
+    //     for (std::size_t chunk_id = 0; chunk_id < CHUNK_NB; chunk_id++)
+    //     {
+    //         auto chunk = pinnedmask.chunk(chunk_id);
+    //         while (chunk)
+    //         {
+    //             const auto sq = pop_lsb(chunk, chunk_id);
+    //             for (Move* move = start; move != moves; move++) {
+    //                 move->setpseudo(sq);
+    //             }
+    //         }
+    //     }
+    // }
 
     return moves - start;
 }

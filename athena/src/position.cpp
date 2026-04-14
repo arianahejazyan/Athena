@@ -9,6 +9,7 @@
 #include "castle.h"
 #include "chess.h"
 #include "color.h"
+#include "move.h"
 #include "piece.h"
 #include "square.h"
 #include "utility.h"
@@ -298,7 +299,7 @@ void Position::undomove(Move move, const GameSetup setup)
     }   
 }
 
-bool Position::inCheck(Color color, Square sq) const
+bool Position::inCheck(Color color, Square sq) const noexcept
 {
     // Checked by Knight
     for (auto offset : crawl_offsets(Piece::Knight))
@@ -386,8 +387,19 @@ bool Position::inCheck(Color color, Square sq) const
     return false;
 }
 
-bool Position::inCheck(Color color) const {
+bool Position::inCheck(Color color) const noexcept
+{
     return inCheck(color, royal(color));
+}
+
+bool Position::inCheck() const noexcept
+{
+    return inCheck(turn());
+}
+
+bool Position::isLegal(Move move) const noexcept 
+{
+    return move.pseudo() ? inCheck() : true;
 }
 
 // template<std::size_t chunk, uint8_t piece>

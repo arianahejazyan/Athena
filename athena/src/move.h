@@ -34,19 +34,22 @@ class Move
 {
     public:
 
-    Move(Square source, Square target, MoveFlag flag, MoveType type)
+    Move(Square source, Square target, MoveFlag flag, MoveType type) noexcept
         : encoded_(static_cast<uint8_t>(source) | (static_cast<uint8_t>(target) << 24) | (static_cast<uint32_t>(type) << 8)) {}
 
-    Move(Square source, Square target, Side side)
+    Move(Square source, Square target, Side side) noexcept
         : encoded_(static_cast<uint8_t>(source) | (static_cast<uint8_t>(target) << 24) | (static_cast<uint32_t>(MoveType::Castle) << 8) | (static_cast<uint8_t>(side) << 18)) {}
 
-    Move(Square source, Square target, Piece piece)
+    Move(Square source, Square target, Piece piece) noexcept
         : encoded_(static_cast<uint8_t>(source) | (static_cast<uint8_t>(target) << 24) | (static_cast<uint32_t>(MoveType::Evolve) << 8) | (static_cast<uint8_t>(piece) << 12)) {}
 
-    Move(Square source, Square target, Color enpass)
+    Move(Square source, Square target, Color enpass) noexcept
         : encoded_(static_cast<uint8_t>(source) | (static_cast<uint8_t>(target) << 24) | (static_cast<uint32_t>(MoveType::Enpass) << 8) | (static_cast<uint8_t>(enpass) << 15)) {}
 
-    Move() = default;
+    Move(Move move, bool pseudo) noexcept
+        : encoded_(move.encoded_ | (pseudo << 20)) {}
+
+    Move() noexcept = default;
 
     Square source() const noexcept { 
         return Square(encoded_ & 0xFF); 
@@ -74,6 +77,14 @@ class Move
 
     MoveFlag flag() const noexcept { 
         return MoveFlag((encoded_ >> 11) & 0x1); 
+    }
+
+    bool pseudo() const noexcept {
+        return encoded_ & (1 << 20);
+    }
+
+    void setpseudo(Square sq) noexcept {
+        encoded_ |= ((source() == sq) << 20);
     }
 
     // UCI Conversion

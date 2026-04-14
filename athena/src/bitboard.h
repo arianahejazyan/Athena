@@ -185,6 +185,10 @@ class alignas(CACHELINE_SIZE) Bitboard
     // hex
     // decimal
 
+    uint64_t chunk(std::size_t chunk_id) const noexcept {
+        return chunks_[chunk_id]; 
+    }
+
     template<std::size_t chunk_id>
     uint64_t& chunk() noexcept { return chunks_[chunk_id]; }
 

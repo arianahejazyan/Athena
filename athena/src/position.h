@@ -108,8 +108,11 @@ class alignas(CACHELINE_SIZE) Position
     void makemove(Move move, const GameSetup setup);
     void undomove(Move move, const GameSetup setup);
 
-    bool inCheck(Color color) const;
-    bool inCheck(Color color, Square sq) const;
+    bool inCheck() const noexcept;
+    bool inCheck(Color color) const noexcept;
+    bool inCheck(Color color, Square sq) const noexcept;
+
+    bool isLegal(Move move) const noexcept;
 
     void print() const; // board16x16 = false
 

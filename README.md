@@ -11,14 +11,6 @@
 <img src="./docs/assets/boards/wallpaper.png" alt="Four Player Chess Board" style="width: 100%; height:auto; border-radius: 10px;"/>
 </div>
 
-## Table of Contents
-- [Installation](#installation)
-- [4PC engines and tools](#4pc-engines--tools)
-  - engines
-  - tools
-- [licenses](#licenses)
-
-
 ## Installation
 Clone the repository
 

@@ -26,7 +26,6 @@ class Perft
     void run(const Position& pos, const Options& options, const GameSetup setup);
     void print() const;
 
-    private:
     Options options_;
     std::vector<Record> records_;
 

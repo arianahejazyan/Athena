@@ -72,7 +72,7 @@ target_include_directories(athena_lib PUBLIC
 )
 
 add_executable(athena 
-    src/athena.cpp
+    src/athena.cc
 )
 
 target_link_libraries(athena PRIVATE athena_lib)
@@ -81,6 +81,25 @@ target_link_libraries(athena PRIVATE athena_lib)
 message(STATUS "Compiler ID: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "Compiler path: ${CMAKE_CXX_COMPILER}")
 message(STATUS "Compiler version: ${CMAKE_CXX_COMPILER_VERSION}")
+
+find_package(GTest REQUIRED)
+
+enable_testing()
+
+add_executable(perft_tests tests/perft_test.cc)
+
+target_compile_options(perft_tests PRIVATE
+    -fconstexpr-ops-limit=1000000000
+    -O3
+    -march=native
+    -mavx2
+    -mbmi2
+)
+
+target_link_libraries(perft_tests PRIVATE athena_lib GTest::GTest GTest::Main)
+
+include(GoogleTest)
+gtest_discover_tests(perft_tests)
 
 # add_library(athena-utility STATIC 
 #     src/utility/utility.cpp

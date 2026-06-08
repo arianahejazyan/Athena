@@ -40,3 +40,8 @@ This is a list of four-player chess engines to help discover and support other e
 
 
 You can also find four-player chess tools list in this [repo](https://github.com/arianahejazyan/Colosseum).
+
+## Acknowledgements
+- **Special thanks** to Moxile for always supporting me and for the many hours of programming together.
+- **Special thanks** to tsoj, Lotfy and the Discord chess engine community for their help with coding and discussions.
+- **Special thanks** to qilp and Chess.com team for providing API access and support.

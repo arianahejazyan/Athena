@@ -34,21 +34,20 @@ Once built, you can run the Athena cli
 cd build && ./athena
 ```
 
-## 4PC Engines & Tools
+## 4PC Engines
 <p align="justify"> 
-Welcome to our growing list of four-player chess engines and tools! Here, you’ll find links to their GitHub repositories and Chess.com profiles, making it easy to explore and connect with others who share your passion. If you’ve developed a four-player chess engine, we warmly invite you to add it to this list. Sharing your work not only helps others get to know your engine and find it easily but also supports the growth of the four-player chess community. </p>
+This is a list of four-player chess engines to help discover and support other engines. Feel free to add your chess engine here, or ask me to add it for you. You can include your Chess.com profile and GitHub repository. </p>
+ 
+<table align="center">
+  <tr>
+    <td>Athena (<a href="https://github.com/arianahejazyan/Athena" target="_blank">GitHub</a>, <a href="https://www.chess.com/member/teamathena1" target="_blank">Chess.com</a>)</td>
+    <td>Samaritan (<a href="https://github.com/Moxile/Samaritan" target="_blank">GitHub</a>)</td>
+  </tr>
+</table>
 
-###  Engines 
 
-<p align="center">
-  Athena (<a href="https://github.com/arianahejazyan/Athena" target="_blank">GitHub</a>, <a href="https://www.chess.com/member/teamathena1" target="_blank">Chess.com</a>)
-  &nbsp;&nbsp;&nbsp;
-  Samaritan (<a href="https://github.com/Moxile/Samaritan" target="_blank">GitHub</a>)
-</p>
 
-### Tools
-- Colosseum ([GitHub](https://github.com/arianahejazyan/Colosseum)) [GUI and tournamant manager]
-
+You can also find four-player chess tools list in this [repo](https://github.com/arianahejazyan/Colosseum).
 
 ## Licenses
 

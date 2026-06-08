@@ -72,7 +72,7 @@ target_include_directories(athena_lib PUBLIC
 )
 
 add_executable(athena 
-    athena.cpp
+    src/athena.cpp
 )
 
 target_link_libraries(athena PRIVATE athena_lib)

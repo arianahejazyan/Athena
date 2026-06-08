@@ -61,7 +61,11 @@ add_library(athena_lib STATIC
     ${ALL_SRC_FILES}
 )
 
-target_compile_options(athena_lib PRIVATE -fconstexpr-ops-limit=1000000000)
+target_compile_options(athena_lib PRIVATE -fconstexpr-ops-limit=1000000000
+    -O3
+    -march=native
+    -mavx2
+    -mbmi2)
 
 target_include_directories(athena_lib PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/src

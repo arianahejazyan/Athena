@@ -3,12 +3,12 @@
 #include <iostream>
 #include "cli.h"
 #include "attacks.h"
-#include "src/attacks.h"
-#include "src/bitboard.h"
-#include "src/constants.h"
-#include "src/fen.h"
-#include "src/position.h"
-#include "src/square.h"
+#include "attacks.h"
+#include "bitboard.h"
+#include "constants.h"
+#include "fen.h"
+#include "position.h"
+#include "square.h"
 #include "movegen.h"
 
 using namespace athena;

@@ -4,7 +4,7 @@
 
   <h3>Athena</h3>
 
-  A UCI-compatible four-player chess engine powered by deep RL and 256-bit bitboards.
+  A UCI-compatible four-player chess engine
 
 </div>
 <div align="center">

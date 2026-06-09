@@ -9,7 +9,6 @@
 namespace athena
 {
 
-    
 struct alignas(CACHELINE_SIZE) Straight
 {
     Bitboard vertical;
@@ -36,7 +35,7 @@ extern const std::array<Adjacent, SQUARE_NB> ADJACENT;
 
 extern const std::array<std::array<std::pair<Bitboard, Bitboard>, ALLIANCE_NB>, SQUARE_NB> PRECOMPUTED_PAWN_ATTACKS;
 
-
+alignas(64) 
 extern const std::array<std::array<Bitboard, COLOR_NB>, SQUARE_NB> PRECOMPUTED_PAWN_ATTACKS_2;
 
 inline auto get_pawn_attacks(Square sq, Color color) noexcept {

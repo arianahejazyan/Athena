@@ -120,10 +120,10 @@ class alignas(CACHELINE_SIZE) Position
     template<Color color>
     void compute_check_and_pinned_masks();
 
-    std::array<PieceClass, SQUARE_NB> board_;
-    std::array<GameState, PLAY_NB> states_;
-    std::array<Bitboard, 6> pieces_;
-    std::array<Bitboard, 4> colors_;
+    alignas(64) std::array<PieceClass, SQUARE_NB> board_;
+    alignas(64) std::array<GameState, PLAY_NB> states_;
+    alignas(64) std::array<Bitboard, 6> pieces_;
+    alignas(64) std::array<Bitboard, 4> colors_;
 
     std::array<Square, COLOR_NB> royals_;
     std::array<Square, COLOR_NB> enpass_;

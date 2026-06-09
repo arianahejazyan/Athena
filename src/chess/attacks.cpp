@@ -393,6 +393,7 @@ constexpr std::array<std::array<std::pair<Bitboard, Bitboard>, TEAM_NB>, SQUARE_
     return table;
 }();
 
+alignas(64) 
 constexpr std::array<std::array<Bitboard, COLOR_NB>, SQUARE_NB> PRECOMPUTED_PAWN_ATTACKS_2 = []() consteval {
     std::array<std::array<Bitboard, COLOR_NB>, SQUARE_NB> table{};
 

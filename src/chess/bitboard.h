@@ -8,7 +8,7 @@
 namespace athena
 {
 
-class alignas(CACHELINE_SIZE) Bitboard
+class alignas(32) Bitboard
 {
     public:
 

@@ -38,10 +38,9 @@ This is a list of four-player chess engines to help discover and support other e
   </tr>
   <tr>
   <td>Nexus (<a href="https://www.chess.com/member/TeamNexus1" target="_blank">Chess.com</a>)</td>
+  <td>BlackKnight (<a href="https://www.chess.com/member/TeamBlackKnight1" target="_blank">Chess.com</a>)</td>
   </tr>
 </table>
-
-
 
 You can also find four-player chess tools list in this [repo](https://github.com/arianahejazyan/Colosseum).
 

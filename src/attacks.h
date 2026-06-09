@@ -36,6 +36,16 @@ extern const std::array<Adjacent, SQUARE_NB> ADJACENT;
 
 extern const std::array<std::array<std::pair<Bitboard, Bitboard>, ALLIANCE_NB>, SQUARE_NB> PRECOMPUTED_PAWN_ATTACKS;
 
+
+extern const std::array<std::array<Bitboard, COLOR_NB>, SQUARE_NB> PRECOMPUTED_PAWN_ATTACKS_2;
+
+inline auto get_pawn_attacks(Square sq, Color color) noexcept {
+    auto reorder = 
+        ((color.value_ & 0b01) << 1) | 
+        ((color.value_ & 0b10) >> 1);
+    return PRECOMPUTED_PAWN_ATTACKS_2[static_cast<uint8_t>(sq)][reorder];
+}
+
 // vertical
 // horizontal
 

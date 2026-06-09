@@ -393,4 +393,20 @@ constexpr std::array<std::array<std::pair<Bitboard, Bitboard>, TEAM_NB>, SQUARE_
     return table;
 }();
 
+constexpr std::array<std::array<Bitboard, COLOR_NB>, SQUARE_NB> PRECOMPUTED_PAWN_ATTACKS_2 = []() consteval {
+    std::array<std::array<Bitboard, COLOR_NB>, SQUARE_NB> table{};
+
+    for (auto sq: squares_array())
+    {
+        if (sq.stone()) continue;
+
+        table[sq.value_][Color::Red   ] = compute_pawn_attack_mask(sq, Color::Red   );
+        table[sq.value_][Color::Blue  ] = compute_pawn_attack_mask(sq, Color::Yellow);
+        table[sq.value_][Color::Yellow] = compute_pawn_attack_mask(sq, Color::Blue  );
+        table[sq.value_][Color::Green ] = compute_pawn_attack_mask(sq, Color::Green );
+    }
+
+    return table;
+}();
+
 } // namespace athena

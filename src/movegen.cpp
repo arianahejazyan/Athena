@@ -297,23 +297,27 @@ template<MoveFlag flag, Color color>
 std::size_t generate_moves(const Position& pos, Move* moves, GameSetup setup) noexcept
 {
     Move* start = moves;
-    const auto& [checkmask, pinnedmask] = pos.check_pinned_masks_[pos.play_];
+    // const auto& [checkmask, pinnedmask] = pos.check_pinned_masks_[pos.play_];
 
-    // Compute occupancy mask
-    const auto occupancy = 
-    pos.bitboard(Team(Team::RY)) |
-    pos.bitboard(Team(Team::BG));
+    const Bitboard teammate = pos.bitboard(color       ) | pos.bitboard(color.ally());
+    const Bitboard opponent = pos.bitboard(color.next()) | pos.bitboard(color.prev());
+    const Bitboard occupancy = teammate | opponent;
+
+    // // Compute occupancy mask
+    // const auto occupancy = 
+    // pos.bitboard(Team(Team::RY)) |
+    // pos.bitboard(Team(Team::BG));
 
     // Compute filter mask
     Bitboard mask;
-    if constexpr (flag == MoveFlag::Noisy) mask = pos.bitboard(color.team().enemy());
+    if constexpr (flag == MoveFlag::Noisy) mask = opponent;
     if constexpr (flag == MoveFlag::Quiet) mask = ~occupancy;
 
     // Generate King moves
     moves = generate_king_moves(pos, moves, pos.royal(color), mask, flag);
 
-    // Handle checks
-    mask &= checkmask;
+    // // Handle checks
+    // mask &= checkmask;
 
     const Bitboard us = pos.bitboard(color);
     // 

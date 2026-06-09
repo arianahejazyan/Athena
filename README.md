@@ -34,7 +34,10 @@ This is a list of four-player chess engines to help discover and support other e
   <tr>
     <td>Athena (<a href="https://github.com/arianahejazyan/Athena" target="_blank">GitHub</a>, <a href="https://www.chess.com/member/teamathena1" target="_blank">Chess.com</a>)</td>
     <td>Samaritan (<a href="https://github.com/Moxile/Samaritan" target="_blank">GitHub</a>)</td>
-    <td>Enigma (<a href="https://github.com/anurag-baundwal/4pchess" target="_blank">GitHub (old version)</a>, <a href="https://www.chess.com/member/teamenigma1" target="_blank">Chess.com</a>)</td>
+    <td>Enigma (<a href="https://github.com/anurag-baundwal/4pchess" target="_blank">GitHub</a>, <a href="https://www.chess.com/member/teamenigma1" target="_blank">Chess.com</a>)</td>
+  </tr>
+  <tr>
+  <td>Nexus (<a href="https://www.chess.com/member/TeamNexus1" target="_blank">Chess.com</a>)</td>
   </tr>
 </table>
 

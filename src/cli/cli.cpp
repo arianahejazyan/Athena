@@ -40,6 +40,55 @@ namespace athena
 CLI::CLI()
 {
     pos_.init(STARTPOS);
+    // pos_.init("B-0,0,0,0-1,1,1,1-1,1,1,1-0,0,0,0-0-x,x,x,yR,yN,yB,yK,yQ,yB,yN,yR,x,x,x/x,x,x,yP,yP,yP,yP,yP,yP,yP,yP,x,x,x/x,x,x,8,x,x,x/bR,bP,10,gP,gR/bN,bP,10,gP,gN/bB,bP,10,gP,gB/bQ,bP,10,gP,gK/bK,bP,10,gP,gQ/bB,bP,10,gP,gB/bN,bP,10,gP,gN/bR,bP,3,rP,6,gP,gR/x,x,x,8,x,x,x/x,x,x,rP,rP,1,rP,rP,rP,rP,rP,x,x,x/x,x,x,rR,rN,rB,rQ,rK,rB,rN,rR,x,x,x");
+
+    // auto setup = GameSetup::Modern;
+
+    // Move moves[MOVE_NB];
+    // std::size_t n = 0;
+    // n += generate_noisy_moves(pos_, moves + n, GameSetup::Modern);
+    // n += generate_quiet_moves(pos_, moves + n, GameSetup::Modern);
+    // std::cout <<"n: "<< n<<std::endl;
+
+    // for (std::size_t i = 0; i < n; ++i)
+    // {
+    //     // std::cout <<moves[i].uci(true)<<std::endl;
+    //     if (moves[i].uci(true) == "g3g4") {
+    //         pos_.makemove(moves[i], setup);
+    //         break;
+    //     }
+    // }
+
+    // pos_.print();
+    // std::cout << pos_.inCheck(Color(1)) << std::endl;
+            
+    // pos_.bitboard(Color(0)).print();
+    // pos_.bitboard(Color(1)).print();
+    // pos_.bitboard(Color(2)).print();
+    // pos_.bitboard(Color(3)).print();
+
+    // pos_.bitboard(Piece(0)).print();
+    // pos_.bitboard(Piece(1)).print();
+    // pos_.bitboard(Piece(2)).print();
+    // pos_.bitboard(Piece(3)).print();
+    // pos_.bitboard(Piece(4)).print();
+    // pos_.bitboard(Piece(5)).print();
+    // uint64_t nodes = 0;
+    // for (std::size_t i = 0; i < n; ++i)
+    // {
+    //     const auto move = moves[i];
+    //     pos_.makemove(move, setup);
+        
+    //     if (pos_.inCheck(pos_.turn().prev()))
+    //     {
+    //         pos_.undomove(move, setup);
+    //         continue;
+    //     }
+
+    //     nodes += perft(pos_, depth - 1, setup);
+    //     pos_.undomove(move, setup);
+    // }
+
 }
 
 void CLI::launch()

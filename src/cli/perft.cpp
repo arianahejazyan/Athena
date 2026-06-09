@@ -100,8 +100,8 @@ uint64_t Perft::perft(Position& pos, int depth, const GameSetup setup)
     n = generate_noisy_moves(pos, moves + n, setup);
     n = generate_quiet_moves(pos, moves + n, setup);
 
-    if (depth == 1)
-        return n;
+    // if (depth == 1)
+    //     return n;
 
     uint64_t nodes = 0;
     for (std::size_t i = 0; i < n; ++i)

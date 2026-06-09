@@ -38,7 +38,7 @@ void Perft::run(const Position& pos, const Options& options, const GameSetup set
 
         uint64_t count = 0;
 
-        x.movegen();
+        // x.movegen();
         Move moves[MOVE_NB];
         std::size_t n = 0;
         n = generate_noisy_moves(x, moves + n, setup);
@@ -49,11 +49,11 @@ void Perft::run(const Position& pos, const Options& options, const GameSetup set
             Position x = pos;
             x.makemove(moves[i], setup);
             
-            // if (x.inCheck(x.turn()))
-            // {
-            //     x.undomove(moves[i]);
-            //     continue;
-            // }
+            if (x.inCheck(x.turn().prev()))
+            {
+                x.undomove(moves[i], setup);
+                continue;
+            }
 
             uint64_t nodes = perft(x, options_.depth - 1, setup);
             // records_[options_.depth].nodes += nodes;
@@ -95,16 +95,13 @@ uint64_t Perft::perft(Position& pos, int depth, const GameSetup setup)
     if (depth == 0)
         return 1;
 
-    pos.movegen();
     Move moves[MOVE_NB];
     std::size_t n = 0;
     n = generate_noisy_moves(pos, moves + n, setup);
     n = generate_quiet_moves(pos, moves + n, setup);
 
     if (depth == 1)
-    {
         return n;
-    }
 
     uint64_t nodes = 0;
     for (std::size_t i = 0; i < n; ++i)
@@ -112,17 +109,11 @@ uint64_t Perft::perft(Position& pos, int depth, const GameSetup setup)
         const auto move = moves[i];
         pos.makemove(move, setup);
         
-        // if (!pos.isLegal(move))
-        // {
-        //     pos.undomove(move, setup);
-        //     continue;
-        // }
-
-        // if (pos.inCheck(pos.turn()))
-        // {
-        //     pos.undomove(moves[i], setup);
-        //     continue;
-        // }
+        if (pos.inCheck(pos.turn().prev()))
+        {
+            pos.undomove(move, setup);
+            continue;
+        }
 
         nodes += perft(pos, depth - 1, setup);
         pos.undomove(move, setup);

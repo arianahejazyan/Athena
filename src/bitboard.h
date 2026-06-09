@@ -155,6 +155,10 @@ class alignas(CACHELINE_SIZE) Bitboard
     // Check if all bits are zero
     constexpr bool empty() const noexcept;
 
+    constexpr bool any() const noexcept {
+        return combine() != 0;
+    }
+
     // Count the number of set bits
     int count() const noexcept;
 
@@ -284,10 +288,10 @@ consteval Bitboard file_bitboard(int file)
 inline constexpr std::array<Bitboard, COLOR_NB> HOMERANK_BITBOARD_TABLE = []()
 {
     std::array<Bitboard, COLOR_NB> arr {};
-    arr[Color::Red   ] = rank_bitboard(          HOMERANK) | rank_bitboard(          HOMERANK + 1);
-    arr[Color::Blue  ] = file_bitboard(          HOMERANK) | file_bitboard(          HOMERANK + 1);
-    arr[Color::Yellow] = rank_bitboard(RANK_NB - HOMERANK) | rank_bitboard(RANK_NB - HOMERANK - 1);
-    arr[Color::Green ] = file_bitboard(FILE_NB - HOMERANK) | file_bitboard(FILE_NB - HOMERANK - 1);
+    arr[Color::Red   ] = rank_bitboard(          HOMERANK    ) | rank_bitboard(          HOMERANK + 1);
+    arr[Color::Blue  ] = file_bitboard(          HOMERANK    ) | file_bitboard(          HOMERANK + 1);
+    arr[Color::Yellow] = rank_bitboard(RANK_NB - HOMERANK - 2) | rank_bitboard(RANK_NB - HOMERANK - 1);
+    arr[Color::Green ] = file_bitboard(FILE_NB - HOMERANK - 2) | file_bitboard(FILE_NB - HOMERANK - 1);
     return arr;    
 }();
 

@@ -1,57 +1,56 @@
 #pragma once
 
-#include <string>
-#include <string_view>
 #include <cstdint>
 
-namespace athena
-{
+namespace athena::chess {
 
-class Piece
-{
-    public: enum : uint8_t // reorder NKPQRB
-    {
+class Piece {
+public: 
+    enum class ID : uint8_t {
         King   = 0,
         Knight = 1,
-        Pawn   = 2,
-        Queen  = 3,
-        Bishop = 4,
-        Rook   = 5,
-        Stone  = 6, // rm
-        Empty  = 7, // rm
+        Bishop = 2,
+        Rook   = 3,
+        Queen  = 4,
+        Pawn   = 5,
+        Empty  = 6,
+        Stone  = 7,
     };
 
-    public:
+    constexpr Piece() noexcept = default;
+    constexpr Piece(ID id) noexcept : id_(id) {}
 
-    // Default constructor
-    constexpr Piece() = default;
+    Piece(char c) noexcept {
+        switch (c) {
+            case 'P': id_ = ID::Pawn  ; break;
+            case 'N': id_ = ID::Knight; break;
+            case 'B': id_ = ID::Bishop; break;
+            case 'R': id_ = ID::Rook  ; break;
+            case 'Q': id_ = ID::Queen ; break;
+            case 'K': id_ = ID::King  ; break;
+            default : id_ = ID::Empty ; break;
+        }    
+    }
 
-    // Constructor
-    constexpr Piece(uint8_t value) noexcept : value_(value) {}
+    char uci() const noexcept {
+        switch (id_) {
+            case ID::Pawn  : return 'P';
+            case ID::Knight: return 'N';
+            case ID::Bishop: return 'B';
+            case ID::Rook  : return 'R';
+            case ID::Queen : return 'Q';
+            case ID::King  : return 'K';
+            default        : return '?';
+        }
+    }
 
-    // UCI Constructor
-    Piece(std::string_view piece) noexcept;
+    constexpr ID id() const noexcept { return id_; }
 
-    // Conversion operator
-    explicit constexpr operator uint8_t() const noexcept { return value_; }
-
-    // Return the UCI representation of the piece
-    std::string uci() const noexcept;
-
-    // Piece::array();
-
-    public:
-    uint8_t value_;
+private:
+    ID id_;
 };
 
-// ===== operators ===== //
-
-inline constexpr bool operator==(Piece lhs, Piece rhs) noexcept {
-    return static_cast<uint8_t>(lhs) == static_cast<uint8_t>(rhs);
-}
-
-inline constexpr bool operator!=(Piece lhs, Piece rhs) noexcept {
-    return static_cast<uint8_t>(lhs) != static_cast<uint8_t>(rhs);
-}
+inline constexpr bool operator==(Piece lhs, Piece rhs) noexcept { return lhs.id() == rhs.id(); }
+inline constexpr bool operator!=(Piece lhs, Piece rhs) noexcept { return lhs.id() != rhs.id(); }
 
 } // namespace athena

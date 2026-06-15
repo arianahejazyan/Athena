@@ -114,7 +114,7 @@ Move* generate_rook_moves(const Position& pos, Move* moves, Bitboard& sources, c
 }
 
 template<Color color>
-Move* generate_take_moves(const Position& pos, Move* moves, Bitboard& pawn, const Bitboard& mask)
+Move* generate_take_moves(const Position& pos, Move* moves, Bitboard pawn, const Bitboard& mask)
 {
     constexpr auto east_offset = take_offsets(color)[0];
     constexpr auto west_offset = take_offsets(color)[1];
@@ -141,7 +141,7 @@ Move* generate_take_moves(const Position& pos, Move* moves, Bitboard& pawn, cons
 }
 
 template<Color color>
-Move* generate_push_moves(const Position& pos, Move* moves, Bitboard& pawn, const Bitboard& mask, const Bitboard& occupancy)
+Move* generate_push_moves(const Position& pos, Move* moves, Bitboard pawn, const Bitboard& mask, const Bitboard& occupancy)
 {
     constexpr auto single_push_offset = push_offsets(color)[0];
     constexpr auto double_push_offset = push_offsets(color)[1];
@@ -309,9 +309,9 @@ std::size_t generate_moves(const Position& pos, Move* moves, GameSetup setup) no
     // pos.bitboard(Team(Team::BG));
 
     // Compute filter mask
-    Bitboard mask;
-    if constexpr (flag == MoveFlag::Noisy) mask = opponent;
-    if constexpr (flag == MoveFlag::Quiet) mask = ~occupancy;
+    Bitboard mask = ~teammate;
+    // if constexpr (flag == MoveFlag::Noisy) mask = opponent;
+    // if constexpr (flag == MoveFlag::Quiet) mask = ~occupancy;
 
     // Generate King moves
     moves = generate_king_moves(pos, moves, pos.royal(color), mask, flag);
@@ -356,13 +356,13 @@ std::size_t generate_moves(const Position& pos, Move* moves, GameSetup setup) no
     auto    evolve = (pawns &  promotion_bitboard(color));
 
     // Generate Pawn moves
-    if constexpr (flag == MoveFlag::Noisy) moves = generate_take_moves<color>(pos, moves, nonevolve, mask);
-    if constexpr (flag == MoveFlag::Quiet) moves = generate_push_moves<color>(pos, moves, nonevolve, mask, occupancy);
+    moves = generate_take_moves<color>(pos, moves, nonevolve, opponent);
+    moves = generate_push_moves<color>(pos, moves, nonevolve, ~occupancy, occupancy);
 
     // Generate special moves
-    if constexpr (flag == MoveFlag::Noisy) moves = generate_enpass_moves<color>(pos, moves, evolve);
-    if constexpr (flag == MoveFlag::Noisy) moves = generate_evolve_moves<color>(pos, moves, evolve);
-    if constexpr (flag == MoveFlag::Quiet) moves = generate_castle_moves<color>(pos, moves, setup );
+     moves = generate_enpass_moves<color>(pos, moves, evolve);
+     moves = generate_evolve_moves<color>(pos, moves, evolve);
+     moves = generate_castle_moves<color>(pos, moves, setup );
 
     // Set pinned pieces moves as pseudo
     // if (!pinnedmask.empty())

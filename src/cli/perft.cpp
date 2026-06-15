@@ -42,7 +42,7 @@ void Perft::run(const Position& pos, const Options& options, const GameSetup set
         Move moves[MOVE_NB];
         std::size_t n = 0;
         n = generate_noisy_moves(x, moves + n, setup);
-        n = generate_quiet_moves(x, moves + n, setup);
+        // n = generate_quiet_moves(x, moves + n, setup);
 
         for (std::size_t i = 0; i < n; ++i)
         {
@@ -98,7 +98,7 @@ uint64_t Perft::perft(Position& pos, int depth, const GameSetup setup)
     Move moves[MOVE_NB];
     std::size_t n = 0;
     n = generate_noisy_moves(pos, moves + n, setup);
-    n = generate_quiet_moves(pos, moves + n, setup);
+    // n = generate_quiet_moves(pos, moves + n, setup);
 
     if (depth == 1)
         return n;

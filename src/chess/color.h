@@ -37,12 +37,13 @@ public:
         }
     }
 
+    constexpr Color self() const noexcept { return Color(static_cast<ID>((static_cast<uint8_t>(id_) + 0) & 3)); }
     constexpr Color next() const noexcept { return Color(static_cast<ID>((static_cast<uint8_t>(id_) + 1) & 3)); }
     constexpr Color ally() const noexcept { return Color(static_cast<ID>((static_cast<uint8_t>(id_) + 2) & 3)); }
     constexpr Color prev() const noexcept { return Color(static_cast<ID>((static_cast<uint8_t>(id_) + 3) & 3)); }
 
-    constexpr bool isSameSide(Color color) const noexcept { return (static_cast<uint8_t>(id_) & 1) == (static_cast<uint8_t>(color.id_) & 1); }
-    constexpr bool isDiffSide(Color color) const noexcept { return (static_cast<uint8_t>(id_) & 1) != (static_cast<uint8_t>(color.id_) & 1); }
+    constexpr bool same(Color::ID color) const noexcept { return (static_cast<uint8_t>(id_) & 1) == (static_cast<uint8_t>(color) & 1); }
+    constexpr bool diff(Color::ID color) const noexcept { return (static_cast<uint8_t>(id_) & 1) != (static_cast<uint8_t>(color) & 1); }
    
     constexpr ID id() const noexcept { return id_; }
     

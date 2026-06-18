@@ -1,20 +1,18 @@
 #pragma once
 
+#include <array>
 #include <string>
 #include <string_view>
 #include <cstdint>
-#include "constants.h"
-#include "offset.h"
-#include "color.h"
 #include "piece.h"
+#include "color.h"
+#include "constants.h"
 
-namespace athena
-{
+namespace athena::chess {
 
-class Square
-{
-    public: enum : uint8_t 
-    {
+class Square {
+public: 
+    enum class ID : uint8_t {
         A1 , B1 , C1 , D1 , E1 , F1 , G1 , H1 , I1 , J1 , K1 , L1 , M1 , N1 , O1 , P1 ,
         A2 , B2 , C2 , D2 , E2 , F2 , G2 , H2 , I2 , J2 , K2 , L2 , M2 , N2 , O2 , P2 ,
         A3 , B3 , C3 , D3 , E3 , F3 , G3 , H3 , I3 , J3 , K3 , L3 , M3 , N3 , O3 , P3 ,
@@ -30,237 +28,226 @@ class Square
         A13, B13, C13, D13, E13, F13, G13, H13, I13, J13, K13, L13, M13, N13, O13, P13,
         A14, B14, C14, D14, E14, F14, G14, H14, I14, J14, K14, L14, M14, N14, O14, P14,
         A15, B15, C15, D15, E15, F15, G15, H15, I15, J15, K15, L15, M15, N15, O15, P15,
-        A16, B16, C16, D16, E16, F16, G16, H16, I16, J16, K16, L16, M16, N16, O16, P16, Offboard = 0
+        A16, B16, C16, D16, E16, F16, G16, H16, I16, J16, K16, L16, M16, N16, O16, P16,
     };
 
-    public:
+    enum class Offset : int {
+        North = +16,
+        South = -16,
+        East  = +1 ,
+        West  = -1 , 
+        None  =  0 ,
+    };
 
-    // Default constructor
-    constexpr Square() = default;
+    using Index = uint8_t;
+    using Chunk = uint8_t;
+    using Rank  = uint8_t;
+    using File  = uint8_t;
 
-    // Constructor
-    constexpr Square(uint8_t value)
-        : value_(value) {}
+    constexpr Square() noexcept = default;
+    constexpr Square(ID id) noexcept : id_(id) {}
+    constexpr Square(File file, Rank rank) noexcept : id_(static_cast<ID>(file + FILE_NB * rank)) {}
 
-    // Coordinate constructor
-    constexpr Square(int rank, int file)
-        : value_(rank * FILE_NB + file) {}
-
-    // UCI Constructor
-    Square(std::string_view square, bool expanded = false) noexcept;
-
-    // Index & Chunk operators
-    inline constexpr uint8_t chunk() const noexcept { return value_ >> 6; } // value_ / CHUNK_SIZE
-    inline constexpr uint8_t index() const noexcept { return value_ & 63; } // value_ % CHUNK_SIZE
-    
-    // Rank & File operators
-    inline constexpr int rank() const noexcept { return value_ >> 4; } // value_ / FILE_NB 
-    inline constexpr int file() const noexcept { return value_ & 15; } // value_ % FILE_NB
-
-    // Offboard operator
-    inline constexpr bool offboard() const noexcept { return value_ == Offboard; }
-
-    // Stone operator
-    inline constexpr bool stone() const noexcept;
-
-    // Checks if square is not stone
-    inline constexpr bool valid() const noexcept;
-
-    // Conversion operator
-    explicit constexpr operator uint8_t() const {
-        return value_;
+    Square(std::string_view sv, bool board16x16 = false) noexcept {
+        int rank = std::stoi(std::string(sv.substr(1))); 
+        int file = sv[0] - 'a' + 1;
+        if (board16x16) {
+            rank--;
+            file--;
+        }
+        *this = Square(file, rank);
     }
 
-    // constexpr Square to14x14() const noexcept {
-    //     return Square(value_ - 17);
-    // }
+    std::string uci(bool board16x16 = false) const noexcept {
+        int r = rank();
+        int f = file() - 1;
+        if (board16x16) {
+            r++;
+            f++;
+        }
+        return std::string(1, static_cast<char>('a' + f)) + std::to_string(r);
+    }
 
-    // constexpr Square to16x16() const noexcept {
-    //     return Square(value_ + 17);
-    // }
+    constexpr bool isValid() const noexcept { return !isStone(); }  
+    constexpr bool isStone() const noexcept {
+        auto r = rank();
+        auto f = file();
+        return 
+            (r <= 0  || f <= 0 ) || 
+            (r <= 3  && f <= 3 ) || 
+            (r >= 12 && f >= 12) ||
+            (r >= 15 || f >= 15) || 
+            (r <= 3  && f >= 12) || 
+            (r >= 12 && f <= 3 );   
+    }
 
-    // corner
-    // edge
+    constexpr Index index() const noexcept { return static_cast<uint8_t>(id_) & 63; } 
+    constexpr Chunk chunk() const noexcept { return static_cast<uint8_t>(id_) >> 6; } 
+    constexpr Rank  rank()  const noexcept { return static_cast<uint8_t>(id_) >> 4; } 
+    constexpr File  file()  const noexcept { return static_cast<uint8_t>(id_) & 15; } 
 
-    // // Used to check if pawns can double push
-    // template<uint8_t color>
-    // constexpr bool homerank() const noexcept;
+    constexpr inline Square flip_file() { return static_cast<ID>(static_cast<uint8_t>(id_) ^ 0x0F); }
+    constexpr inline Square flip_rank() { return static_cast<ID>(static_cast<uint8_t>(id_) ^ 0xF0); }
+    constexpr inline Square flip_both() { return static_cast<ID>(static_cast<uint8_t>(id_) ^ 0xFF); }
 
-    // // Used to check if pawns can promote
-    // template<uint8_t color>
-    // constexpr bool promotion() const noexcept;
+    constexpr ID id() const noexcept { return id_; }
+    constexpr auto compact() const noexcept { return static_cast<uint8_t>(id_) - 20; }
+    
+private:
+    ID id_;
 
-    // Return the UCI representation of the square
-    std::string uci(bool expanded = false) const noexcept; // board16x16
+public:
+    template<Piece::ID piece>
+    static constexpr auto offsets() noexcept;
 
-    public:
-    uint8_t value_;
+    template<Color::ID color>
+    static constexpr auto offsets() noexcept;
+
+    static constexpr Offset push(Color::ID color, int idx) noexcept;
+    static constexpr Offset take(Color::ID color, int idx) noexcept;
+
+    static constexpr Square middle(Square a, Square b) noexcept {
+        return static_cast<Square::ID>((static_cast<uint8_t>(a.id_) + static_cast<uint8_t>(b.id_)) >> 1
+        );
+    }
+
+    static constexpr Square::ID offboard() { return Square::ID::A1; }
 };
 
-// ===== function declarations ===== //
+inline constexpr bool operator==(Square lhs, Square rhs) noexcept { return lhs.id() == rhs.id(); }
+inline constexpr bool operator!=(Square lhs, Square rhs) noexcept { return lhs.id() != rhs.id(); }
 
-inline constexpr bool Square::stone() const noexcept
-{
-    auto r = rank();
-    auto f = file();
+inline constexpr Square operator+(Square lhs, Square::Offset rhs) noexcept { return static_cast<Square::ID>(static_cast<uint8_t>(lhs.id()) + static_cast<int>(rhs)); }
+inline constexpr Square operator-(Square lhs, Square::Offset rhs) noexcept { return static_cast<Square::ID>(static_cast<uint8_t>(lhs.id()) - static_cast<int>(rhs)); }
 
-    return 
-    (r == 0  || f == 0 ) || (r <= 3  && f <= 3 ) || (r >= 12 && f >= 12) ||
-    (r == 15 || f == 15) || (r <= 3  && f >= 12) || (r >= 12 && f <= 3 );    
+inline constexpr Square::ID operator+(Square::ID lhs, Square::Offset rhs) noexcept { return static_cast<Square::ID>(static_cast<uint8_t>(lhs) + static_cast<int>(rhs)); }
+inline constexpr Square::ID operator-(Square::ID lhs, Square::Offset rhs) noexcept { return static_cast<Square::ID>(static_cast<uint8_t>(lhs) - static_cast<int>(rhs)); }
+
+inline constexpr Square::Offset operator+(Square::Offset lhs, Square::Offset rhs) noexcept { return static_cast<Square::Offset>(static_cast<int>(lhs) + static_cast<int>(rhs)); }
+inline constexpr Square::Offset operator-(Square::Offset lhs, Square::Offset rhs) noexcept { return static_cast<Square::Offset>(static_cast<int>(lhs) - static_cast<int>(rhs)); }
+
+inline constexpr Square& operator+=(Square& sq, Square::Offset offset) noexcept { sq = sq + offset; return sq; }
+inline constexpr Square& operator-=(Square& sq, Square::Offset offset) noexcept { sq = sq - offset; return sq; }
+
+inline constexpr bool operator>(Square::Offset lhs, int rhs) noexcept { return static_cast<int>(lhs) > rhs; }
+inline constexpr bool operator<(Square::Offset lhs, int rhs) noexcept { return static_cast<int>(lhs) < rhs; }
+
+template<>
+inline constexpr 
+auto Square::offsets<Piece::ID::King>() noexcept {
+    static constexpr std::array<Square::Offset, CRAWL_NB> offsets = {{
+        Square::Offset::South + Square::Offset::West,
+        Square::Offset::South                       ,
+        Square::Offset::South + Square::Offset::East,
+        Square::Offset::West                        ,
+        Square::Offset::East                        ,
+        Square::Offset::North + Square::Offset::West,
+        Square::Offset::North                       ,
+        Square::Offset::North + Square::Offset::East,
+    }};
+    return offsets;
 }
 
-inline constexpr bool Square::valid() const noexcept
-{
-    return !stone();
+template<>
+inline constexpr 
+auto Square::offsets<Piece::ID::Knight>() noexcept {
+    static constexpr std::array<Square::Offset, CRAWL_NB> offsets = {{
+        Square::Offset::South + Square::Offset::South + Square::Offset::West,
+        Square::Offset::South + Square::Offset::South + Square::Offset::East,
+        Square::Offset::South + Square::Offset::West  + Square::Offset::West,
+        Square::Offset::South + Square::Offset::East  + Square::Offset::East,
+        Square::Offset::North + Square::Offset::West  + Square::Offset::West,
+        Square::Offset::North + Square::Offset::East  + Square::Offset::East,
+        Square::Offset::North + Square::Offset::North + Square::Offset::West,
+        Square::Offset::North + Square::Offset::North + Square::Offset::East,
+    }};
+    return offsets;
 }
 
-// ===== operators ===== //
-
-inline constexpr Square operator+(Square sq, Offset offset) noexcept {
-    return static_cast<Square>(static_cast<uint8_t>(sq) + static_cast<int>(offset));
+template<>
+inline constexpr 
+auto Square::offsets<Piece::ID::Bishop>() noexcept {
+    static constexpr std::array<Square::Offset, SLIDE_NB> offsets = {{
+        Square::Offset::South + Square::Offset::West,
+        Square::Offset::South + Square::Offset::East,
+        Square::Offset::North + Square::Offset::West,
+        Square::Offset::North + Square::Offset::East,
+    }};
+    return offsets;
 }
 
-inline constexpr Square operator-(Square sq, Offset offset) noexcept {
-    return static_cast<Square>(static_cast<uint8_t>(sq) - static_cast<int>(offset));
+template<>
+inline constexpr 
+auto Square::offsets<Piece::ID::Rook>() noexcept {
+    static constexpr std::array<Square::Offset, SLIDE_NB> offsets = {{
+        Square::Offset::South,
+        Square::Offset::West ,
+        Square::Offset::East ,
+        Square::Offset::North,
+    }};
+    return offsets;
 }
 
-inline constexpr Square& operator+=(Square& sq, Offset offset) noexcept {
-    sq = sq + offset;
-    return sq;
+template<>
+inline constexpr 
+auto Square::offsets<Color::ID::Red>() noexcept {
+    static constexpr std::array<Square::Offset, TAKE_NB> offsets = {{
+        Square::Offset::North + Square::Offset::East ,
+        Square::Offset::North + Square::Offset::West ,
+    }};
+    return offsets;
 }
 
-inline constexpr Square& operator-=(Square& sq, Offset offset) noexcept {
-    sq = sq - offset;
-    return sq;
+template<>
+inline constexpr 
+auto Square::offsets<Color::ID::Blue>() noexcept {
+    static constexpr std::array<Square::Offset, TAKE_NB> offsets = {{
+        Square::Offset::South + Square::Offset::East ,
+        Square::Offset::North + Square::Offset::East ,
+    }};
+    return offsets;
 }
 
-inline constexpr Square operator+(Square lhs, Square rhs) noexcept {
-    return static_cast<Square>(static_cast<uint8_t>(lhs) + static_cast<uint8_t>(rhs));
+template<>
+inline constexpr 
+auto Square::offsets<Color::ID::Yellow>() noexcept {
+    static constexpr std::array<Square::Offset, TAKE_NB> offsets = {{
+        Square::Offset::South + Square::Offset::West ,
+        Square::Offset::South + Square::Offset::East ,
+    }};
+    return offsets;
 }
 
-inline constexpr Square operator-(Square lhs, Square rhs) noexcept {
-    return static_cast<Square>(static_cast<uint8_t>(lhs) - static_cast<uint8_t>(rhs));
+template<>
+inline constexpr 
+auto Square::offsets<Color::ID::Green>() noexcept {
+    static constexpr std::array<Square::Offset, TAKE_NB> offsets = {{
+        Square::Offset::North + Square::Offset::West,
+        Square::Offset::South + Square::Offset::West,
+    }};
+    return offsets;
 }
 
-inline constexpr Square& operator++(Square& sq) noexcept {
-    sq = static_cast<Square>(static_cast<uint8_t>(sq) + 1);
-    return sq;
+inline constexpr 
+Square::Offset Square::push(Color::ID color, int idx) noexcept { // make function for push instead of doing here
+    static constexpr std::array<Square::Offset, COLOR_NB * PUSH_NB> offsets = {
+        Square::Offset::North , Square::Offset::North + Square::Offset::North,
+        Square::Offset::East  , Square::Offset::East  + Square::Offset::East ,
+        Square::Offset::South , Square::Offset::South + Square::Offset::South,
+        Square::Offset::West  , Square::Offset::West  + Square::Offset::West ,
+    };
+    return offsets[static_cast<uint8_t>(color) * PUSH_NB + idx];
 }
 
-inline constexpr Square operator++(Square& sq, int) noexcept {
-    Square old = sq;
-    ++sq;
-    return old;
+inline constexpr 
+Square::Offset Square::take(Color::ID color, int idx) noexcept {
+    static constexpr std::array<Square::Offset, COLOR_NB * TAKE_NB> offsets = {
+        Square::Offset::North + Square::Offset::East, Square::Offset::North + Square::Offset::West,
+        Square::Offset::South + Square::Offset::East, Square::Offset::North + Square::Offset::East,
+        Square::Offset::South + Square::Offset::West, Square::Offset::South + Square::Offset::East,
+        Square::Offset::North + Square::Offset::West, Square::Offset::South + Square::Offset::West,
+    };
+    return offsets[static_cast<uint8_t>(color) * TAKE_NB + idx];
 }
 
-inline constexpr Square& operator--(Square& sq) noexcept {
-    sq = static_cast<Square>(static_cast<uint8_t>(sq) - 1);
-    return sq;
-}
-
-inline constexpr Square operator--(Square& sq, int) noexcept {
-    Square old = sq;
-    --sq;
-    return old;
-}
-
-inline constexpr bool operator<(Square lhs, Square rhs) noexcept {
-    return static_cast<uint8_t>(lhs) < static_cast<uint8_t>(rhs);
-}
-
-inline constexpr bool operator<=(Square lhs, Square rhs) noexcept {
-    return static_cast<uint8_t>(lhs) <= static_cast<uint8_t>(rhs);
-}
-
-inline constexpr bool operator>(Square lhs, Square rhs) noexcept {
-    return static_cast<uint8_t>(lhs) > static_cast<uint8_t>(rhs);
-}
-
-inline constexpr bool operator>=(Square lhs, Square rhs) noexcept {
-    return static_cast<uint8_t>(lhs) >= static_cast<uint8_t>(rhs);
-}
-
-inline constexpr bool operator==(Square lhs, Square rhs) noexcept {
-    return static_cast<uint8_t>(lhs) == static_cast<uint8_t>(rhs);
-}
-
-inline constexpr bool operator!=(Square lhs, Square rhs) noexcept {
-    return static_cast<uint8_t>(lhs) != static_cast<uint8_t>(rhs);
-}
-
-inline constexpr Square operator<<(Square lhs, int rhs) noexcept {
-    return static_cast<Square>(static_cast<uint8_t>(lhs) << rhs);
-}
-
-inline constexpr Square operator>>(Square lhs, int rhs) noexcept {
-    return static_cast<Square>(static_cast<uint8_t>(lhs) >> rhs);
-}
-
-inline constexpr Square& operator<<=(Square& lhs, int rhs) noexcept {
-    lhs = lhs << rhs;
-    return lhs;
-}
-
-inline constexpr Square& operator>>=(Square& lhs, int rhs) noexcept {
-    lhs = lhs >> rhs;
-    return lhs;
-}
-
-// // ====== homerank (template specialization) ====== //
-
-// template<>
-// inline bool Square::homerank<Color::Red>() const noexcept {
-//     return rank() == HOME_RANK || rank() == HOME_RANK - 1;
-// }
-
-// template<>
-// inline bool Square::homerank<Color::Blue>() const noexcept {
-//     return file() == HOME_RANK || file() == HOME_RANK - 1;
-// }
-
-// template<>
-// inline bool Square::homerank<Color::Yellow>() const noexcept {
-//     return rank() == (RANK_NB - HOME_RANK) || rank() == (RANK_NB - HOME_RANK - 1);
-// }
-
-// template<>
-// inline bool Square::homerank<Color::Green>() const noexcept {
-//     return file() == (FILE_NB - HOME_RANK) || file() == (FILE_NB - HOME_RANK - 1);
-// }
-
-// // ====== promotion (template specialization) ====== //
-
-// template<>
-// inline bool Square::promotion<Color::Red>() const noexcept {
-//     return rank() == PROMOTION_RANK;
-// }
-
-// template<>
-// inline bool Square::promotion<Color::Blue>() const noexcept {
-//     return file() == PROMOTION_RANK;
-// }
-
-// template<>
-// inline bool Square::promotion<Color::Yellow>() const noexcept {
-//     return rank() == (RANK_NB - PROMOTION_RANK - 1);
-// }
-
-// template<>
-// inline bool Square::promotion<Color::Green>() const noexcept {
-//     return file() == (FILE_NB - PROMOTION_RANK - 1);
-// }
-
-// == == //
-
-inline constexpr std::array<Square, SQUARE_NB> SQUARS_TABLE = []()
-{
-    std::array<Square, SQUARE_NB> arr {};
-    for (int i = 0; i < SQUARE_NB; i++) arr[i] = Square(i);
-    return arr;
-}();
-
-inline constexpr auto squares_array() noexcept {
-    return SQUARS_TABLE;
-}
-
-} // namespace athena
+} // namespace athena 

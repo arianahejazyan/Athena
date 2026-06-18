@@ -1,12 +1,12 @@
 #pragma once
 
-#include "chess.h"
-#include "constants.h"
+#include "move.h"
+#include "position.h"
 
-namespace athena
-{
+namespace athena::chess {
 
-std::size_t generate_noisy_moves(const Position& pos, Move* moves, const GameSetup setup) noexcept;
-std::size_t generate_quiet_moves(const Position& pos, Move* moves, const GameSetup setup) noexcept;
+[[nodiscard]] int generate_noisy_moves(Position& pos, Move* moves) noexcept;
+[[nodiscard]] int generate_quiet_moves(Position& pos, Move* moves) noexcept;
+[[nodiscard]] int generate_legal_moves(Position& pos, Move* moves) noexcept;
 
 } // namespace athena

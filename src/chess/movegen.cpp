@@ -2,410 +2,526 @@
 #include "attacks.h"
 #include "bitboard.h"
 #include "castle.h"
-#include "chess.h"
-#include "constants.h"
+#include "chess/constants.h"
 #include "move.h"
-#include "offset.h"
 #include "piece.h"
-#include "piececlass.h"
+#include "piececolor.h"
 #include "position.h"
-#include <cstddef>
-#include <cstdint>
-#include <iostream>
 
-namespace athena
-{
+namespace athena::chess {
 
-template<std::size_t chunk_id>
-Move* add_moves(Move* moves, const Square source, Bitboard& targets, const MoveFlag flag, const MoveType type) noexcept
-{
-    auto& chunk = targets.chunk<chunk_id>();
-    while(chunk)
-    {
-        const auto target = targets.pop_lsb<chunk_id>();
-        *(moves++) = Move(source, target, flag, type);
-    }
+Move* add_evolve_moves(const Position& pos, Move* moves, Square source, Square target, Color::ID color, Color::ID enpass = Color::ID::None) noexcept {
     
+    auto occ = pos.occupied();
+    occ.pop_bit(source);
+    if (enpass != Color::ID::None) occ.pop_bit(source + Square::push(color, 0));
+    if (pos.get_attackers_bitboard(target, pos.turn().id(), occ).any())
+        return moves;
+
+    *(moves++) = Move(source.id(), target.id(), Piece::ID::Queen , enpass, Castle::Side(0b10), Move::Policy::Evolve);
+    *(moves++) = Move(source.id(), target.id(), Piece::ID::Rook  , enpass, Castle::Side(0b10), Move::Policy::Evolve);
+    *(moves++) = Move(source.id(), target.id(), Piece::ID::Bishop, enpass, Castle::Side(0b10), Move::Policy::Evolve);
+    *(moves++) = Move(source.id(), target.id(), Piece::ID::Knight, enpass, Castle::Side(0b10), Move::Policy::Evolve); 
     return moves;
 }
 
-template<std::size_t chunk_id>
-Move* add_moves(Move* moves, const Offset offset, Bitboard& targets, const MoveFlag flag, const MoveType type) noexcept
-{
-    auto& chunk = targets.chunk<chunk_id>();
-    while(chunk)
-    {
-        const auto target = targets.pop_lsb<chunk_id>();
-        const auto source = target - offset;
-        *(moves++) = Move(source, target, flag, type);
-    }
-    
-    return moves;
-}
+template<Color::ID color>
+Move* generate_evolve_moves(const Position& pos, Move* moves, Bitboard& pawn) noexcept {
 
-Move* generate_king_moves(const Position& pos, Move* moves, const Square sq, const Bitboard& mask, const MoveFlag flag) noexcept
-{
-    auto [targets, _] = crawl_attacks(sq);
-    targets &= mask;
+    if (pawn.empty()) return moves;
 
-    moves = add_moves<CHUNK_0>(moves, sq, targets, flag, MoveType::Crawl);
-    moves = add_moves<CHUNK_1>(moves, sq, targets, flag, MoveType::Crawl);
-    moves = add_moves<CHUNK_2>(moves, sq, targets, flag, MoveType::Crawl);
-    moves = add_moves<CHUNK_3>(moves, sq, targets, flag, MoveType::Crawl);
+    for (Bitboard::ChunkID chunk_id = 0; chunk_id < CHUNK_NB; chunk_id++) {
 
-    return moves;
-}
+        auto& chunk = pawn.chunk(chunk_id);
+        while(chunk) {
+            const auto source = Bitboard::pop_lsb(chunk, chunk_id);
+            const auto east = (source + Square::take(color, 0)).id();
+            const auto west = (source + Square::take(color, 1)).id();
+            const auto push = (source + Square::push(color, 0)).id();
 
-template<std::size_t chunk_id>
-Move* generate_knight_moves(const Position& pos, Move* moves, Bitboard& sources, const Bitboard& mask, const MoveFlag flag) noexcept
-{
-    auto& chunk = sources.chunk<chunk_id>();
-    while(chunk)
-    {
-        const auto source = sources.pop_lsb<chunk_id>();
-        auto [_, targets] = crawl_attacks(source);
-        targets &= mask;
-
-        moves = add_moves<CHUNK_0>(moves, source, targets, flag, MoveType::Crawl);
-        moves = add_moves<CHUNK_1>(moves, source, targets, flag, MoveType::Crawl);
-        moves = add_moves<CHUNK_2>(moves, source, targets, flag, MoveType::Crawl);
-        moves = add_moves<CHUNK_3>(moves, source, targets, flag, MoveType::Crawl);       
-    }
-
-    return moves;
-}
-
-template<std::size_t chunk_id>
-Move* generate_bishop_moves(const Position& pos, Move* moves, Bitboard& sources, const Bitboard& mask, const Bitboard& occupancy, const MoveFlag flag) noexcept
-{
-    auto& chunk = sources.chunk<chunk_id>();
-    while(chunk)
-    {
-        const auto source = sources.pop_lsb<chunk_id>();
-        auto targets = bishop_attacks(source, occupancy);
-        targets &= mask;
-
-        moves = add_moves<CHUNK_0>(moves, source, targets, flag, MoveType::Slide);
-        moves = add_moves<CHUNK_1>(moves, source, targets, flag, MoveType::Slide);
-        moves = add_moves<CHUNK_2>(moves, source, targets, flag, MoveType::Slide);
-        moves = add_moves<CHUNK_3>(moves, source, targets, flag, MoveType::Slide);        
-    }
-
-    return moves;
-}
-
-template<std::size_t chunk_id>
-Move* generate_rook_moves(const Position& pos, Move* moves, Bitboard& sources, const Bitboard& mask, const Bitboard& occupancy, const MoveFlag flag) noexcept
-{
-    auto& chunk = sources.chunk<chunk_id>();
-    while(chunk)
-    {
-        const auto source = sources.pop_lsb<chunk_id>();
-        auto targets = rook_attacks(source, occupancy); // std::cout << "square: " << source.uci(true) << std::endl; occupancy.print(); targets.print(); mask.print();
-        targets &= mask;
-
-        moves = add_moves<CHUNK_0>(moves, source, targets, flag, MoveType::Slide);
-        moves = add_moves<CHUNK_1>(moves, source, targets, flag, MoveType::Slide);
-        moves = add_moves<CHUNK_2>(moves, source, targets, flag, MoveType::Slide);
-        moves = add_moves<CHUNK_3>(moves, source, targets, flag, MoveType::Slide);        
-    }
-
-    return moves;
-}
-
-template<Color color>
-Move* generate_take_moves(const Position& pos, Move* moves, Bitboard& pawn, const Bitboard& mask)
-{
-    constexpr auto east_offset = take_offsets(color)[0];
-    constexpr auto west_offset = take_offsets(color)[1];
-
-    auto& east = pawn;
-    auto  west = pawn;
-
-    east.shift<east_offset>();
-    west.shift<west_offset>();
-
-    east &= mask;
-    west &= mask;
-
-    moves = add_moves<CHUNK_0>(moves, east_offset, east, MoveFlag::Noisy, MoveType::Take);
-    moves = add_moves<CHUNK_1>(moves, east_offset, east, MoveFlag::Noisy, MoveType::Take);
-    moves = add_moves<CHUNK_2>(moves, east_offset, east, MoveFlag::Noisy, MoveType::Take);
-    moves = add_moves<CHUNK_3>(moves, east_offset, east, MoveFlag::Noisy, MoveType::Take);     
-    moves = add_moves<CHUNK_0>(moves, west_offset, west, MoveFlag::Noisy, MoveType::Take);
-    moves = add_moves<CHUNK_1>(moves, west_offset, west, MoveFlag::Noisy, MoveType::Take);
-    moves = add_moves<CHUNK_2>(moves, west_offset, west, MoveFlag::Noisy, MoveType::Take);
-    moves = add_moves<CHUNK_3>(moves, west_offset, west, MoveFlag::Noisy, MoveType::Take);     
-
-    return moves;
-}
-
-template<Color color>
-Move* generate_push_moves(const Position& pos, Move* moves, Bitboard& pawn, const Bitboard& mask, const Bitboard& occupancy)
-{
-    constexpr auto single_push_offset = push_offsets(color)[0];
-    constexpr auto double_push_offset = push_offsets(color)[1];
-
-    pawn.shift<single_push_offset>();
-    auto push = pawn & ~occupancy & homerank_bitboard(color);
-    push.shift<single_push_offset>();
-    pawn &= mask;
-    push &= mask;
-
-    moves = add_moves<CHUNK_0>(moves, single_push_offset, pawn, MoveFlag::Quiet, MoveType::Push  );
-    moves = add_moves<CHUNK_1>(moves, single_push_offset, pawn, MoveFlag::Quiet, MoveType::Push  );
-    moves = add_moves<CHUNK_2>(moves, single_push_offset, pawn, MoveFlag::Quiet, MoveType::Push  );
-    moves = add_moves<CHUNK_3>(moves, single_push_offset, pawn, MoveFlag::Quiet, MoveType::Push  );     
-    moves = add_moves<CHUNK_0>(moves, double_push_offset, push, MoveFlag::Quiet, MoveType::Stride);
-    moves = add_moves<CHUNK_1>(moves, double_push_offset, push, MoveFlag::Quiet, MoveType::Stride);
-    moves = add_moves<CHUNK_2>(moves, double_push_offset, push, MoveFlag::Quiet, MoveType::Stride);
-    moves = add_moves<CHUNK_3>(moves, double_push_offset, push, MoveFlag::Quiet, MoveType::Stride);     
-
-    return moves;
-}
-
-Move* add_moves(Move* moves, const Square source, const Square target) noexcept
-{
-    *(moves++) = Move(source, target, Piece(Piece::Queen ));
-    *(moves++) = Move(source, target, Piece(Piece::Rook  ));
-    *(moves++) = Move(source, target, Piece(Piece::Bishop));
-    *(moves++) = Move(source, target, Piece(Piece::Knight)); return moves;
-    // if (promotion)
-    // {
-    //     *(moves++) = Move(source, target, Piece(Piece::Queen ));
-    //     *(moves++) = Move(source, target, Piece(Piece::Rook  ));
-    //     *(moves++) = Move(source, target, Piece(Piece::Bishop));
-    //     *(moves++) = Move(source, target, Piece(Piece::Knight));        
-    // }
-
-    // else *(moves++) = Move(source, target, MoveFlag::Noisy, MoveType::Enpass); return moves; // problem
-}
-
-template<std::size_t chunk_id, Color color>
-Move* generate_evolve_moves(const Position& pos, Move* moves, Bitboard& pawn) noexcept
-{
-    constexpr auto east_offset = take_offsets(color)[0];
-    constexpr auto west_offset = take_offsets(color)[1];
-    constexpr auto push_offset = push_offsets(color)[0];
-
-    auto& chunk = pawn.chunk<chunk_id>();
-    while(chunk)
-    {
-        const auto source = pawn.pop_lsb<chunk_id>();
-        const auto east = source + east_offset;
-        const auto west = source + west_offset;
-        const auto push = source + push_offset;
-
-        const bool b1 = pos.board(east).piece() != Piece::Empty && pos.board(east).color().team() != color.team();
-        const bool b2 = pos.board(west).piece() != Piece::Empty && pos.board(west).color().team() != color.team();
-        const bool b3 = pos.board(push).piece() == Piece::Empty;
-
-        if (b1) moves = add_moves(moves, source, east);
-        if (b2) moves = add_moves(moves, source, west);
-        if (b3) moves = add_moves(moves, source, push);
-    }
-
-    return moves;
-}
-
-template<Color color>
-Move* generate_evolve_moves(const Position& pos, Move* moves, Bitboard& pawn) noexcept
-{
-    if (!pawn.empty())
-    {
-        moves = generate_evolve_moves<CHUNK_0, color>(pos, moves, pawn);
-        moves = generate_evolve_moves<CHUNK_1, color>(pos, moves, pawn);
-        moves = generate_evolve_moves<CHUNK_2, color>(pos, moves, pawn);
-        moves = generate_evolve_moves<CHUNK_3, color>(pos, moves, pawn);
-    }
-
-    return moves;
-}
-
-template<Color color, Color opponent>
-Move* generate_enpass_moves(const Position& pos, Move* moves, const Bitboard& pawn) noexcept
-{
-    constexpr auto offsets = take_offsets(color.ally());
-    const auto target = pos.enpass(opponent);
-
-    if (!target.offboard())
-    {
-        for (auto offset: offsets)
-        {
-            const auto source = target + offset;
-            if (pos.board(source) == PieceClass(color, Piece::Pawn))
-            {
-                if (pawn.has(source)) 
-                {
-                    moves = add_moves(moves, source, target);
-                    continue;
-                }
-
-                *(moves++) = Move(source, target, opponent);
-            }
+            if (pos.board(push) == PieceColor::empty()) { moves = add_evolve_moves(pos, moves, source, push, color); }    
+            if (pos.board(east).color().diff(color)   ) { moves = add_evolve_moves(pos, moves, source, east, color); }
+            if (pos.board(west).color().diff(color)   ) { moves = add_evolve_moves(pos, moves, source, west, color); }
         }
     }
 
     return moves;
 }
 
-template<Color color>
-Move* generate_enpass_moves(const Position& pos, Move* moves, const Bitboard& pawn) noexcept
-{
-    moves = generate_enpass_moves<color, color.next()>(pos, moves, pawn);
-    moves = generate_enpass_moves<color, color.prev()>(pos, moves, pawn);
-    return moves;
-}
+template<Color::ID color, Color::ID enemy, Square::Offset offset>
+Move* generate_enpass_moves(const Position& pos, Move* moves, Square target) noexcept {
 
-template<Color color, Side side>
-Move* generate_castle_moves(const Position& pos, Move* moves, GameSetup setup) noexcept
-{
-    const auto squares = castle_squares(color, side, setup);
-    const auto& gs = pos.state();
+    const auto source = target - offset;
+    if (pos.board(source.id()) != PieceColor(color, Piece::ID::Pawn)) 
+        return moves;
 
-    if (gs.castle.has(color, side))
-    {
-        constexpr auto path = path_squares(color, side);
-        if (
-        pos.board(path[0]) == PieceClass::Empty() &&
-        pos.board(path[1]) == PieceClass::Empty() &&
-        pos.board(path[2]) == PieceClass::Empty()
-        )
+    if constexpr (color == Color::ID::Red || color == Color::ID::Yellow)
+        if (source.rank() == PROMOTES)
+            return add_evolve_moves(pos, moves, source, target, enemy);
 
-        *(moves++) = Move(squares.king_source, squares.king_target, side);
-    }
+    if constexpr (color == Color::ID::Blue || color == Color::ID::Green )
+        if (source.file() == PROMOTES)
+            return add_evolve_moves(pos, moves, source, target, enemy);
+
+    auto occ = pos.occupied();
+    occ.pop_bit(source);
+    occ.pop_bit(source + Square::push(color, 0));
+    if (pos.get_attackers_bitboard(target, color, occ).any())
+        return moves;
+
+    *(moves++) = Move(source.id(), target.id(), Piece::ID::Empty, enemy, Castle::Side(0b10), Move::Policy::Enpass);
     
     return moves;
 }
 
-template<Color color>
-Move* generate_castle_moves(const Position& pos, Move* moves, GameSetup setup) noexcept
-{
-    moves = generate_castle_moves<color, Side::KingSide >(pos, moves, setup);
-    moves = generate_castle_moves<color, Side::QueenSide>(pos, moves, setup);
+template<Color::ID color, Color::ID enemy>
+Move* generate_enpass_moves(const Position& pos, Move* moves) noexcept {
+
+    const auto target = pos.enpass(enemy);
+    if (target == Square::offboard()) 
+        return moves;
+
+    moves = generate_enpass_moves<color, enemy, Square::take(enemy, 0)>(pos, moves, target);
+    moves = generate_enpass_moves<color, enemy, Square::take(enemy, 1)>(pos, moves, target);
+
     return moves;
 }
 
-Square pop_lsb(uint64_t& chunk, std::size_t chunk_id) noexcept
-{
-    int b = __builtin_ctzll(chunk);
-    chunk &= chunk - 1;
-    return Square(chunk_id * CHUNK_SIZE + b);
+template<Color::ID color>
+Move* generate_enpass_moves(const Position& pos, Move* moves) noexcept {
+    moves = generate_enpass_moves<color, Color(color).next().id()>(pos, moves);
+    moves = generate_enpass_moves<color, Color(color).prev().id()>(pos, moves);
+    return moves;
 }
 
-template<MoveFlag flag, Color color>
-std::size_t generate_moves(const Position& pos, Move* moves, GameSetup setup) noexcept
-{
+template<Color::ID color, Castle::Setup setup, Castle::Side side>
+Move* generate_castle_moves(const Position& pos, Move* moves) noexcept {
+
+    if (pos.state().castle.has(Castle(color, side)))
+        return moves;
+
+    if (
+    pos.board(Castle::path_square(setup, color, side, 0)) == PieceColor::empty() &&
+    pos.board(Castle::path_square(setup, color, side, 1)) == PieceColor::empty() &&
+    pos.board(Castle::path_square(setup, color, side, 2)) == PieceColor::empty()) 
+        return moves;
+
+    if ((
+        pos.get_attackers_bitboard(Castle::safe_square(setup, color, side, 0), color, pos.occupied()) |
+        pos.get_attackers_bitboard(Castle::safe_square(setup, color, side, 1), color, pos.occupied()) |
+        pos.get_attackers_bitboard(Castle::safe_square(setup, color, side, 2), color, pos.occupied())).any()
+    )
+        return moves;
+
+    *(moves++) = Move(Castle::king_source(setup, color, side), Castle::king_target(setup, color, side), Piece::ID::Empty, Color::ID::None, side, Move::Policy::Castle);
+    
+    return moves;
+}
+
+template<Castle::Setup setup, Color::ID color>
+Move* generate_castle_moves(const Position& pos, Move* moves) noexcept {
+    moves = generate_castle_moves<color, setup, Castle::Side::KingSide >(pos, moves);
+    moves = generate_castle_moves<color, setup, Castle::Side::QueenSide>(pos, moves);
+    return moves;
+}
+
+template<Color::ID color>
+Move* generate_castle_moves(const Position& pos, Move* moves) noexcept {
+    switch (pos.setup()) {
+        case Castle::Setup::Modern : return generate_castle_moves<Castle::Setup::Modern , color>(pos, moves);
+        case Castle::Setup::Classic: return generate_castle_moves<Castle::Setup::Classic, color>(pos, moves);
+        default: return moves;
+    }
+}
+
+template<Bitboard::ChunkID chunk_id>
+Move* add_royal_moves(const Position& pos, Move* moves, Square source, Bitboard& targets) noexcept {
+    auto& chunk = targets.chunk(chunk_id);
+    while(chunk) {
+        const auto target = Bitboard::pop_lsb(chunk, chunk_id);
+
+       
+        auto occ = pos.occupied();
+        occ.pop_bit(source);
+        if (pos.get_attackers_bitboard(target, pos.turn().id(), occ).any())
+            continue;
+        
+
+        *(moves++) = Move(source.id(), target.id(), Piece::ID::Empty, Color::ID::None, Castle::Side(0b10), Move::Policy::Normal);
+    }
+    return moves;
+}
+
+Move* add_royal_moves(const Position& pos, Move* moves, Square source, Bitboard& targets) noexcept {
+    moves = add_royal_moves<Bitboard::ChunkID(0)>(pos, moves, source, targets);
+    moves = add_royal_moves<Bitboard::ChunkID(1)>(pos, moves, source, targets);
+    moves = add_royal_moves<Bitboard::ChunkID(2)>(pos, moves, source, targets);
+    moves = add_royal_moves<Bitboard::ChunkID(3)>(pos, moves, source, targets);
+    return moves;
+}
+
+Move* generate_royal_moves(const Position& pos, Move* moves, Square source, const Bitboard& mask) noexcept {
+    auto attacks = get_crawl_attacks<Piece::ID::King>(source);
+    attacks &= mask;
+    moves = add_royal_moves(pos, moves, source, attacks);
+    return moves;
+}
+
+template<Bitboard::ChunkID chunk_id>
+Move* add_normal_moves(Move* moves, Square source, Bitboard& targets) noexcept {
+    auto& chunk = targets.chunk(chunk_id);
+    while(chunk) {
+        const auto target = Bitboard::pop_lsb(chunk, chunk_id);
+
+        // if constexpr (pin) {
+        //     auto occ = pos.occupied();
+        //     occ.pop_bit(source);
+        //     if (pos.get_attackers_bitboard(target, pos.turn().id(), occ).any())
+        //         continue;
+        // } 
+
+        *(moves++) = Move(source.id(), target.id(), Piece::ID::Empty, Color::ID::None, Castle::Side(0b10), Move::Policy::Normal);
+    }
+    return moves;
+}
+
+Move* add_normal_moves(Move* moves, Square source, Bitboard& targets) noexcept {
+    moves = add_normal_moves<Bitboard::ChunkID(0)>(moves, source, targets);
+    moves = add_normal_moves<Bitboard::ChunkID(1)>(moves, source, targets);
+    moves = add_normal_moves<Bitboard::ChunkID(2)>(moves, source, targets);
+    moves = add_normal_moves<Bitboard::ChunkID(3)>(moves, source, targets);
+    return moves;
+}
+
+template<Piece::ID piece, Bitboard::ChunkID chunk_id>
+Move* generate_crawl_moves(Move* moves, Bitboard& sources, const Bitboard& mask) noexcept {
+    auto& chunk = sources.chunk(chunk_id);
+    while(chunk) {
+        const auto source = Bitboard::pop_lsb(chunk, chunk_id);
+        auto attacks = get_crawl_attacks<piece>(source);
+        attacks &= mask;
+        moves = add_normal_moves(moves, source, attacks);
+    }
+    return moves;
+}
+
+template<Piece::ID piece>
+Move* generate_crawl_moves(Move* moves, Bitboard& sources, const Bitboard& mask) noexcept {
+    moves = generate_crawl_moves<piece, Bitboard::ChunkID(0)>(moves, sources, mask);
+    moves = generate_crawl_moves<piece, Bitboard::ChunkID(1)>(moves, sources, mask);
+    moves = generate_crawl_moves<piece, Bitboard::ChunkID(2)>(moves, sources, mask);
+    moves = generate_crawl_moves<piece, Bitboard::ChunkID(3)>(moves, sources, mask);
+    return moves;
+}
+
+template<Piece::ID piece, Bitboard::ChunkID chunk_id>
+Move* generate_slide_moves(Move* moves, Bitboard& sources, const Bitboard& mask, const Bitboard& occupied) noexcept {
+    auto& chunk = sources.chunk(chunk_id);
+    while(chunk) {
+        const auto source = Bitboard::pop_lsb(chunk, chunk_id);
+        auto attacks = get_slide_attacks<piece>(source, occupied);
+        attacks &= mask;
+        moves = add_normal_moves(moves, source, attacks);         
+    }
+    return moves;
+}
+
+template<Piece::ID piece>
+Move* generate_slide_moves(Move* moves, Bitboard& sources, const Bitboard& mask, const Bitboard& occupied) noexcept {
+    moves = generate_slide_moves<piece, Bitboard::ChunkID(0)>(moves, sources, mask, occupied);
+    moves = generate_slide_moves<piece, Bitboard::ChunkID(1)>(moves, sources, mask, occupied);
+    moves = generate_slide_moves<piece, Bitboard::ChunkID(2)>(moves, sources, mask, occupied);
+    moves = generate_slide_moves<piece, Bitboard::ChunkID(3)>(moves, sources, mask, occupied);
+    return moves;
+}
+
+template<Bitboard::ChunkID chunk_id>
+Move* add_pawn_moves(Move* moves, Bitboard& targets, Square::Offset offset, Move::Policy policy) noexcept {
+    auto& chunk = targets.chunk(chunk_id);
+    while(chunk) {
+        const auto target = Bitboard::pop_lsb(chunk, chunk_id);
+        const auto source = target - offset;
+
+        // if constexpr (pin) {
+        //     auto occ = pos.occupied();
+        //     occ.pop_bit(source);
+        //     if (pos.get_attackers_bitboard(target, pos.turn().id(), occ).any())
+        //         continue;
+        // } 
+
+        *(moves++) = Move(source.id(), target.id(), Piece::ID::Empty, Color::ID::None, Castle::Side(0b10), policy);
+    }
+    return moves;
+}
+
+Move* add_pawn_moves(Move* moves, Bitboard& targets, Square::Offset offset, Move::Policy policy) noexcept {
+    moves = add_pawn_moves<Bitboard::ChunkID(0)>(moves, targets, offset, policy);
+    moves = add_pawn_moves<Bitboard::ChunkID(1)>(moves, targets, offset, policy);
+    moves = add_pawn_moves<Bitboard::ChunkID(2)>(moves, targets, offset, policy);
+    moves = add_pawn_moves<Bitboard::ChunkID(3)>(moves, targets, offset, policy);
+    return moves;
+}
+
+template<Color::ID color>
+Move* generate_push_moves(Move* moves, Bitboard& pawn, const Bitboard& mask) noexcept {
+
+    pawn.shift<Square::push(color, 0)>();
+    auto push = pawn & mask & Bitboard::homerank(color);
+    push.shift<Square::push(color, 0)>();
+
+    pawn &= mask;
+    push &= mask;
+
+    moves = add_pawn_moves(moves, pawn, Square::push(color, 0), Move::Policy::Normal);
+    moves = add_pawn_moves(moves, push, Square::push(color, 1), Move::Policy::Stride);     
+
+    return moves;
+}
+
+template<Color::ID color>
+Move* generate_take_moves(Move* moves, const Bitboard& pawn, const Bitboard& mask) noexcept {
+
+    auto east = pawn;
+    auto west = pawn;
+
+    east.shift<Square::take(color, 0)>();
+    west.shift<Square::take(color, 1)>();
+
+    east &= mask;
+    west &= mask;
+
+    moves = add_pawn_moves(moves, east, Square::take(color, 0), Move::Policy::Normal);
+    moves = add_pawn_moves(moves, west, Square::take(color, 1), Move::Policy::Normal);
+
+    return moves;
+}
+
+template<Bitboard::ChunkID chunk_id>
+Move* add_pin_moves(const Position& pos, Move* moves, Bitboard& targets, Square::Offset offset, Move::Policy policy) noexcept {
+    auto& chunk = targets.chunk(chunk_id);
+    while(chunk) {
+        const auto target = Bitboard::pop_lsb(chunk, chunk_id);
+        const auto source = target - offset;
+
+        auto occ = pos.occupied();
+        occ.pop_bit(source);
+        if (pos.get_attackers_bitboard(target, pos.turn().id(), occ).any())
+            continue;
+    
+        *(moves++) = Move(source.id(), target.id(), Piece::ID::Empty, Color::ID::None, Castle::Side(0b10), policy);
+    }
+    return moves;
+}
+
+Move* add_pin_moves(const Position& pos, Move* moves, Bitboard& targets, Square::Offset offset, Move::Policy policy) noexcept {
+    moves = add_pin_moves<Bitboard::ChunkID(0)>(pos, moves, targets, offset, policy);
+    moves = add_pin_moves<Bitboard::ChunkID(1)>(pos, moves, targets, offset, policy);
+    moves = add_pin_moves<Bitboard::ChunkID(2)>(pos, moves, targets, offset, policy);
+    moves = add_pin_moves<Bitboard::ChunkID(3)>(pos, moves, targets, offset, policy);
+    return moves;
+}
+
+template<Bitboard::ChunkID chunk_id>
+Move* add_pin_moves(const Position& pos, Move* moves, Square source, Bitboard& targets) noexcept {
+    auto& chunk = targets.chunk(chunk_id);
+    while(chunk) {
+        const auto target = Bitboard::pop_lsb(chunk, chunk_id);
+
+        auto occ = pos.occupied();
+        occ.pop_bit(source);
+        if (pos.get_attackers_bitboard(target, pos.turn().id(), occ).any())
+                continue;
+
+        *(moves++) = Move(source.id(), target.id(), Piece::ID::Empty, Color::ID::None, Castle::Side(0b10), Move::Policy::Normal);
+    }
+    return moves;
+}
+
+Move* add_pin_moves(const Position& pos, Move* moves, Square source, Bitboard& targets) noexcept {
+    moves = add_pin_moves<Bitboard::ChunkID(0)>(pos, moves, source, targets);
+    moves = add_pin_moves<Bitboard::ChunkID(1)>(pos, moves, source, targets);
+    moves = add_pin_moves<Bitboard::ChunkID(2)>(pos, moves, source, targets);
+    moves = add_pin_moves<Bitboard::ChunkID(3)>(pos, moves, source, targets);
+    return moves;
+}
+
+template<Move::Flag flag, Color::ID color, Bitboard::ChunkID chunk_id>
+Move* generate_pin_moves(const Position& pos, Move* moves, Bitboard& sources, const Bitboard& mask, const Bitboard& checks) noexcept {
+    auto& chunk = sources.chunk(chunk_id);
+    while(chunk) {
+        const auto source = Bitboard::pop_lsb(chunk, chunk_id);
+        const auto piece = pos.board(source.id()).piece().id();
+        switch (piece) {
+            case Piece::ID::Bishop:
+            {
+                auto attacks = get_slide_attacks<Piece::ID::Bishop>(source, pos.occupied()); 
+                attacks &= mask;
+                moves = add_pin_moves(pos, moves, source, attacks);  
+                break;
+            }
+            case Piece::ID::Rook:
+            {
+                auto attacks = get_slide_attacks<Piece::ID::Rook>(source, pos.occupied()); 
+                attacks &= mask;
+                moves = add_pin_moves(pos, moves, source, attacks);  
+                break;
+            }
+            case Piece::ID::Queen:
+            {
+                auto attacks = 
+                get_slide_attacks<Piece::ID::Bishop>(source, pos.occupied()) |
+                get_slide_attacks<Piece::ID::Rook  >(source, pos.occupied()); 
+                attacks &= mask;
+                moves = add_pin_moves(pos, moves, source, attacks);  
+                break;
+            }
+            case Piece::ID::Knight:
+            {
+                auto attacks = get_crawl_attacks<Piece::ID::Knight>(source); 
+                attacks &= mask;
+                moves = add_pin_moves(pos, moves, source, attacks);  
+                break;
+            }
+            case Piece::ID::Pawn:
+            {
+                Bitboard pawn = pos.bitboard(Piece::ID::Pawn) & pos.bitboard(color);
+                Bitboard push = pawn;
+                Bitboard east = pawn;
+                Bitboard west = pawn;
+
+                pawn.shift<Square::push(color, 0)>();
+                push.shift<Square::push(color, 0)>();
+                east.shift<Square::take(color, 0)>();
+                west.shift<Square::take(color, 1)>();
+
+                pawn &= Bitboard::homerank(color);
+                pawn &= flag == Move::Flag::Legal ? ~pos.occupied() & checks : mask;
+                push &= flag == Move::Flag::Legal ? ~pos.occupied() & checks : mask;
+                east &= flag == Move::Flag::Legal ?  pos.opponent() & checks : mask;
+                west &= flag == Move::Flag::Legal ?  pos.opponent() & checks : mask;
+
+                pawn.shift<Square::push(color, 0)>();
+                pawn &= flag == Move::Flag::Legal ? ~pos.occupied() & checks : mask;
+
+                if constexpr (flag != Move::Flag::Noisy) moves = add_pin_moves(pos, moves, pawn, Square::push(color, 0), Move::Policy::Normal);
+                if constexpr (flag != Move::Flag::Noisy) moves = add_pin_moves(pos, moves, push, Square::push(color, 1), Move::Policy::Stride);
+                if constexpr (flag != Move::Flag::Quiet) moves = add_pin_moves(pos, moves, east, Square::take(color, 0), Move::Policy::Normal);
+                if constexpr (flag != Move::Flag::Quiet) moves = add_pin_moves(pos, moves, west, Square::take(color, 1), Move::Policy::Normal);
+                
+                break;
+            }
+            default: break;
+        }
+    }
+    return moves;
+}
+
+template<Move::Flag flag, Color::ID color>
+Move* generate_pin_moves(const Position& pos, Move* moves, const Bitboard& pinned, const Bitboard& mask, const Bitboard& checks) noexcept {
+    if (pinned.any()) return moves;
+    Bitboard sources = pinned;
+    moves = generate_pin_moves<flag, color, Bitboard::ChunkID(0)>(pos, moves, sources, mask, checks);
+    moves = generate_pin_moves<flag, color, Bitboard::ChunkID(1)>(pos, moves, sources, mask, checks);
+    moves = generate_pin_moves<flag, color, Bitboard::ChunkID(2)>(pos, moves, sources, mask, checks);
+    moves = generate_pin_moves<flag, color, Bitboard::ChunkID(3)>(pos, moves, sources, mask, checks);
+    return moves;
+}
+
+template<Move::Flag flag, Color::ID color>
+int generate_all_moves(const Position& pos, Move* moves) noexcept {
     Move* start = moves;
-    // const auto& [checkmask, pinnedmask] = pos.check_pinned_masks_[pos.play_];
 
-    const Bitboard teammate = pos.bitboard(color       ) | pos.bitboard(color.ally());
-    const Bitboard opponent = pos.bitboard(color.next()) | pos.bitboard(color.prev());
-    const Bitboard occupancy = teammate | opponent;
-
-    // // Compute occupancy mask
-    // const auto occupancy = 
-    // pos.bitboard(Team(Team::RY)) |
-    // pos.bitboard(Team(Team::BG));
-
-    // Compute filter mask
+    const Bitboard teammate = pos.bitboard(Color(color).self().id()) | pos.bitboard(Color(color).ally().id());
+    const Bitboard opponent = pos.bitboard(Color(color).next().id()) | pos.bitboard(Color(color).prev().id());
+    const Bitboard occupied = teammate | opponent;
+    const auto& [pinned, checks] = pos.get_pinned_checks_bitboards();
+    const Bitboard us = pos.bitboard(color) & ~pinned;
+    
     Bitboard mask;
-    if constexpr (flag == MoveFlag::Noisy) mask = opponent;
-    if constexpr (flag == MoveFlag::Quiet) mask = ~occupancy;
+    if constexpr (flag == Move::Flag::Noisy) { mask =  opponent; }
+    if constexpr (flag == Move::Flag::Quiet) { mask = ~occupied; }
+    if constexpr (flag == Move::Flag::Legal) { mask = ~teammate; }
 
-    // Generate King moves
-    moves = generate_king_moves(pos, moves, pos.royal(color), mask, flag);
+    // Generate king moves
+    auto ksq = pos.royal(color);
+    moves = generate_royal_moves(pos, moves, ksq, mask);
+    mask &= checks;
 
-    // // Handle checks
-    // mask &= checkmask;
+    // Generate knight moves
+    constexpr auto n = Piece::ID::Knight;
+    auto nBB = pos.bitboard(n);
+    nBB &= us;
+    moves = generate_crawl_moves<n>(moves, nBB, mask); 
 
-    const Bitboard us = pos.bitboard(color);
-    // 
-    auto knights = pos.bitboard(Piece(Piece::Knight));
-    knights &= us;
-    moves = generate_knight_moves<CHUNK_0>(pos, moves, knights, mask, flag);
-    moves = generate_knight_moves<CHUNK_1>(pos, moves, knights, mask, flag);
-    moves = generate_knight_moves<CHUNK_2>(pos, moves, knights, mask, flag);
-    moves = generate_knight_moves<CHUNK_3>(pos, moves, knights, mask, flag);
+    // Generate bishop, rook, queen moves
+    constexpr auto b = Piece::ID::Bishop;
+    constexpr auto r = Piece::ID::Rook;
+    constexpr auto q = Piece::ID::Queen;
 
-    //
-    auto bishops = pos.bitboard(Piece(Piece::Bishop));
-    auto rooks   = pos.bitboard(Piece(Piece::Rook  ));
-    auto queens  = pos.bitboard(Piece(Piece::Queen ));
+    auto bBB = pos.bitboard(b);
+    auto rBB = pos.bitboard(r);
+    auto qBB = pos.bitboard(q);
 
-    //
-    bishops |= queens;
-    bishops &= us;
-    moves = generate_bishop_moves<CHUNK_0>(pos, moves, bishops, mask, occupancy, flag);
-    moves = generate_bishop_moves<CHUNK_1>(pos, moves, bishops, mask, occupancy, flag);
-    moves = generate_bishop_moves<CHUNK_2>(pos, moves, bishops, mask, occupancy, flag);
-    moves = generate_bishop_moves<CHUNK_3>(pos, moves, bishops, mask, occupancy, flag);
+    bBB |= qBB; bBB &= us;
+    rBB |= qBB; rBB &= us;
+    
+    moves = generate_slide_moves<b>(moves, bBB, mask, occupied);
+    moves = generate_slide_moves<r>(moves, rBB, mask, occupied);
+    
+    // Generate pawn moves
+    constexpr auto p = Piece::ID::Pawn; 
+    constexpr auto pmask = ~Bitboard::promote(color);
+    constexpr auto emask =  Bitboard::promote(color);
+    auto pBB = pos.bitboard(p) & us;
+    auto eBB = pBB;
+    pBB &= pmask;
+    eBB &= emask;
 
-    //
-    rooks |= queens;
-    rooks &= us;
-    moves = generate_rook_moves<CHUNK_0>(pos, moves, rooks, mask, occupancy, flag);
-    moves = generate_rook_moves<CHUNK_1>(pos, moves, rooks, mask, occupancy, flag);
-    moves = generate_rook_moves<CHUNK_2>(pos, moves, rooks, mask, occupancy, flag);
-    moves = generate_rook_moves<CHUNK_3>(pos, moves, rooks, mask, occupancy, flag);
-
-    // 
-    auto pawns = pos.bitboard(Piece(Piece::Pawn));
-    pawns &= us;
-    auto nonevolve = (pawns & ~promotion_bitboard(color));
-    auto    evolve = (pawns &  promotion_bitboard(color));
-
-    // Generate Pawn moves
-    if constexpr (flag == MoveFlag::Noisy) moves = generate_take_moves<color>(pos, moves, nonevolve, mask);
-    if constexpr (flag == MoveFlag::Quiet) moves = generate_push_moves<color>(pos, moves, nonevolve, mask, occupancy);
+    if constexpr (flag != Move::Flag::Quiet) 
+        moves = generate_take_moves<color>(moves, pBB, flag == Move::Flag::Legal ?  opponent & checks : mask); 
+    if constexpr (flag != Move::Flag::Noisy) 
+        moves = generate_push_moves<color>(moves, pBB, flag == Move::Flag::Legal ? ~occupied & checks : mask);
 
     // Generate special moves
-    if constexpr (flag == MoveFlag::Noisy) moves = generate_enpass_moves<color>(pos, moves, evolve);
-    if constexpr (flag == MoveFlag::Noisy) moves = generate_evolve_moves<color>(pos, moves, evolve);
-    if constexpr (flag == MoveFlag::Quiet) moves = generate_castle_moves<color>(pos, moves, setup );
+    if constexpr (flag != Move::Flag::Quiet) 
+        moves = generate_evolve_moves<color>(pos, moves, eBB);
+    if constexpr (flag != Move::Flag::Quiet) 
+        moves = generate_enpass_moves<color>(pos, moves);
+    if constexpr (flag != Move::Flag::Noisy) 
+        moves = generate_castle_moves<color>(pos, moves);
 
-    // Set pinned pieces moves as pseudo
-    // if (!pinnedmask.empty())
-    // {
-    //     for (std::size_t chunk_id = 0; chunk_id < CHUNK_NB; chunk_id++)
-    //     {
-    //         auto chunk = pinnedmask.chunk(chunk_id);
-    //         while (chunk)
-    //         {
-    //             const auto sq = pop_lsb(chunk, chunk_id);
-    //             for (Move* move = start; move != moves; move++) {
-    //                 move->setpseudo(sq);
-    //             }
-    //         }
-    //     }
-    // }
-
-    return moves - start;
+    return generate_pin_moves<flag, color>(pos, moves, pinned, mask, checks) - start;
 }
 
-std::size_t generate_noisy_moves(const Position& pos, Move* moves, GameSetup setup) noexcept
-{
-    const auto color = pos.turn();
-    switch (color.value_) 
-    {
-        case Color::Red   : return generate_moves<MoveFlag::Noisy, Color::Red   >(pos, moves, setup);
-        case Color::Blue  : return generate_moves<MoveFlag::Noisy, Color::Blue  >(pos, moves, setup);
-        case Color::Yellow: return generate_moves<MoveFlag::Noisy, Color::Yellow>(pos, moves, setup);
-        case Color::Green : return generate_moves<MoveFlag::Noisy, Color::Green >(pos, moves, setup);
+[[nodiscard]] int generate_noisy_moves(Position& pos, Move* moves) noexcept {
+    pos.set_pinned_checks_bitboards();
+    switch (pos.turn().id()) {
+        case Color::ID::Red   : return generate_all_moves<Move::Flag::Noisy, Color::ID::Red   >(pos, moves);
+        case Color::ID::Blue  : return generate_all_moves<Move::Flag::Noisy, Color::ID::Blue  >(pos, moves);
+        case Color::ID::Yellow: return generate_all_moves<Move::Flag::Noisy, Color::ID::Yellow>(pos, moves);
+        case Color::ID::Green : return generate_all_moves<Move::Flag::Noisy, Color::ID::Green >(pos, moves);
         default: return 0;
     }
 }
 
-std::size_t generate_quiet_moves(const Position& pos, Move* moves, GameSetup setup) noexcept
-{
-    const auto color = pos.turn();
-    switch (color.value_) 
-    {
-        case Color::Red   : return generate_moves<MoveFlag::Quiet, Color::Red   >(pos, moves, setup);
-        case Color::Blue  : return generate_moves<MoveFlag::Quiet, Color::Blue  >(pos, moves, setup);
-        case Color::Yellow: return generate_moves<MoveFlag::Quiet, Color::Yellow>(pos, moves, setup);
-        case Color::Green : return generate_moves<MoveFlag::Quiet, Color::Green >(pos, moves, setup);
+[[nodiscard]] int generate_quiet_moves(Position& pos, Move* moves) noexcept {
+    switch (pos.turn().id()) {
+        case Color::ID::Red   : return generate_all_moves<Move::Flag::Quiet, Color::ID::Red   >(pos, moves);
+        case Color::ID::Blue  : return generate_all_moves<Move::Flag::Quiet, Color::ID::Blue  >(pos, moves);
+        case Color::ID::Yellow: return generate_all_moves<Move::Flag::Quiet, Color::ID::Yellow>(pos, moves);
+        case Color::ID::Green : return generate_all_moves<Move::Flag::Quiet, Color::ID::Green >(pos, moves);
         default: return 0;
+    }
+}
+
+[[nodiscard]] int generate_legal_moves(Position& pos, Move* moves) noexcept {
+    pos.set_pinned_checks_bitboards();
+    switch (pos.turn().id()) {
+        case Color::ID::Red   : return generate_all_moves<Move::Flag::Legal, Color::ID::Red   >(pos, moves);
+        case Color::ID::Blue  : return generate_all_moves<Move::Flag::Legal, Color::ID::Blue  >(pos, moves);
+        case Color::ID::Yellow: return generate_all_moves<Move::Flag::Legal, Color::ID::Yellow>(pos, moves);
+        case Color::ID::Green : return generate_all_moves<Move::Flag::Legal, Color::ID::Green >(pos, moves);
+        default : return 0;
     }
 }
 

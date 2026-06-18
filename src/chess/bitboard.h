@@ -1,433 +1,459 @@
 #pragma once
 
+#include <iostream>
 #include <cstdint>
 #include <immintrin.h>
-#include "chess.h"
 #include "constants.h"
+#include "square.h"
+#include "color.h"
 
-namespace athena
-{
+namespace athena::chess {
 
-class alignas(32) Bitboard
-{
-    public:
+class alignas(32) Bitboard {
+public:
+    using Chunk   = uint64_t;
+    using ChunkID = uint8_t;
 
-    friend Bitboard subtract(Square sq1, Square sq2) noexcept;
-    friend Bitboard rook_attacks(Square sq, const Bitboard& occupied) noexcept;
+    constexpr Bitboard() noexcept = default;
+    constexpr Bitboard(Chunk c) noexcept : chunks_{c, c, c, c} {}
+    constexpr Bitboard(Chunk a, Chunk b, Chunk c, Chunk d) noexcept : chunks_{a, b, c, d} {}
 
-    template<std::size_t chunk_id, Piece piece>
-    friend void process_candidates(Square sq, Bitboard& candidates, Bitboard& checkmask, Bitboard& pinnedmask, const Bitboard& blockers, const Bitboard& occupanys) noexcept;
-
-    // Default constructor
-    constexpr Bitboard() = default;
-
-    // Chunk-by-chunk constructor
-    constexpr Bitboard(uint64_t chunk0, uint64_t chunk1, uint64_t chunk2, uint64_t chunk3) noexcept 
-        : chunks_{chunk0, chunk1, chunk2, chunk3} {}
-
-    // Chunk constructor
-    explicit constexpr Bitboard(uint64_t chunk) noexcept 
-        : chunks_{chunk, chunk, chunk, chunk} {}
-
-    // Square constructor
-    explicit constexpr Bitboard(Square sq) noexcept 
-        : chunks_{0, 0, 0, 0}
-    {
-        set(sq);
-    }
-
-    // Copy constructor
-    constexpr Bitboard(const Bitboard& other) noexcept 
-        : chunks_{other.chunks_[0], other.chunks_[1], other.chunks_[2], other.chunks_[3]} {}
-
-    // Move constructor
-    constexpr Bitboard(Bitboard&& other) noexcept 
-        : chunks_{other.chunks_[0], other.chunks_[1], other.chunks_[2], other.chunks_[3]} {}
-
-    constexpr Bitboard operator=(const Bitboard& other) noexcept
-    {
-        for (std::size_t i = 0; i < CHUNK_NB; i++) {
-            chunks_[i] = other.chunks_[i];
-        }
+    constexpr Bitboard& operator&=(const Bitboard& __restrict__ rhs) noexcept {
+        chunks_[0] &= rhs.chunks_[0];
+        chunks_[1] &= rhs.chunks_[1];
+        chunks_[2] &= rhs.chunks_[2];
+        chunks_[3] &= rhs.chunks_[3];
         return *this;
     }
 
-    constexpr Bitboard& operator=(uint64_t value) noexcept
-    {
-        chunks_[0] = value;
-        chunks_[1] = value;
-        chunks_[2] = value;
-        chunks_[3] = value;
+    constexpr Bitboard& operator|=(const Bitboard& __restrict__ rhs) noexcept {
+        chunks_[0] |= rhs.chunks_[0];
+        chunks_[1] |= rhs.chunks_[1];
+        chunks_[2] |= rhs.chunks_[2];
+        chunks_[3] |= rhs.chunks_[3];
         return *this;
     }
 
-    // constexpr Bitboard(const Bitboard& other) noexcept
-    //     : chunks_{other.chunks_[0], other.chunks_[1], other.chunks_[2], other.chunks_[3]} {}
-
-    // constexpr Bitboard(uint64_t chunk0, uint64_t chunk1, uint64_t chunk2, uint64_t chunk3) noexcept
-    //     : chunks_{chunk0, chunk1, chunk2, chunk3} {}
-
-    constexpr Bitboard& operator&=(uint64_t mask) noexcept
-    {
-        for (std::size_t i = 0; i < CHUNK_NB; i++) {
-            chunks_[i] &= mask;
-        }
+    constexpr Bitboard& operator^=(const Bitboard& __restrict__ rhs) noexcept {
+        chunks_[0] ^= rhs.chunks_[0];
+        chunks_[1] ^= rhs.chunks_[1];
+        chunks_[2] ^= rhs.chunks_[2];
+        chunks_[3] ^= rhs.chunks_[3];
         return *this;
     }
 
-    constexpr Bitboard& operator|=(uint64_t mask) noexcept
-    {
-        for (std::size_t i = 0; i < CHUNK_NB; i++) {
-            chunks_[i] |= mask;
-        }
+    constexpr Bitboard& operator<<=(int shift) noexcept {
+        chunks_[0] <<= shift;
+        chunks_[1] <<= shift;
+        chunks_[2] <<= shift;
+        chunks_[3] <<= shift;
         return *this;
     }
 
-    constexpr Bitboard operator~() const noexcept
-    {
-        return Bitboard(
-            ~chunks_[0], 
-            ~chunks_[1], 
-            ~chunks_[2], 
-            ~chunks_[3]);
-    }
-
-    constexpr Bitboard operator&(const Bitboard& other) const noexcept {
-        Bitboard result(*this);
-        result &= other;
-        return result;
-    }
-
-    constexpr Bitboard operator|(const Bitboard& other) const noexcept {
-        Bitboard result(*this);
-        result |= other;
-        return result;
-    }
-
-    constexpr Bitboard operator&(uint64_t mask) const noexcept {
-        Bitboard result(*this);
-        result &= mask;
-        return result;
-    }
-
-    constexpr Bitboard operator|(uint64_t mask) const noexcept {
-        Bitboard result(*this);
-        result |= mask;
-        return result;
-    }
-
-    constexpr Bitboard& operator&=(const Bitboard& other) noexcept
-    {
-        for (std::size_t i = 0; i < CHUNK_NB; i++) {
-            chunks_[i] &= other.chunks_[i];
-        }
+    constexpr Bitboard& operator>>=(int shift) noexcept {
+        chunks_[0] >>= shift;
+        chunks_[1] >>= shift;
+        chunks_[2] >>= shift;
+        chunks_[3] >>= shift;
         return *this;
     }
 
-    constexpr Bitboard& operator|=(const Bitboard& other) noexcept
-    {
-        for (std::size_t i = 0; i < CHUNK_NB; i++) {
-            chunks_[i] |= other.chunks_[i];
-        }
+    constexpr Bitboard operator&(const Bitboard& __restrict__ rhs) const noexcept {
+        return {
+            chunks_[0] & rhs.chunks_[0],
+            chunks_[1] & rhs.chunks_[1],
+            chunks_[2] & rhs.chunks_[2],
+            chunks_[3] & rhs.chunks_[3],
+        };
+    }
+
+    constexpr Bitboard operator|(const Bitboard& __restrict__ rhs) const noexcept {
+        return {
+            chunks_[0] | rhs.chunks_[0],
+            chunks_[1] | rhs.chunks_[1],
+            chunks_[2] | rhs.chunks_[2],
+            chunks_[3] | rhs.chunks_[3],
+        };
+    }
+    
+    constexpr Bitboard operator^(const Bitboard& __restrict__ rhs) const noexcept {
+        return {
+            chunks_[0] ^ rhs.chunks_[0],
+            chunks_[1] ^ rhs.chunks_[1],
+            chunks_[2] ^ rhs.chunks_[2],
+            chunks_[3] ^ rhs.chunks_[3],
+        };
+    }
+     
+    constexpr Bitboard operator<<(int shift) const noexcept {
+        return {
+            chunks_[0] << shift,
+            chunks_[1] << shift,
+            chunks_[2] << shift,
+            chunks_[3] << shift,
+        };
+    }
+    
+    constexpr Bitboard operator>>(int shift) const noexcept {
+        return {
+            chunks_[0] >> shift,
+            chunks_[1] >> shift,
+            chunks_[2] >> shift,
+            chunks_[3] >> shift,
+        };
+    }
+
+    constexpr Bitboard operator~() const noexcept {
+        return {
+            ~chunks_[0],
+            ~chunks_[1],
+            ~chunks_[2],
+            ~chunks_[3],
+        };
+    }
+    
+    constexpr bool has_bit(Square sq) const noexcept { 
+        return (chunks_[sq.chunk()] >> sq.index()) & 0x1;
+    }
+
+    constexpr Bitboard& set_bit(Square sq) noexcept { 
+        chunks_[sq.chunk()] |=  (1ULL << sq.index()); 
         return *this;
     }
 
-    // Shift each 64-bit chunk independently (no carry between chunks)
-    void operator<<(int s) noexcept;
-    void operator>>(int s) noexcept;
+    constexpr Bitboard& pop_bit(Square sq) noexcept { 
+        chunks_[sq.chunk()] &= ~(1ULL << sq.index()); 
+        return *this;
+    }
 
-    // Shift each 64-bit chunk dependently (cross-chunk carry)
-    template<Offset offset>
-    void shift() noexcept;
+    constexpr Chunk combine() const noexcept {
+        return 
+            chunks_[0] | 
+            chunks_[1] | 
+            chunks_[2] | 
+            chunks_[3];
+    }
 
-    // Set the bit at the given square
-    constexpr void set(Square sq) noexcept;
-
-    // Clear the bit at the given square
-    constexpr void pop(Square sq) noexcept;
-
-    // Check if the bit at the given square is set
-    constexpr bool has(Square sq) const noexcept;
-
-    // Combine the 4 chunks into a single 64-bit integer
-    constexpr uint64_t combine() const noexcept;
-
-    // Check if all bits are zero
-    constexpr bool empty() const noexcept;
+    constexpr bool empty() const noexcept {
+        return combine() == 0;
+    }
 
     constexpr bool any() const noexcept {
         return combine() != 0;
     }
 
-    // Count the number of set bits
-    int count() const noexcept;
-
-    // 
-    template<std::size_t chunk_id>
-    Square pop_lsb() noexcept
-    {
-        int b = __builtin_ctzll(chunks_[chunk_id]);
-        chunks_[chunk_id] &= chunks_[chunk_id] - 1;
-        return Square(chunk_id * CHUNK_SIZE + b);
+    int count() const noexcept {
+        return __builtin_popcountll(chunks_[0])
+             + __builtin_popcountll(chunks_[1])
+             + __builtin_popcountll(chunks_[2])
+             + __builtin_popcountll(chunks_[3]);
     }
 
-    Square lsb() const noexcept
-    {
-        for (std::size_t chunk_id = 0; chunk_id < CHUNK_NB; chunk_id++)
-        {
-            const auto chunk = chunks_[chunk_id];
-            if (chunk)
-                return __builtin_ctzll(chunk);
+    void swap_bytes() noexcept {
+        std::swap(chunks_[0], chunks_[3]);
+        std::swap(chunks_[1], chunks_[2]);
+        chunks_[0] = __builtin_bswap64(chunks_[0]);
+        chunks_[1] = __builtin_bswap64(chunks_[1]);
+        chunks_[2] = __builtin_bswap64(chunks_[2]);
+        chunks_[3] = __builtin_bswap64(chunks_[3]);
+    }
+
+    Chunk& chunk(ChunkID id) noexcept { return chunks_[id]; }
+    const Chunk& chunk(ChunkID id) const noexcept { return chunks_[id]; }
+
+    template<Square::Offset offset>
+    void shift_east() noexcept {
+        constexpr int bits = static_cast<int>(offset);
+        constexpr int anti = CHUNK_SIZE - bits;
+        const Chunk c0 = chunks_[0], c1 = chunks_[1], c2 = chunks_[2], c3 = chunks_[3];
+        chunks_[0] = (c0 >> bits) | (c1 << anti);
+        chunks_[1] = (c1 >> bits) | (c2 << anti);
+        chunks_[2] = (c2 >> bits) | (c3 << anti);
+        chunks_[3] =  c3 >> bits;
+    }
+
+    template<Square::Offset offset>
+    void shift_west() noexcept {
+        constexpr int bits = static_cast<int>(offset);
+        constexpr int anti = CHUNK_SIZE - bits;
+        const Chunk c0 = chunks_[0], c1 = chunks_[1], c2 = chunks_[2], c3 = chunks_[3];
+        chunks_[0] =  c0 << bits;
+        chunks_[1] = (c1 << bits) | (c0 >> anti);
+        chunks_[2] = (c2 << bits) | (c1 >> anti);
+        chunks_[3] = (c3 << bits) | (c2 >> anti);
+    }
+
+    template<Square::Offset offset>
+    void shift() noexcept {
+        if constexpr (offset > 0) shift_west<offset>();
+        if constexpr (offset < 0) shift_east<Square::Offset(-static_cast<int>(offset))>();
+    }
+
+    template<ChunkID chunk_id>
+    void ray_attacks_cross(Square::Index idx) noexcept;
+
+    template<ChunkID chunk_id>
+    void ray_attacks_chunk(Square::Index idx) noexcept;
+
+    void print(bool board16x16 = true) const;
+
+private:
+    Chunk chunks_[CHUNK_NB];
+
+public:
+    static Square pop_lsb(Chunk& chunk, ChunkID chunk_id) noexcept {
+        int bit = __builtin_ctzll(chunk);
+        chunk &= chunk - 1;
+        return static_cast<Square::ID>(static_cast<int>(chunk_id) * CHUNK_SIZE + bit);
+    }
+    
+    static Square pop_msb(Chunk& chunk, ChunkID chunk_id) noexcept {
+        int bit = 63 - __builtin_clzll(chunk);
+        chunk &= ~(1ULL << bit);
+        return static_cast<Square::ID>(static_cast<int>(chunk_id) * CHUNK_SIZE + bit);
+    }
+
+    static Square pop_lsb(Bitboard& bb) noexcept {
+        for (int i = 0; i < 4; ++i) {
+            if (bb.chunks_[i])
+                return pop_lsb(bb.chunks_[i], i);
         }
-
-        return Square::Offboard;
+        return Square::offboard();
+    }
+    
+    static Square pop_msb(Bitboard& bb) noexcept {
+        for (int i = 3; i >= 0; --i) {
+            if (bb.chunks_[i])
+                return pop_msb(bb.chunks_[i], i);
+        }
+        return Square::offboard();
     }
 
-    // pop_msb
-    // msb
-
-    // hex
-    // decimal
-
-    uint64_t chunk(std::size_t chunk_id) const noexcept {
-        return chunks_[chunk_id]; 
+    static Square lsb(Chunk chunk, ChunkID chunk_id) noexcept {
+        int bit = __builtin_ctzll(chunk);
+        return static_cast<Square::ID>(static_cast<int>(chunk_id) * CHUNK_SIZE + bit);
+    }
+    
+    static Square msb(Chunk chunk, ChunkID chunk_id) noexcept {
+        int bit = 63 - __builtin_clzll(chunk);
+        return static_cast<Square::ID>(static_cast<int>(chunk_id) * CHUNK_SIZE + bit);
+    }
+    
+    static Square lsb(const Bitboard& bb) noexcept {
+        for (int i = 0; i < 4; ++i) {
+            if (bb.chunks_[i])
+                return lsb(bb.chunks_[i], i);
+        }
+        return Square::offboard();
+    }
+    
+    static Square msb(const Bitboard& bb) noexcept {
+        for (int i = 3; i >= 0; --i) {
+            if (bb.chunks_[i])
+                return msb(bb.chunks_[i], i);
+        }
+        return Square::offboard();
     }
 
-    template<std::size_t chunk_id>
-    uint64_t& chunk() noexcept { return chunks_[chunk_id]; }
+    static constexpr Bitboard homerank(Color::ID color) noexcept;
+    static constexpr Bitboard promote (Color::ID color) noexcept;
 
-    void print(bool debug = true) const;
+    static constexpr Bitboard ones() noexcept { return Bitboard(UINT64_MAX);}
+    static constexpr Bitboard zero() noexcept { return Bitboard(0ULL);}
 
-    private:
-    uint64_t chunks_[CHUNK_NB];
+    static constexpr Bitboard valid() noexcept;
+    static constexpr Bitboard stone() noexcept;
 };
 
-constexpr void Bitboard::set(Square sq) noexcept {
-    chunks_[sq.chunk()] |= 1ULL << sq.index();
-}
+consteval Bitboard makeRank(Square::Rank rank) noexcept { Bitboard bb{}; for (int f=0; f<FILE_NB; f++) { bb.set_bit(Square(Square::File(f), rank)); } return bb; }
+consteval Bitboard makeFile(Square::File file) noexcept { Bitboard bb{}; for (int r=0; r<RANK_NB; r++) { bb.set_bit(Square(file, Square::Rank(r))); } return bb; }
 
-constexpr void Bitboard::pop(Square sq) noexcept {
-    chunks_[sq.chunk()] &= ~(1ULL << sq.index());
-}
+alignas(64) inline constexpr 
+std::array<std::pair<Bitboard, Bitboard>, COLOR_NB> 
+TABLE_HOMERANK_PROMOTES = {{
+    { makeRank(static_cast<Square::Rank>(          HOMERANK    )) | makeRank(static_cast<Square::Rank>(          HOMERANK + 1)), makeRank(static_cast<Square::Rank>(          PROMOTES    )) },
+    { makeFile(static_cast<Square::File>(          HOMERANK    )) | makeFile(static_cast<Square::File>(          HOMERANK + 1)), makeFile(static_cast<Square::File>(          PROMOTES    )) },
+    { makeRank(static_cast<Square::Rank>(RANK_NB - HOMERANK - 2)) | makeRank(static_cast<Square::Rank>(RANK_NB - HOMERANK - 1)), makeRank(static_cast<Square::Rank>(RANK_NB - PROMOTES - 1)) },
+    { makeFile(static_cast<Square::File>(FILE_NB - HOMERANK - 2)) | makeFile(static_cast<Square::File>(FILE_NB - HOMERANK - 1)), makeFile(static_cast<Square::File>(FILE_NB - PROMOTES - 1)) },
+}};  
 
-constexpr bool Bitboard::has(Square sq) const noexcept {
-    return (chunks_[sq.chunk()] >> sq.index()) & 0x1;
-}
+inline constexpr Bitboard Bitboard::homerank(Color::ID color) noexcept { return TABLE_HOMERANK_PROMOTES[static_cast<uint8_t>(color)].first ; }
+inline constexpr Bitboard Bitboard::promote (Color::ID color) noexcept { return TABLE_HOMERANK_PROMOTES[static_cast<uint8_t>(color)].second; }
 
-inline void Bitboard::operator<<(int s) noexcept
-{
-    chunks_[0] <<= s;
-    chunks_[1] <<= s;
-    chunks_[2] <<= s;
-    chunks_[3] <<= s;
-}
-
-inline void Bitboard::operator>>(int s) noexcept
-{
-    chunks_[0] >>= s;
-    chunks_[1] >>= s;
-    chunks_[2] >>= s;
-    chunks_[3] >>= s;
-}
-
-constexpr uint64_t Bitboard::combine() const noexcept
-{
-    return 
-    chunks_[0] | 
-    chunks_[1] | 
-    chunks_[2] |
-    chunks_[3];
-}
-
-constexpr bool Bitboard::empty() const noexcept {
-    return combine() == 0;
-}
-
-inline int Bitboard::count() const noexcept
-{
-    return 
-    __builtin_popcountll(chunks_[0]) +
-    __builtin_popcountll(chunks_[1]) +
-    __builtin_popcountll(chunks_[2]) +
-    __builtin_popcountll(chunks_[3]);
-}
-
-// Return the bitboard of all bits between two squares
-inline Bitboard subtract(Square sq1, Square sq2) noexcept
-{
-    if (sq1 < sq2)
-        std::swap(sq1, sq2);
-
-    Bitboard result;
-    Bitboard bb1(sq1);
-    Bitboard bb2(sq2);
-
-    uint64_t borrow;
-    borrow = __builtin_sub_overflow(bb1.chunks_[0], bb2.chunks_[0]         , &result.chunks_[0]);
-    borrow = __builtin_sub_overflow(bb1.chunks_[1], bb2.chunks_[1] + borrow, &result.chunks_[1]);
-    borrow = __builtin_sub_overflow(bb1.chunks_[2], bb2.chunks_[2] + borrow, &result.chunks_[2]);
-             __builtin_sub_overflow(bb1.chunks_[3], bb2.chunks_[3] + borrow, &result.chunks_[3]);
-
-    return result;
-}
-
-consteval Bitboard rank_bitboard(int rank) //valid & stone_bitboard
-{
-    Bitboard bb(0ULL);
-    for (int file = 0; file < FILE_NB; file++) bb.set(Square(rank, file));
+inline constexpr Bitboard Bitboard::valid() noexcept {
+    Bitboard bb {0ULL};
+    for (int s=0; s<SQUARE_NB; s++) {
+        auto sq = Square(static_cast<Square::ID>(s));
+        if (sq.isValid()) bb.set_bit(sq); 
+    }
     return bb;
 }
 
-consteval Bitboard file_bitboard(int file)
-{
-    Bitboard bb(0ULL);
-    for (int rank = 0; rank < RANK_NB; rank++) bb.set(Square(rank, file));
+inline constexpr Bitboard Bitboard::stone() noexcept {
+    Bitboard bb {0ULL};
+    for (int s=0; s<SQUARE_NB; s++) {
+        auto sq = Square(static_cast<Square::ID>(s));
+        if (sq.isStone()) bb.set_bit(sq); 
+    }
     return bb;
 }
 
-inline constexpr std::array<Bitboard, COLOR_NB> HOMERANK_BITBOARD_TABLE = []()
-{
-    std::array<Bitboard, COLOR_NB> arr {};
-    arr[Color::Red   ] = rank_bitboard(          HOMERANK    ) | rank_bitboard(          HOMERANK + 1);
-    arr[Color::Blue  ] = file_bitboard(          HOMERANK    ) | file_bitboard(          HOMERANK + 1);
-    arr[Color::Yellow] = rank_bitboard(RANK_NB - HOMERANK - 2) | rank_bitboard(RANK_NB - HOMERANK - 1);
-    arr[Color::Green ] = file_bitboard(FILE_NB - HOMERANK - 2) | file_bitboard(FILE_NB - HOMERANK - 1);
-    return arr;    
-}();
-
-inline constexpr std::array<Bitboard, COLOR_NB> PROMOTION_BITBOARD_TABLE = []()
-{
-    std::array<Bitboard, COLOR_NB> arr {};
-    arr[Color::Red   ] = rank_bitboard(          PROMOTIONRANK - 1);
-    arr[Color::Blue  ] = file_bitboard(          PROMOTIONRANK - 1);
-    arr[Color::Yellow] = rank_bitboard(RANK_NB - PROMOTIONRANK + 1);
-    arr[Color::Green ] = file_bitboard(FILE_NB - PROMOTIONRANK + 1);
-    return arr;  
-}();
-
-inline constexpr Bitboard homerank_bitboard(Color color) noexcept { // Bitboard::homerank
-    return HOMERANK_BITBOARD_TABLE[color.value_];
+inline Bitboard& operator-=(
+    Bitboard& __restrict__ bitboard, Square sq) noexcept {
+    Bitboard bb{};
+    bb.set_bit(sq);
+    uint64_t borrow; 
+    borrow = __builtin_sub_overflow(bitboard.chunk(0), bb.chunk(0)         , &bitboard.chunk(0));
+    borrow = __builtin_sub_overflow(bitboard.chunk(1), bb.chunk(1) + borrow, &bitboard.chunk(1));
+    borrow = __builtin_sub_overflow(bitboard.chunk(2), bb.chunk(2) + borrow, &bitboard.chunk(2));
+             __builtin_sub_overflow(bitboard.chunk(3), bb.chunk(3) + borrow, &bitboard.chunk(3));
+    return bitboard;
 }
 
-inline constexpr Bitboard promotion_bitboard(Color color) noexcept {
-    return PROMOTION_BITBOARD_TABLE[color.value_];
-}
+// template<>
+// inline void Bitboard::ray_attacks_cross<static_cast<Bitboard::ChunkID>(0)>(Square::Index idx) noexcept {
+//     const uint64_t index = 1ULL << static_cast<uint8_t>(idx);
+//     const uint64_t lower = (index - 1);
+//     const uint64_t upper = ~lower;
+//     uint64_t bu = index;
+//     uint64_t bl = index;
+//     bl = __builtin_bswap64(bl);
+//     uint64_t u3, u2, u1, u0, l0;
+//     u3 = chunks_[3];
+//     u2 = chunks_[2];
+//     u1 = chunks_[1];
+//     u0 = chunks_[0] & upper;
+//     l0 = chunks_[0] & lower;
+//     l0 = __builtin_bswap64(l0);
+//     bl = __builtin_sub_overflow(l0, bl, &l0);
+//     bu = __builtin_sub_overflow(u0, bu, &chunks_[0]);
+//     bu = __builtin_sub_overflow(u1, bu, &chunks_[1]);
+//     bu = __builtin_sub_overflow(u2, bu, &chunks_[2]);
+//          __builtin_sub_overflow(u3, bu, &chunks_[3]);
+//     chunks_[0] |= __builtin_bswap64(l0);
+// }
 
-inline consteval Bitboard valid_bitboard() noexcept
-{
-    Bitboard bb(0);
-    for (auto sq: squares_array()) if (sq.valid()) bb.set(sq);
-    return bb;
-}
+// template<>
+// inline void Bitboard::ray_attacks_cross<static_cast<Bitboard::ChunkID>(1)>(Square::Index idx) noexcept {
+//     const uint64_t index = 1ULL << static_cast<uint8_t>(idx);
+//     const uint64_t lower = (index - 1);
+//     const uint64_t upper = ~lower;
+//     uint64_t bu = index;
+//     uint64_t bl = index;
+//     bl = __builtin_bswap64(bl);
+//     uint64_t u3, u2, u1, l1, l0;
+//     u3 = chunks_[3];
+//     u2 = chunks_[2];
+//     u1 = chunks_[1] & upper;
+//     l1 = chunks_[1] & lower;
+//     l0 = chunks_[0];
+//     l1 = __builtin_bswap64(l1); 
+//     l0 = __builtin_bswap64(l0); 
+//     bl = __builtin_sub_overflow(l1, bl, &l1);
+//     bl = __builtin_sub_overflow(l0, bl, &l0);
+//     bu = __builtin_sub_overflow(u1, bu, &chunks_[1]);
+//     bu = __builtin_sub_overflow(u2, bu, &chunks_[2]);
+//          __builtin_sub_overflow(u3, bu, &chunks_[3]);
+//     chunks_[0]  = __builtin_bswap64(l0);
+//     chunks_[1] |= __builtin_bswap64(l1);
+// }
 
-// Bitboard::stone()
-inline consteval Bitboard stone_bitboard() noexcept 
-{
-    Bitboard bb(0);
-    for (auto sq: squares_array()) if (sq.stone()) bb.set(sq);
-    return bb;
-}
+// template<>
+// inline void Bitboard::ray_attacks_cross<static_cast<Bitboard::ChunkID>(2)>(Square::Index idx) noexcept {
+//     const uint64_t index = 1ULL << static_cast<uint8_t>(idx);
+//     const uint64_t lower = (index - 1);
+//     const uint64_t upper = ~lower;
+//     uint64_t bu = index;
+//     uint64_t bl = index;
+//     bl = __builtin_bswap64(bl);
+//     uint64_t u3, u2, l2, l1, l0;
+//     u3 = chunks_[3];
+//     u2 = chunks_[2] & upper;
+//     l2 = chunks_[2] & lower;
+//     l1 = chunks_[1];
+//     l0 = chunks_[0];
+//     l2 = __builtin_bswap64(l2);
+//     l1 = __builtin_bswap64(l1);
+//     l0 = __builtin_bswap64(l0);
+//     bl = __builtin_sub_overflow(l2, bl, &l2);
+//     bl = __builtin_sub_overflow(l1, bl, &l1); 
+//     bl = __builtin_sub_overflow(l0, bl, &l0);         
+//     bu = __builtin_sub_overflow(u2, bu, &chunks_[2]);
+//          __builtin_sub_overflow(u3, bu, &chunks_[3]);
+//     chunks_[0]  = __builtin_bswap64(l0);
+//     chunks_[1]  = __builtin_bswap64(l1);
+//     chunks_[2] |= __builtin_bswap64(l2);
+// }
 
-// ===== shift (template specialization) ===== //
+// template<>
+// inline void Bitboard::ray_attacks_cross<static_cast<Bitboard::ChunkID>(3)>(Square::Index idx) noexcept {
+//     const uint64_t index = 1ULL << static_cast<uint8_t>(idx);
+//     const uint64_t lower = (index - 1);
+//     const uint64_t upper = ~lower;
+//     uint64_t bu = index;
+//     uint64_t bl = index;
+//     bl = __builtin_bswap64(bl);
+//     uint64_t u3, l3, l2, l1, l0;
+//     u3 = chunks_[3] & upper;
+//     l3 = chunks_[3] & lower;
+//     l2 = chunks_[2];
+//     l1 = chunks_[1];
+//     l0 = chunks_[0];
+//     l3 = __builtin_bswap64(l3);
+//     l2 = __builtin_bswap64(l2);
+//     l1 = __builtin_bswap64(l1);
+//     l0 = __builtin_bswap64(l0);
+//     bl = __builtin_sub_overflow(l3, bl, &l3);
+//     bl = __builtin_sub_overflow(l2, bl, &l2);
+//     bl = __builtin_sub_overflow(l1, bl, &l1);
+//     bl = __builtin_sub_overflow(l0, bl, &l0);
+//          __builtin_sub_overflow(u3, bu, &chunks_[3]);
+//     chunks_[0]  = __builtin_bswap64(l0);
+//     chunks_[1]  = __builtin_bswap64(l1);
+//     chunks_[2]  = __builtin_bswap64(l2);
+//     chunks_[3] |= __builtin_bswap64(l3);
+// }
 
-template<>
-inline void Bitboard::shift<Offset::North>() noexcept
-{
-#if __AVX2__
-    __m256i b     = _mm256_load_si256(reinterpret_cast<const __m256i*>(chunks_));
-    __m256i left  = _mm256_slli_epi64(b, 16);
-    __m256i carry = _mm256_srli_epi64(b, 48);
-    __m256i perm  = _mm256_permute4x64_epi64(carry, _MM_SHUFFLE(2,1,0,0));
-    __m256i mask  = _mm256_set_epi64x(-1LL,-1LL,-1LL,0LL);
-    _mm256_store_si256(reinterpret_cast<__m256i*>(chunks_), _mm256_or_si256(left, _mm256_and_si256(perm, mask)));
-#else
-    const uint64_t c0 = chunks_[0];
-    const uint64_t c1 = chunks_[1];
-    const uint64_t c2 = chunks_[2];
-    const uint64_t c3 = chunks_[3];
-    chunks_[0] =  c0 << 16;
-    chunks_[1] = (c1 << 16) | (c0 >> 48);
-    chunks_[2] = (c2 << 16) | (c1 >> 48);
-    chunks_[3] = (c3 << 16) | (c2 >> 48);
-#endif
-}
+// template<Bitboard::ChunkID chunk_id>
+// inline void Bitboard::ray_attacks_chunk(
+//     Square::Index idx) noexcept {
+//     constexpr int shift_lsb = (chunk_id == 0 || chunk_id == 3) ? 12 : 15;
+//     constexpr int shift_msb = (chunk_id == 0 || chunk_id == 3) ?  4 :  1;
 
-template<>
-inline void Bitboard::shift<Offset::South>() noexcept
-{
-#if __AVX2__
-    __m256i b     = _mm256_load_si256(reinterpret_cast<const __m256i*>(chunks_));
-    __m256i right = _mm256_srli_epi64(b, 16);
-    __m256i carry = _mm256_slli_epi64(b, 48);
-    __m256i perm  = _mm256_permute4x64_epi64(carry, _MM_SHUFFLE(0,3,2,1));
-    __m256i mask  = _mm256_set_epi64x(0LL,-1LL,-1LL,-1LL);
-    _mm256_store_si256(reinterpret_cast<__m256i*>(chunks_), _mm256_or_si256(right, _mm256_and_si256(perm, mask)));
-#else
-    const uint64_t c0 = chunks_[0];
-    const uint64_t c1 = chunks_[1];
-    const uint64_t c2 = chunks_[2];
-    const uint64_t c3 = chunks_[3];
-    chunks_[0] = (c0 >> 16) | (c1 << 48);
-    chunks_[1] = (c1 >> 16) | (c2 << 48);
-    chunks_[2] = (c2 >> 16) | (c3 << 48);
-    chunks_[3] =  c3 >> 16;
-#endif
-}
+//     const uint64_t index = 1ULL << static_cast<uint8_t>(idx);
+//     const uint64_t lower = chunks_[chunk_id] & (index - 1);
+//     const uint64_t upper = chunks_[chunk_id] & ~lower;
 
-template<>
-inline void Bitboard::shift<Offset::East>() noexcept
-{
-#if __AVX2__
-    __m256i b = _mm256_load_si256(reinterpret_cast<const __m256i*>(chunks_));
-    _mm256_store_si256(reinterpret_cast<__m256i*>(chunks_), _mm256_slli_epi64(b,1));
-#else
-    chunks_[0] >>= 1;
-    chunks_[1] >>= 1;
-    chunks_[2] >>= 1;
-    chunks_[3] >>= 1;
-#endif
-}
+//     const auto lsb = 1  + __builtin_ctzll(upper | (1ULL << (shift_lsb + (static_cast<uint8_t>(idx) & ~0xFU))));
+//     const auto msb = 63 - __builtin_clzll(lower | (1ULL << (shift_msb + (static_cast<uint8_t>(idx) & ~0xFU))));
 
-template<>
-inline void Bitboard::shift<Offset::West>() noexcept
-{
-#if __AVX2__
-    __m256i b = _mm256_load_si256(reinterpret_cast<const __m256i*>(chunks_));
-    _mm256_store_si256(reinterpret_cast<__m256i*>(chunks_), _mm256_srli_epi64(b,1));
-#else
-    chunks_[0] <<= 1;
-    chunks_[1] <<= 1;
-    chunks_[2] <<= 1;
-    chunks_[3] <<= 1;
-#endif
-}
+//     chunks_[chunk_id] = (1ULL << lsb) - (1ULL << msb) - index;
+// }
 
-template<>
-inline void Bitboard::shift<Offset::North + Offset::East>() noexcept
-{
-    shift<Offset::North>();
-    shift<Offset::East>();
-}
-
-template<>
-inline void Bitboard::shift<Offset::North + Offset::West>() noexcept
-{
-    shift<Offset::North>();
-    shift<Offset::West>();
-}
-
-template<>
-inline void Bitboard::shift<Offset::South + Offset::East>() noexcept
-{
-    shift<Offset::South>();
-    shift<Offset::East>();
-}
-
-template<>
-inline void Bitboard::shift<Offset::South + Offset::West>() noexcept
-{
-    shift<Offset::South>();
-    shift<Offset::West>();
+inline void Bitboard::print(bool board16x16) const {
+    const int size   = board16x16 ? 16 : 14;
+    const int offset = board16x16 ? 0  : 1 ;
+    std::cout << "\n    ";
+    for (int file = 0; file < size; ++file) std::cout << static_cast<char>('a' + file) << ' ';
+    std::cout << "\n";
+    for (int rank = size - 1; rank >= 0; --rank) {
+        int row_label = rank + 1;
+        std::cout << (row_label < 10 ? " " : "") << row_label << "  ";
+        for (int file = 0; file < size; ++file) {
+            int r = rank + offset;
+            int f = file + offset;
+            auto sq = Square(f, r);
+            bool valid = sq.isStone();
+            bool set = has_bit(sq);
+            if (set) std::cout << (!valid ? "\033[34mX\033[0m" : "\033[90mX\033[0m");
+            else     std::cout << (!valid ? "." : "\033[90m.\033[0m");
+            if (file < size - 1) std::cout << ' ';
+        }
+        std::cout << "  " << (row_label < 10 ? " " : "") << row_label << '\n';
+    }
+    std::cout << "    ";
+    for (int file = 0; file < size; ++file) std::cout << static_cast<char>('a' + file) << ' ';
+    std::cout << "\n" << std::endl;
 }
 
 } // namespace athena

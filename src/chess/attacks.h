@@ -1,173 +1,174 @@
 #pragma once
 
 #include "bitboard.h"
-#include "chess.h"
+#include "chess/constants.h"
+#include "square.h"
 #include "color.h"
-#include "constants.h"
+#include "piece.h"
 #include <cstdint>
 
-namespace athena
-{
+namespace athena::chess {
 
-struct alignas(CACHELINE_SIZE) Straight
-{
-    Bitboard vertical;
-    Bitboard horizontal;
-};
+// [main, anti] diagonal bishop attacks
+alignas(64) extern const 
+std::array<std::pair<Bitboard, Bitboard>, VALID_NB> PRECOMPUTED_TABLE_DIAGONAL;
+ 
+// [vertical, horizontal] rook attacks
+alignas(64) extern const 
+std::array<std::pair<Bitboard, Bitboard>, VALID_NB> PRECOMPUTED_TABLE_STRAIGHT;
 
-struct alignas(CACHELINE_SIZE) Diagonal
-{
-    Bitboard diag;
-    Bitboard anti;
-};
+// [kingt, knigh] attacks
+alignas(64) extern const 
+std::array<std::pair<Bitboard, Bitboard>, VALID_NB> PRECOMPUTED_TABLE_CRAWL;
 
-struct alignas(CACHELINE_SIZE) Adjacent
-{
-    Bitboard king;
-    Bitboard knight;
-};
+// [red, yellow, blue, green] pawn attacks
+alignas(64) extern const 
+std::array<std::array<Bitboard, COLOR_NB>, VALID_NB> PRECOMPUTED_TABLE_PAWN;
 
-extern const std::array<Straight, SQUARE_NB> STRAIGHT;
-extern const std::array<Diagonal, SQUARE_NB> DIAGONAL;
-extern const std::array<Adjacent, SQUARE_NB> ADJACENT;
+template<Piece::ID piece>
+inline const 
+Bitboard get_slide_attacks(Square sq) noexcept {
+    if constexpr (piece == Piece::ID::Bishop) { const auto& [main, anti] = PRECOMPUTED_TABLE_DIAGONAL[sq.compact()]; return main | anti; }
+    if constexpr (piece == Piece::ID::Rook  ) { const auto& [vert, hori] = PRECOMPUTED_TABLE_STRAIGHT[sq.compact()]; return vert | hori; }
+    return Bitboard();
+}
 
+template<Piece::ID piece>
+inline const 
+Bitboard get_crawl_attacks(Square sq) noexcept {
+    if constexpr (piece == Piece::ID::King  ) { const auto& [attacks, _] = PRECOMPUTED_TABLE_CRAWL[sq.compact()]; return attacks; }
+    if constexpr (piece == Piece::ID::Knight) { const auto& [_, attacks] = PRECOMPUTED_TABLE_CRAWL[sq.compact()]; return attacks; }
+    return Bitboard();
+}
 
-
-extern const std::array<std::array<std::pair<Bitboard, Bitboard>, ALLIANCE_NB>, SQUARE_NB> PRECOMPUTED_PAWN_ATTACKS;
-
-alignas(64) 
-extern const std::array<std::array<Bitboard, COLOR_NB>, SQUARE_NB> PRECOMPUTED_PAWN_ATTACKS_2;
-
-inline auto get_pawn_attacks(Square sq, Color color) noexcept {
+inline const 
+Bitboard get_pawn_attacks(Square sq, Color::ID color) noexcept {
     auto reorder = 
-        ((color.value_ & 0b01) << 1) | 
-        ((color.value_ & 0b10) >> 1);
-    return PRECOMPUTED_PAWN_ATTACKS_2[static_cast<uint8_t>(sq)][reorder];
+        ((static_cast<uint8_t>(color) & 0b10) >> 1) | 
+        ((static_cast<uint8_t>(color) & 0b01) << 1);
+    return PRECOMPUTED_TABLE_PAWN[sq.compact()][reorder];
 }
 
-// vertical
-// horizontal
-
-// Bishop PEXT tables
-extern const std::array<std::array<uint64_t, 1024>, SQUARE_NB> PEXT_TABLE_DIAG;
-extern const std::array<std::array<uint64_t, 1024>, SQUARE_NB> PEXT_TABLE_ANTI;
-
-inline Bitboard bishop_attacks(Square sq, const Bitboard& occupied) noexcept
-{
-    auto [diag, anti] = DIAGONAL[static_cast<uint8_t>(sq)];
-
-    Bitboard bb1(occupied & diag);
-    Bitboard bb2(occupied & anti);
-
-    uint64_t mask1 = PEXT_TABLE_DIAG[static_cast<uint8_t>(sq)][_pext_u64(bb1.combine(), diag.combine())];
-    uint64_t mask2 = PEXT_TABLE_ANTI[static_cast<uint8_t>(sq)][_pext_u64(bb2.combine(), anti.combine())];
-
-    return (diag & mask1) | (anti & mask2);
-}
-
-// Rook PEXT tables
-extern const std::array<std::array<Bitboard, 4096>, RANK_NB    > PEXT_TABLE_VERTICAL; // reduce size
-extern const std::array<std::array<uint64_t, 4096>, CHUNK_SIZE > PEXT_TABLE_HORIZONTAL;
-
-extern const std::array<Bitboard, FILE_NB - 2> VERTICAL_MASK_TABLE;
-
-// pair.first  = file mask
-// pair.second = rank mask
-extern const std::array<std::pair<Bitboard, Bitboard>, SQUARE_NB - 40> STONE_MASK_TABLE;
-
-inline constexpr std::pair<Bitboard, Bitboard> stone_mask(Square sq) noexcept {
-    return STONE_MASK_TABLE[sq.value_ - 20];
-}
-
-inline Bitboard rook_attacks(Square sq, const Bitboard& occupied) noexcept
-{
-    Bitboard attacks(0,0,0,0);
-
-    // Vertical attacks
-    const auto f = sq.file();
-    const auto r = sq.rank();
-
-    __m256i v = _mm256_loadu_si256((const __m256i*)occupied.chunks_);
-    __m256i s = _mm256_slli_epi64(v,  15 - f);
-
-    // attacks |= PEXT_TABLE_VERTICAL[r][_pext_u32(_mm256_movemask_epi8(s), 0xAAAAAAAAU)];
-
-    // Bitboard vertical = PEXT_TABLE_VERTICAL[r][_pext_u32(_mm256_movemask_epi8(s), 0xAAAAAAAAU)];
-    Bitboard vertical = PEXT_TABLE_VERTICAL[r][_pext_u32(_mm256_movemask_epi8(s), 0x0AAAAAA0U)];
-    // vertical &= VERTICAL_MASK_TABLE[f - 1];
-    
-    // Shift left by f amount without cross-chunk calculation
-    __m256i vertical_v = _mm256_loadu_si256((const __m256i*)vertical.chunks_);
-    __m256i shifted = _mm256_slli_epi64(vertical_v, f);
-    
-    // Extract chunks and construct Bitboard
-    alignas(32) uint64_t temp[4];
-    _mm256_storeu_si256((__m256i*)temp, shifted);
-    attacks |= Bitboard(temp[0], temp[1], temp[2], temp[3]);
-
-    // Horizontal attacks
-    const auto chk = sq.chunk();
-    const auto idx = sq.index();
-
-    const auto shift = (r & 0b11) * FILE_NB;
-    const auto occ = occupied.chunks_[chk] >> shift;
-
-    const auto upper = occ & (0xFFFFULL << (1  + f));
-    const auto lower = occ & (0xFFFFULL >> (16 - f));
-
-    const auto ms1B = 0x8000000000000000ULL >> _lzcnt_u64(lower | 1);
-    const auto diff = upper ^ (upper - ms1B);
-
-    attacks.chunks_[chk] |= (diff & (0x7FFEULL ^ (1 << f))) << shift;
-
-    // attacks.chunks()[chk] |= PEXT_TABLE_HORIZONTAL[idx][_pext_u64(occupied.chunks()[chk], STRAIGHT[static_cast<uint8_t>(sq)].horizontal.chunks()[chk])];
-
-    return attacks & valid_bitboard();
-}
-
-inline Bitboard bishop_attacks(Square sq) noexcept
-{
-    return 
-    DIAGONAL[static_cast<uint8_t>(sq)].diag | 
-    DIAGONAL[static_cast<uint8_t>(sq)].anti;
-}
-
-inline Bitboard rook_attacks(Square sq) noexcept
-{
-    return 
-    STRAIGHT[static_cast<uint8_t>(sq)].vertical | 
-    STRAIGHT[static_cast<uint8_t>(sq)].horizontal;
-}
-
-inline Adjacent crawl_attacks(Square sq) noexcept
-{
-    return ADJACENT[static_cast<uint8_t>(sq)];
-}
-
-template<Team team>
-inline std::pair<Bitboard, Bitboard> pawn_attacks(Square sq) noexcept {
-    return PRECOMPUTED_PAWN_ATTACKS[static_cast<uint8_t>(sq)][static_cast<uint8_t>(team)];
-}
-
-// ===== between mask (template specialization) ===== //
-
-template<Piece piece>
-inline Bitboard compute_between_mask(Square sq1, Square sq2) noexcept;
+template<Piece::ID piece>
+inline const 
+Bitboard get_slide_attacks(
+    Square sq, const Bitboard& __restrict__ occupied) noexcept;
 
 template<>
-inline Bitboard compute_between_mask<Piece::Bishop>(Square sq1, Square sq2) noexcept
-{
-    return 
-    bishop_attacks(sq1) & 
-    bishop_attacks(sq2) & subtract(sq1, sq2);
+inline const 
+Bitboard get_slide_attacks<Piece::ID::Bishop>(
+    Square sq, const Bitboard& __restrict__ occupied) noexcept {
+    const auto& [diag, anti] = PRECOMPUTED_TABLE_DIAGONAL[sq.compact()];
+
+    auto d1 = diag & occupied;
+    auto a1 = anti & occupied;
+
+    auto d2 = d1; 
+    auto a2 = a1;
+
+    d2.swap_bytes();
+    a2.swap_bytes();
+
+    const Square sq_flip = sq.flip_rank();
+
+    d1 -= sq;
+    a1 -= sq;
+    d2 -= sq_flip;
+    a2 -= sq_flip;
+
+    d2.swap_bytes();
+    a2.swap_bytes();
+
+    return ((d1 ^ d2) & diag) | ((a1 ^ a2) & anti);
 }
 
 template<>
-inline Bitboard compute_between_mask<Piece::Rook>(Square sq1, Square sq2) noexcept
-{
-    return 
-    rook_attacks(sq1) & 
-    rook_attacks(sq2) & subtract(sq1, sq2);
+inline const 
+Bitboard get_slide_attacks<Piece::ID::Rook>(
+    Square sq, const Bitboard& __restrict__ occupied) noexcept {
+    const auto& [vert, hori] = PRECOMPUTED_TABLE_STRAIGHT[sq.compact()];
+
+    auto v1 = vert & occupied;
+    auto v2 = v1;
+    v2.swap_bytes();
+
+    const Square sq_flip = sq.flip_rank();
+
+    v1 -= sq;
+    v2 -= sq_flip;
+    v2.swap_bytes();
+    v1 &= vert;
+    v2 &= vert;
+
+    Bitboard h{0ULL};
+    const auto index = 1ULL << sq.index();
+    const auto chunk = sq.chunk();
+    auto& c = h.chunk(chunk);
+    const auto lower = occupied.chunk(chunk) & (index - 1);
+    const auto upper = occupied.chunk(chunk) & ~lower;
+    const auto lsb = 1  + __builtin_ctzll(upper | (1ULL << 63));
+    const auto msb = 63 - __builtin_clzll(lower | (1ULL << 0 ));
+    c = (1ULL << lsb) - (1ULL << msb) - index;
+
+    return ((v1 ^ v2) & vert) | (h & hori);
 }
+
+// template<Piece::ID piece, Bitboard::ChunkID chunk_id>
+// inline const 
+// Bitboard get_slide_attacks(
+//     Square sq, const Bitboard& __restrict__ occupied) noexcept {
+//         if constexpr (piece == Piece::ID::Bishop) return get_slide_diagonal<chunk_id>(sq, occupied);
+//         if constexpr (piece == Piece::ID::Rook  ) return get_slide_straight<chunk_id>(sq, occupied);
+//         return Bitboard();
+//     }
+
+// template<Bitboard::ChunkID chunk_id>
+// inline const 
+// Bitboard get_slide_diagonal(
+//     Square sq, const Bitboard& __restrict__ occupied) noexcept {
+//     const auto& [diag, anti] = PRECOMPUTED_TABLE_DIAGONAL[sq.compact()];
+
+//     auto d1 = diag & occupied;
+//     auto a1 = anti & occupied;
+
+//     auto d2 = d1;
+//     auto a2 = a1;
+
+//     d1.ray_attacks_cross<chunk_id>(sq.index());
+//     a1.ray_attacks_cross<chunk_id>(sq.index());
+
+//     d1 &= diag;
+//     d2 &= anti;
+
+//     d1 ^= a2;
+//     a1 ^= a2;
+
+//     return d1 | d2;
+// }
+
+// template<Bitboard::ChunkID chunk_id>
+// inline const 
+// Bitboard get_slide_straight(
+//     Square sq, const Bitboard& __restrict__ occupied) noexcept {
+//     const auto& [vert, hori] = PRECOMPUTED_TABLE_STRAIGHT[sq.compact()];
+
+//     auto d1 = vert & occupied;
+//     auto d2 = hori & occupied;
+
+//     d1.ray_attacks_cross<chunk_id>(sq.index());
+//     d2.ray_attacks_chunk<chunk_id>(sq.index());
+
+//     d1 &= vert;
+//     d2 &= hori;
+
+//     return d1 | d2;
+// }
+
+alignas(64)
+extern const 
+std::array<std::array<std::pair<Bitboard, Bitboard>, VALID_NB>, VALID_NB> PRECOMPUTED_TABLE_THROUGH_BETWEEN;
+
+inline const Bitboard get_line_through_mask(Square x, Square y) noexcept { return PRECOMPUTED_TABLE_THROUGH_BETWEEN[x.compact()][y.compact()].first ; }
+inline const Bitboard get_line_between_mask(Square x, Square y) noexcept { return PRECOMPUTED_TABLE_THROUGH_BETWEEN[x.compact()][y.compact()].second; }
 
 } // namespace athena

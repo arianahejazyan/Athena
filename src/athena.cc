@@ -1,141 +1,38 @@
-#include <cstddef>
-#include <cstdint>
 #include <iostream>
-#include "cli.h"
-#include "attacks.h"
-#include "attacks.h"
-#include "bitboard.h"
-#include "constants.h"
-#include "fen.h"
-#include "position.h"
-#include "square.h"
-#include "movegen.h"
+#include "cli/cli.h"
 
 using namespace athena;
 
-int main(int argc, char *argv[]) // ccheck bitboard temperoray
+void version() {
+    std::cout << "v0.0.0" << std::endl;
+}
+
+void help() {
+    std::cout << "UCI commands:\n"
+              << "  uci           - identify engine\n"
+              << "  isready       - ping engine\n"
+              << "  setoption     - set engine option\n"
+              << "  ucinewgame    - reset for new game\n"
+              << "  position      - set board position\n"
+              << "  go            - start searching\n"
+              << "  stop          - stop searching\n"
+              << "  quit          - exit\n";
+}
+
+int main(int argc, char *argv[])
 {
     if (argc > 1)
     {
         std::string name = argv[1];
-        
-        if (name == "--version")
-        {
-            std::cout << "Athena Engine CLI v0.0.0" << std::endl;
-            return 0;
-        }
-    
-        if (name == "--help")
-        {
-            std::cout << "help message" << std::endl;
-            return 0;
-        }
-
-        std::cout << "info string unknown flag '" << name << "'" << std::endl;
-        return 1;
+        if (name == "--version") { version(); return EXIT_SUCCESS; } else
+        if (name == "--help"   ) { help();    return EXIT_SUCCESS; } else {
+            std::cerr << "info string unknown command line argument: " << name << std::endl;
+            return EXIT_FAILURE;
+        }  
     }
 
-    // Position pos;
-    // pos.init(STARTPOS);
-    // pos.print();
+    cli::CLI cli;
+    cli.run(argc, argv);
 
-    // pos.movegen();
-    // Move moves[MOVE_NB];
-    // std::size_t n = 0;
-    // n += generate_noisy_moves(pos, moves + n, GameSetup::Modern);
-    // n += generate_quiet_moves(pos, moves + n, GameSetup::Modern);
-    // std::cout << n << std::endl;
-
-    // for (std::size_t i = 0; i < n; i++)
-    // {
-    //     std::cout << "["<<i<<"] " << moves[i].uci(true) << std::endl;
-    // }
-
-    // auto x = homerank_bitboard(Color::Red);
-    // x.print();
-
-    // Square sq = Square::E2;
-    // Bitboard occ(0);
-    // occ |= rank_bitboard(1);
-    // occ |= rank_bitboard(2);
-    // occ |= rank_bitboard(13);
-    // occ |= rank_bitboard(14);
-    // occ |= file_bitboard(1);
-    // occ |= file_bitboard(2);
-    // occ |= file_bitboard(13);
-    // occ |= file_bitboard(14);
-    // // occ.set(sq);
-    // // occ.set(Square::J7);
-    // // occ.set(Square::H10);
-    // // occ.set(Square::H3);
-    // Bitboard attacks = rook_attacks(sq, occ);
-    // occ.print();
-    // attacks.print();
-
-    // Position pos;
-    // pos.init(STARTPOS);
-
-    // pos.movegen();
-    // Move moves[MOVE_NB];
-    // std::size_t n = 0;
-    // n += generate_noisy_moves(pos, moves + n, GameSetup::Modern);
-    // n += generate_quiet_moves(pos, moves + n, GameSetup::Modern);
-    // // std::cout << n << std::endl;
-
-    // auto move = moves[0];
-    // pos.print();
-    // pos.teams_[0].print();
-    // pos.teams_[1].print();
-    // pos.pieces_[1].print();
-    // pos.colors_[0].print();
-    // pos.makemove(move, GameSetup::Modern);
-    // pos.print();
-    // pos.teams_[0].print();
-    // pos.teams_[1].print();
-    // pos.pieces_[1].print();
-    // pos.colors_[0].print();
-    // pos.undomove(move, GameSetup::Modern);
-    // pos.print();
-    // pos.teams_[0].print();
-    // pos.teams_[1].print();
-    // pos.pieces_[1].print();
-    // pos.colors_[0].print();
-
-
-    CLI cli;
-    cli.launch();
-
-    return 0;
+    return EXIT_SUCCESS;
 }
-
-// R-0,0,0,0-1,1,1,1-1,1,1,1-0,0,0,0-0-{'enPassant':('','h3:','','')}-
-// x,x,x,yR,yN,yB,yK,yQ,yB,yN,yR,x,x,x/
-// x,x,x,yP,yP,yP,yP,yP,yP,yP,yP,x,x,x/
-// x,x,x,8,x,x,x/
-// bR,bP,10,gP,gR/
-// bN,bP,10,gP,gN/
-// bB,bP,10,gP,gB/
-// bQ,bP,10,gP,gK/
-// bK,bP,10,gP,gQ/
-// bB,bP,10,gP,gB/
-// bN,bP,10,gP,1/
-// bR,bP,11,gR/
-// x,x,x,8,x,x,x/
-// x,x,x,3,rP,1,rP,2,x,x,x/
-// x,x,x,8,x,x,x
-
-// R-0,0,0,0-1,1,1,1-1,1,1,1-0,0,0,0-0-{'enPassant':('','h11:','','')}-
-// x,x,x,yR,yN,yB,yK,yQ,yB,yN,yR,x,x,x/
-// x,x,x,yP,yP,yP,yP,yP,yP,yP,yP,x,x,x/
-// x,x,x,8,x,x,x/
-// bR,bP,10,gP,gR/
-// bN,bP,4,rP,1,rP,3,gP,gN/
-// bB,bP,10,gP,gB/
-// bQ,bP,10,gP,gK/
-// bK,bP,10,gP,gQ/
-// bB,bP,10,gP,gB/
-// bN,bP,10,gP,1/
-// bR,bP,11,gR/
-// x,x,x,8,x,x,x/
-// x,x,x,8,x,x,x/
-// x,x,x,8,x,x,x

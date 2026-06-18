@@ -1,0 +1,5 @@
+CompileFlags:
+  Add: [-fconstexpr-steps=10000000]
+  Remove:
+    - -fconstexpr-ops-limit*
+    - -fconstexpr-loop-limit*

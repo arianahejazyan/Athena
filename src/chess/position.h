@@ -1,159 +1,170 @@
 #pragma once
 
-#include "chess.h"
-#include "bitboard.h"
 #include "constants.h"
+#include "move.h"
+#include "piececolor.h"
+#include "bitboard.h"
 #include "square.h"
+#include "castle.h"
 #include <cstdint>
 
-namespace athena
-{
+namespace athena::chess {
 
-inline constexpr int max_step(Piece piece) noexcept
-{
-    return piece == Piece::Rook ? 13 : 10;
-}
+class alignas(64) Position {
+public:
+    using FEN   = std::string;
+    using Clock = uint8_t;
+    using Depth = uint8_t;
 
-struct GameState
-{
-    PieceClass capture;
-    Square enpass;
-    Castle castle;
-    uint8_t fiftymove;
-};
-
-class alignas(CACHELINE_SIZE) Position
-{
-    public:
-    Position() = default;
-    // Position(const GameSetup& setup): setup_(setup) {} // fix
-
-    void init(FEN fen) noexcept;
-
-    PieceClass board(Square sq) const noexcept {
-        return board_[static_cast<uint8_t>(sq)];
-    }
-
-    GameState& state() noexcept {
-        return states_[play_];
-    }
-
-    const GameState& state() const noexcept {
-        return states_[play_];
-    }
-
-    Square royal() const noexcept {
-        return royals_[static_cast<uint8_t>(turn_)];
-    }
-
-    Square royal(Color color) const noexcept {
-        return royals_[static_cast<uint8_t>(color)];
-    }
-
-    // template<Color color>
-    // Square royal() const noexcept {
-    //     return royals_[static_cast<uint8_t>(color)];
-    // }
-
-    Square enpass(Color color) const noexcept {
-        return enpass_[static_cast<uint8_t>(color)];
-    }
-
-    Color turn() const noexcept {
-        return turn_;
-    }
-
-    Bitboard pieces(Piece piece) noexcept {
-        return pieces_[static_cast<uint8_t>(piece)];
-    }
-
-    Bitboard colors(Color color) noexcept {
-        return pieces_[static_cast<uint8_t>(color)];
-    }
-
-    Bitboard bitboard(Piece piece) const noexcept {
-        return pieces_[static_cast<uint8_t>(piece)];
-    }
-
-    Bitboard bitboard(Color color) const noexcept {
-        return colors_[static_cast<uint8_t>(color)];
-    }
-
-    void setPiece(Square sq, PieceClass pc) noexcept
+    struct alignas(4) State // copy assignment optimized
     {
-        board_[static_cast<uint8_t>(sq)] = pc;
+        PieceColor capture;
+        Square     enpass;
+        Castle     castle;
+        Clock      fifty_move_clock;
+    };
 
-        pieces_[static_cast<uint8_t>(pc.piece())].set(sq);
-        colors_[static_cast<uint8_t>(pc.color())].set(sq);
-    }
+    Position() noexcept = default;
 
-    void popPiece(Square sq) noexcept
-    {
-        Team team = board_[static_cast<uint8_t>(sq)].color().team();
-
-        pieces_[static_cast<uint8_t>(board_[static_cast<uint8_t>(sq)].piece())].pop(sq);
-        colors_[static_cast<uint8_t>(board_[static_cast<uint8_t>(sq)].color())].pop(sq);
-
-        board_[static_cast<uint8_t>(sq)] = PieceClass::Empty();
-    }
-
-    void makemove(Move move, const GameSetup setup);
-    void undomove(Move move, const GameSetup setup);
-
-    bool inCheck() const noexcept;
-    bool inCheck(Color color) const noexcept;
-    bool inCheck(Color color, Square sq) const noexcept;
-
-    bool isLegal(Move move) const noexcept;
-
+    void init(const FEN& fen) noexcept;
+    auto fen() const noexcept;
     void print(bool board16x16 = false) const;
 
-    std::string fen() const;
+    void set_setup(Castle::Setup setup) noexcept { setup_ = setup; }
+    auto setup() const noexcept { return setup_; }
 
-    private:
+    const Bitboard& bitboard(Piece::ID piece) const noexcept { return piece_[static_cast<uint8_t>(piece)]; } // return refence
+    const Bitboard& bitboard(Color::ID color) const noexcept { return color_[static_cast<uint8_t>(color)]; }
 
-    // compute check and pinned masks
-    public:
+    auto enpass(Color::ID color) const noexcept { return enpass_[static_cast<uint8_t>(color)]; }
+    auto royal( Color::ID color) const noexcept { return  royal_[static_cast<uint8_t>(color)]; }
 
-    // const GameSetup& setup_;
+    auto turn() const noexcept { return turn_; }
+    auto play() const noexcept { return play_; }
 
-    template<Color color>
-    void compute_check_and_pinned_masks();
+    void set_board(Square sq, PieceColor pc) noexcept;
+    void pop_board(Square sq, PieceColor pc) noexcept;
 
-    alignas(64) std::array<PieceClass, SQUARE_NB> board_;
-    alignas(64) std::array<GameState, PLAY_NB> states_;
-    alignas(64) std::array<Bitboard, 6> pieces_;
-    alignas(64) std::array<Bitboard, 4> colors_;
+    auto board(Square::ID sq) const noexcept { return board_[static_cast<uint8_t>(sq)]; }
 
-    std::array<Square, COLOR_NB> royals_;
+    void make_move(Move move) noexcept;
+    void undo_move(Move move) noexcept;
+
+    void make_move(const std::string& move, bool board16x16 = false) noexcept;
+    void undo_move(const std::string& move, bool board16x16 = false) noexcept;
+
+    // Bitboard teammate() const noexcept { return bitboard(turn_.self().id()) | bitboard(turn_.ally().id()); }
+    // Bitboard opponent() const noexcept { return bitboard(turn_.next().id()) | bitboard(turn_.prev().id()); }
+    // Bitboard occupied() const noexcept { return teammate() | opponent(); }
+
+    bool legal(Move* move) const noexcept;
+    Bitboard get_attackers_bitboard(Square sq, Color color, const Bitboard& occupancy) const noexcept;
+
+    const Bitboard& teammate() const noexcept { return occupancy_[play_][0]; }
+    const Bitboard& opponent() const noexcept { return occupancy_[play_][1]; }
+    const Bitboard& occupied() const noexcept { return occupancy_[play_][2]; }
+
+    // Bitboard get_pinned_bitboard(
+    //     const Bitboard& teammate, 
+    //     const Bitboard& opponent,
+    //     const Bitboard& occupied,
+    //     const Bitboard& us) const noexcept;
+
+          void  set_pinned_checks_bitboards()       noexcept;
+          auto& get_pinned_checks_bitboards()       noexcept { return pinned_checks_[play_]; }
+    const auto& get_pinned_checks_bitboards() const noexcept { return pinned_checks_[play_]; }
+
+    Position::State& state() noexcept { return state_[play_]; }
+    const Position::State& state() const noexcept { return state_[play_]; }
+
+private:
+    alignas(64) std::array<std::pair<Bitboard, Bitboard>, PLAY_NB> pinned_checks_;
+    alignas(64) std::array<PieceColor, SQUARE_NB> board_;
+    alignas(64) std::array<Bitboard  , PIECE_NB > piece_;
+    alignas(64) std::array<Bitboard  , COLOR_NB > color_;
+    alignas(64) std::array<State     , PLAY_NB  > state_;
+    alignas(64) std::array<std::array<Bitboard, 3>, PLAY_NB> occupancy_;
     std::array<Square, COLOR_NB> enpass_;
-    uint8_t play_;
+    std::array<Square, COLOR_NB> royal_;
+    Depth play_;
     Color turn_;
+    Castle::Setup setup_;
 
-    // store check and pinned masks respectively
-    // std::pair<Bitboard, Bitboard> check_pinned_masks_; // array
-    // Bitboard checksmask_;
-    // Bitboard pinnedmask_;
+    void set_enpass(Square sq, Color::ID color) noexcept { enpass_[static_cast<uint8_t>(color)] = sq; }
+    void set_royal( Square sq, Color::ID color) noexcept {  royal_[static_cast<uint8_t>(color)] = sq; }
 
-    std::array<std::pair<Bitboard, Bitboard>, PLAY_NB> check_pinned_masks_; // array
+    void set_occupany_bitboards() noexcept { 
+        occupancy_[play_][0] = bitboard(turn_.self().id()) | bitboard(turn_.ally().id());
+        occupancy_[play_][1] = bitboard(turn_.next().id()) | bitboard(turn_.prev().id());
+        occupancy_[play_][2] = occupancy_[play_][0] | occupancy_[play_][1];
+    }
 
-    public:
+    void clear_state() noexcept {
+        play_ = 0;
+        auto& state = state_[play_];
+        state.capture = PieceColor::empty();
+        state.enpass  = Square::offboard();
+        state.castle  = 0;
+        state.fifty_move_clock = 0;
+    }
 
-    void movegen() noexcept
-    {
-        const auto color = turn();
-        switch (color.value_) 
-        {
-            case Color::Red   : compute_check_and_pinned_masks<Color::Red   >(); break;
-            case Color::Blue  : compute_check_and_pinned_masks<Color::Blue  >(); break;
-            case Color::Yellow: compute_check_and_pinned_masks<Color::Yellow>(); break;
-            case Color::Green : compute_check_and_pinned_masks<Color::Green >(); break;
-            default: break;
+    void clear_board() noexcept {
+        enpass_.fill(Square::offboard());
+        royal_.fill(Square::offboard());
+        piece_.fill(Bitboard(0ULL));
+        color_.fill(Bitboard(0ULL));
+
+        for (int sq = 0; sq < SQUARE_NB; ++sq) {
+            board_[sq] = Square(static_cast<Square::ID>(sq)).isStone()
+                       ? PieceColor::stone()
+                       : PieceColor::empty();
         }
     }
 
-    // template<std::size_t chunk, uint8_t piece>
-    // friend void process_chunk_candidates(Position& pos, Color turn, Square royal_square, Bitboard& candidates, Bitboard& checkers) noexcept;
+private:
+    inline static const std::array<FEN, SETUP_NB> STARTPOS = 
+    {
+        FEN{
+            "R-0,0,0,0-1,1,1,1-1,1,1,1-0,0,0,0-0-"
+            "x,x,x,yR,yN,yB,yK,yQ,yB,yN,yR,x,x,x/"
+            "x,x,x,yP,yP,yP,yP,yP,yP,yP,yP,x,x,x/"
+            "x,x,x,8,x,x,x/"
+            "bR,bP,10,gP,gR/"
+            "bN,bP,10,gP,gN/"
+            "bB,bP,10,gP,gB/"
+            "bQ,bP,10,gP,gK/"
+            "bK,bP,10,gP,gQ/"
+            "bB,bP,10,gP,gB/"
+            "bN,bP,10,gP,gN/"
+            "bR,bP,10,gP,gR/"
+            "x,x,x,8,x,x,x/"
+            "x,x,x,rP,rP,rP,rP,rP,rP,rP,rP,x,x,x/"
+            "x,x,x,rR,rN,rB,rQ,rK,rB,rN,rR,x,x,x"
+        },
+
+        FEN{
+            "R-0,0,0,0-1,1,1,1-1,1,1,1-0,0,0,0-0-"
+            "x,x,x,yR,yN,yB,yK,yQ,yB,yN,yR,x,x,x/"
+            "x,x,x,yP,yP,yP,yP,yP,yP,yP,yP,x,x,x/"
+            "x,x,x,8,x,x,x/"
+            "bR,bP,10,gP,gR/"
+            "bN,bP,10,gP,gN/"
+            "bB,bP,10,gP,gB/"
+            "bK,bP,10,gP,gQ/"
+            "bQ,bP,10,gP,gK/"
+            "bB,bP,10,gP,gB/"
+            "bN,bP,10,gP,gN/"
+            "bR,bP,10,gP,gR/"
+            "x,x,x,8,x,x,x/"
+            "x,x,x,rP,rP,rP,rP,rP,rP,rP,rP,x,x,x/"
+            "x,x,x,rR,rN,rB,rQ,rK,rB,rN,rR,x,x,x"
+        }
+    };
+
+public:
+    static std::string startpos(Castle::Setup setup) noexcept {
+        return STARTPOS[static_cast<uint8_t>(setup)];
+    }
 };
 
 } // namespace athena

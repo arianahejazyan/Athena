@@ -21,6 +21,12 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ```
 
+*Prerequisites*:
+* A C++ compiler with C++23 support
+* CMake as the configuration system
+* A build system such as Make or Ninja
+* GoogleTest library
+
 ### Command
 
 Once built, launch the interactive Athena engine cli:
@@ -51,10 +57,6 @@ Once built, launch the interactive Athena engine cli:
 ```bash
 ./build/tests/perft --modern --depth 6
 ```
-
-
-
-
 
 ## 4PC Engines
 <p align="justify"> 

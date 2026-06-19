@@ -29,7 +29,7 @@ Once built, launch the interactive Athena engine cli:
 ./build/athena
 ```
 
-> See [manual](#docs/manual.md) for the full list of commands and options.
+> See [manual](./docs/manual.md) for the full list of commands and options.
 
 ### Tests
 

@@ -6,8 +6,9 @@
 
 using namespace athena;
 
-#define MODERN  chess::Castle::Setup::Modern
-#define CLASSIC chess::Castle::Setup::Classic
+constexpr auto MODERN  = chess::Castle::Setup::Modern;
+constexpr auto CLASSIC = chess::Castle::Setup::Classic;
+
 struct Test {
     int depth;
     uint64_t nodes;

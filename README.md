@@ -61,15 +61,40 @@ Once built, launch the interactive Athena engine cli:
 This is a list of four-player chess engines to help discover and support other engines. Feel free to add your chess engine here, or ask me to add it for you. You can include your Chess.com profile and GitHub repository. </p>
  
 <table align="center">
-  <tr>
-    <td>Athena (<a href="https://github.com/arianahejazyan/Athena" target="_blank">GitHub</a>, <a href="https://www.chess.com/member/teamathena1" target="_blank">Chess.com</a>)</td>
-    <td>Samaritan (<a href="https://github.com/Moxile/Samaritan" target="_blank">GitHub</a>)</td>
-    <td>Enigma (<a href="https://github.com/anurag-baundwal/4pchess" target="_blank">GitHub</a>, <a href="https://www.chess.com/member/teamenigma1" target="_blank">Chess.com</a>)</td>
-  </tr>
-  <tr>
-  <td>Nexus (<a href="https://www.chess.com/member/TeamNexus1" target="_blank">Chess.com</a>)</td>
-  <td>BlackKnight (<a href="https://www.chess.com/member/TeamBlackKnight1" target="_blank">Chess.com</a>)</td>
-  </tr>
+  <thead>
+    <tr>
+      <th>Engine</th>
+      <th>GitHub</th>
+      <th>Chess.com</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Athena</td>
+      <td><a href="https://github.com/arianahejazyan/Athena" target="_blank">arianahejazyan/Athena</a></td>
+      <td><a href="https://www.chess.com/member/teamathena1" target="_blank">TeamAthena</a></td>
+    </tr>
+    <tr>
+      <td>Samaritan</td>
+      <td><a href="https://github.com/Moxile/Samaritan" target="_blank">Moxile/Samaritan</a></td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td>Enigma</td>
+      <td><a href="https://github.com/anurag-baundwal/4pchess" target="_blank">anurag-baundwal/4pchess</a></td>
+      <td><a href="https://www.chess.com/member/teamenigma1" target="_blank">TeamEnigma</a></td>
+    </tr>
+    <tr>
+      <td>Nexus</td>
+      <td>(private)</td>
+      <td><a href="https://www.chess.com/member/TeamNexus1" target="_blank">TeamNexus</a></td>
+    </tr>
+    <tr>
+      <td>BlackKnight</td>
+      <td>(private)</td>
+      <td><a href="https://www.chess.com/member/TeamBlackKnight1" target="_blank">TeamBlackKnight</a></td>
+    </tr>
+  </tbody>
 </table>
 
 You can also find four-player chess tools list in this [repo](https://github.com/arianahejazyan/Colosseum).

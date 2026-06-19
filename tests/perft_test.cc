@@ -6,8 +6,8 @@
 
 using namespace athena;
 
-constexpr auto MODERN  = chess::Castle::Setup::Modern;
-constexpr auto CLASSIC = chess::Castle::Setup::Classic;
+constexpr auto modern  = chess::Castle::Setup::Modern;
+constexpr auto classic = chess::Castle::Setup::Classic;
 
 struct TestCase {
     int depth;
@@ -16,14 +16,15 @@ struct TestCase {
     chess::Castle::Setup setup;
 };
 
+inline const auto modern_fen = chess::Position::startpos(modern);
 inline const std::array<TestCase, 7> tests_modern = {{
-    {1, 20        , chess::Position::startpos(MODERN), MODERN},
-    {2, 395       , chess::Position::startpos(MODERN), MODERN},
-    {3, 7800      , chess::Position::startpos(MODERN), MODERN},
-    {4, 152050    , chess::Position::startpos(MODERN), MODERN},
-    {5, 3452310   , chess::Position::startpos(MODERN), MODERN},
-    {6, 77430383  , chess::Position::startpos(MODERN), MODERN},
-    {7, 1735784286, chess::Position::startpos(MODERN), MODERN},
+    {1, 20        , modern_fen, modern},
+    {2, 395       , modern_fen, modern},
+    {3, 7800      , modern_fen, modern},
+    {4, 152050    , modern_fen, modern},
+    {5, 3452310   , modern_fen, modern},
+    {6, 77430383  , modern_fen, modern},
+    {7, 1735784286, modern_fen, modern},
 }};
 
 TEST(PerftTest, Modern) {

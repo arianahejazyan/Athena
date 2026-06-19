@@ -27,7 +27,6 @@ inline const std::array<TestCase, 7> tests_modern = {{
 }};
 
 TEST(PerftTest, Modern) {
-    const auto modern = chess::Castle::Setup::Modern ;
     chess::Position pos;
     for (auto test: tests_modern) {
         pos.set_setup(test.setup);

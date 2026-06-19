@@ -11,20 +11,50 @@
 <img src="./docs/assets/wallpaper.png" alt="Four Player Chess Board" style="width: 100%; height:auto; border-radius: 10px;"/>
 </div>
 
-## Installation
-Clone the repository
+## Getting Started
+### Clone & Build
 
 ```bash
-git clone https://github.com/arianahejazyan/Athena.git && cd Athena/athena 
+git clone https://github.com/arianahejazyan/Athena.git
+cd Athena
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
 ```
-Create a build directory and compile
+
+### Command
+
+Once built, launch the interactive Athena engine cli:
+
 ```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build
+./build/athena
 ```
-Once built, you can run the Athena cli
+
+> See [manual](#docs/manual.md) for the full list of commands and options.
+
+### Tests
+
+**Perft** counts nodes at a given depth to validate move generation.
+
 ```bash
-cd build && ./athena
+./build/tests/perft [options]
 ```
+
+*Options*:
+* `--modern`: Start from the modern chess starting position
+* `--classic`: Start from the classic chess starting position
+* `--fen <fen>`: Start from a custom FEN position
+* `--depth <depth>`: Set the search depth
+* `--split`: Show per-move node counts at the root
+* `--setup <modern|classic>`: Set the castling setup variant
+
+*Example*:
+```bash
+./build/tests/perft --modern --depth 6
+```
+
+
+
+
 
 ## 4PC Engines
 <p align="justify"> 

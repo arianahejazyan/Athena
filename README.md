@@ -94,6 +94,11 @@ This is a list of four-player chess engines to help discover and support other e
       <td>(private)</td>
       <td><a href="https://www.chess.com/member/TeamBlackKnight1" target="_blank">TeamBlackKnight</a></td>
     </tr>
+    <tr>
+      <td>Titan</td>
+      <td><a href="https://github.com/obryanlouis/4pchess" target="_blank">obryanlouis/4pchess</a></td>
+      <td><a href="https://www.chess.com/member/teamtitan1" target="_blank">TeamTitan</a></td>
+    </tr>
   </tbody>
 </table>
 

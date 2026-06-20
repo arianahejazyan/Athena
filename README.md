@@ -11,6 +11,8 @@
 <img src="./docs/assets/wallpaper.png" alt="Four Player Chess Board" style="width: 100%; height:auto; border-radius: 10px;"/>
 </div>
 
+## Table of Contents
+*coming soon*
 ## Getting Started
 ### Clone & Build
 

@@ -61,7 +61,13 @@ Once built, launch the interactive Athena engine cli:
 ```bash
 ./build/tests/perft --modern --depth 6
 ```
-
+## Features
+### Chess
+*coming soon*
+### Search
+*coming soon*
+### Evaluate
+*coming soon*
 ## 4PC Engines
 <p align="justify"> 
 This is a list of four-player chess engines to help discover and support other engines. Feel free to add your chess engine here, or ask me to add it for you. You can include your Chess.com profile and GitHub repository. </p>

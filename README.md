@@ -26,10 +26,12 @@ cmake --build build -j
 ```
 
 *Prerequisites*:
-* A C++ compiler with C++23 support
-* CMake as the configuration system
-* A build system such as Make or Ninja
-* GoogleTest library
+- C++23-compatible compiler
+- CMake
+- Make
+- Google Test
+- Google Mock
+- Google Benchmark
 
 ### Command
 

@@ -21,7 +21,7 @@ void CLI::run(int argc, char *argv[]) {
         if (name == "go"        ) go(is);        else 
         if (name == "stop"      ) stop();        else 
         if (name == "quit"      ) quit();        else {
-            std::cout << "info string" << "unknown command: '" << line << std::endl;
+            std::cout << "info string unknown command '" << line << "'" << std::endl;
         }
     }
 }

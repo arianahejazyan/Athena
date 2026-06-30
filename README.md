@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="./docs/assets/logo.png" alt="Athena Chess Engine Logo" style="width: 250px; height:250px; border-radius: 10px;"/>
+  <img src="./assets/logo.png" alt="Athena Chess Engine Logo" style="width: 250px; height:250px; border-radius: 10px;"/>
 
   <h3>Athena</h3>
 
@@ -8,7 +8,7 @@
 
 </div>
 <div align="center">
-<img src="./docs/assets/wallpaper.png" alt="Four Player Chess Board" style="width: 100%; height:auto; border-radius: 10px;"/>
+<img src="./assets/wallpaper.png" alt="Four Player Chess Board" style="width: 100%; height:auto; border-radius: 10px;"/>
 </div>
 
 ## Table of Contents

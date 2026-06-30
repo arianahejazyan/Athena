@@ -71,6 +71,8 @@ int CLI::run(int argc, char** argv) {
             std::cout << "info string unknown command '" << line << "'\n";
         }
     }
+
+    return EXIT_SUCCESS;
 }
 
 void CLI::uci(std::istream&) {

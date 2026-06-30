@@ -150,7 +150,16 @@ void CLI::quit(std::istream&) {
 void CLI::perft(std::istream&) {
 }
 
-void CLI::print(std::istream&) {
+void CLI::print(std::istream& args) {
+    std::string arg;
+    if (!(args >> arg)) {
+        engine_.print(false);
+    } else if (arg == "--board16x16") {
+        engine_.print(true);
+    } else {
+        std::cout << "info string position expected startpos or fen\n";
+        return;
+    }
 }
 
 } // namespace athena

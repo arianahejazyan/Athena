@@ -16,53 +16,36 @@
 ## Introduction
 *coming soon*
 ## Getting Started
-### Clone & Build
-
+### 1. Clone the repository
 ```bash
 git clone https://github.com/arianahejazyan/Athena.git
 cd Athena
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j
 ```
+### 2. Build the project
+**Linux / WSL / macOS:**
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+```
+**Windows:**
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
+```
+### 3. Run Athena CLI
+After successful build, you can run the engine:
 
-*Prerequisites*:
-- C++23-compatible compiler
-- CMake
-- Make
-- Google Test
-- Google Mock
-- Google Benchmark
-
-### Command
-
-Once built, launch the interactive Athena engine cli:
-
+**Linux / WSL / macOS:**
 ```bash
 ./build/athena
+```
+**Windows:**
+```bash
+.\build\Release\athena.exe
 ```
 
 > See [manual](./docs/manual.md) for the full list of commands and options.
 
-### Tests
-
-**Perft** counts nodes at a given depth to validate move generation.
-
-```bash
-./build/tests/perft [options]
-```
-
-*Options*:
-* `--modern`: Start from the modern chess starting position
-* `--classic`: Start from the classic chess starting position
-* `--fen <fen>`: Start from a custom FEN position
-* `--depth <depth>`: Set the search depth
-* `--split`: Show per-move node counts at the root
-* `--setup <modern|classic>`: Set the castling setup variant
-
-*Example*:
-```bash
-./build/tests/perft --modern --depth 6
-```
 ## Features
 ### Chess
 *coming soon*

@@ -1,10 +1,23 @@
+#include <chrono>
 #include <sstream>
 #include "cli/cli.h"
 #include "misc.h"
+#include "chess/movegen.h"
+#include "chess/perft.h"
 
 namespace athena::cli {
 
+inline std::string format(std::uint64_t num) {
+    std::string s = std::to_string(num);
+    for (int i = static_cast<int>(s.size()) - 3; i > 0; i -= 3) s.insert(i, ",");
+    return s;
+}  
+
 CLI::CLI() {
+    const auto setup = chess::Castle::Setup::Modern;
+    const auto fen = chess::Position::startpos(setup);
+    pos_.set_setup(setup);
+    pos_.init(fen);
     registerCommands();
 }
 
@@ -132,10 +145,10 @@ void CLI::pos(std::istream& args) {
         return;
     }
 
-    engine_.setPosition(fen);
+    pos_.init(fen);
 
     if (token == "moves") {
-        while (args >> token) engine_.applyMove(token);
+        while (args >> token) pos_.make_move(token);
     }
 }
 
@@ -149,7 +162,60 @@ void CLI::quit(std::istream&) {
     std::exit(EXIT_SUCCESS);
 }
 
-void CLI::perft(std::istream&) {
+void CLI::perft(std::istream& args) {
+    int depth;
+    if (!(args >> depth)) {
+        std::cout << "Usage: perft <depth> [--split]\n";
+        return;
+    }
+
+    bool split = false;
+    std::string arg;
+
+    if (args >> arg) {
+        if (arg == "--split") {
+            split = true;
+
+            // No more arguments allowed.
+            if (args >> arg) {
+                std::cout << "info string too many arguments.\n";
+                return;
+            }
+        } else {
+            std::cout << "info string unknown option '" << arg << "'.\n";
+            return;
+        }
+    }
+
+    auto pos = pos_;
+    uint64_t nodes = 0;
+
+    auto tic = std::chrono::high_resolution_clock::now();
+
+    if (split) {
+        chess::Move moves[chess::MOVE_NB];
+        int num_moves = chess::generate_legal_moves(pos, moves);
+
+        for (int i = 0; i < num_moves; ++i) {
+            const auto& move = moves[i];
+
+            pos_.make_move(move);
+            uint64_t count = chess::perft(pos, depth - 1);
+            pos_.undo_move(move);
+
+            nodes += count;
+            std::cout << move.uci() << ": " << count << '\n';
+        }
+    } else {
+        nodes = chess::perft(pos, depth);
+    }
+
+    auto toc = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = toc - tic;
+
+    std::cout << "nodes: " << format(nodes) << " "
+              << "nps: "   << format(static_cast<uint64_t>(nodes / elapsed.count()))
+              << '\n';
 }
 
 void CLI::print(std::istream& args) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include "chess/position.h"
 #include "core/engine/engine.h"
 
 namespace athena::cli {
@@ -27,6 +28,7 @@ private:
     void perft(std::istream& is);
     void print(std::istream& is);
 
+    chess::Position pos_;
     core::Engine engine_;
     std::unordered_map<std::string, std::function<void(std::istream&)>> commands_;
 };

@@ -178,11 +178,11 @@ void CLI::perft(std::istream& args) {
 
             // No more arguments allowed.
             if (args >> arg) {
-                std::cout << "info string too many arguments.\n";
+                std::cout << "Usage: perft <depth> [--split]\n";
                 return;
             }
         } else {
-            std::cout << "info string unknown option '" << arg << "'.\n";
+            std::cout << "Usage: perft <depth> [--split]\n";
             return;
         }
     }
@@ -225,7 +225,7 @@ void CLI::print(std::istream& args) {
     } else if (arg == "--board16x16") {
         engine_.print(true);
     } else {
-        std::cout << "info string position expected startpos or fen\n";
+        std::cout << " Usage: print [--board16x16]\n\n";
         return;
     }
 }

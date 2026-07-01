@@ -153,7 +153,7 @@ void Position::undo_move(Move move) noexcept {
     set_enpass(curr_state.enpass, turn_.id());
 
     if (attacker.piece() == Piece::ID::King) {
-        set_enpass(source, turn_.id());
+        set_royal(source, turn_.id());
     }
 
     switch (policy)
@@ -175,10 +175,9 @@ void Position::undo_move(Move move) noexcept {
         }
 
         case Move::Policy::Evolve: {
-            const auto promoted = PieceColor(turn_.id(), move.evolve());
-            pop_board(source, promoted);
-            set_board(source, attacker);
+            pop_board(target, attacker);
             set_board(target, defender);
+            set_board(source, PieceColor(turn().id(), Piece::ID::Pawn));
             if (move.enpass() != Color::ID::None) {
                 const auto pawn = PieceColor(move.enpass(), Piece::ID::Pawn);
                 set_board(source + Square::push(turn_.id(), 0), pawn);

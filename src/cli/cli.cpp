@@ -13,27 +13,6 @@ inline std::string format(std::uint64_t num) {
     return s;
 }  
 
-inline std::string format_time(double seconds) {
-    std::ostringstream out;
-
-    if (seconds < 1.0) {
-        out << std::fixed << std::setprecision(3)
-            << (seconds * 1000.0) << "ms";
-    } else if (seconds < 60.0) {
-        out << std::fixed << std::setprecision(3)
-            << seconds << "s";
-    } else {
-        int min = static_cast<int>(seconds) / 60;
-        double sec = seconds - min * 60;
-
-        out << min << "min "
-            << std::fixed << std::setprecision(2)
-            << sec << "s";
-    }
-
-    return out.str();
-}
-
 CLI::CLI() {
     const auto setup = chess::Castle::Setup::Modern;
     const auto fen = chess::Position::startpos(setup);
@@ -235,7 +214,7 @@ void CLI::perft(std::istream& args) {
     std::chrono::duration<double> elapsed = toc - tic;
 
     std::cout << "nodes: " << format(nodes) << " "
-              << "time: "  << format_time(elapsed.count()) << " "
+              << "time: "  << std::to_string(elapsed.count() * 1000.0) + " ms "
               << "nps: "   << format(static_cast<uint64_t>(nodes / elapsed.count()))
               << '\n';
 }

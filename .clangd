@@ -1,5 +1,14 @@
+# .clangd - clangd configuration for Cursor / VS Code
+
 CompileFlags:
-  Add: [-fconstexpr-steps=10000000]
+  Add:
+    - -std=c++23
+    - -fconstexpr-steps=100000000
+    - -fconstexpr-depth=10000
+
   Remove:
-    - -fconstexpr-ops-limit*
-    - -fconstexpr-loop-limit*
+    - -fconstexpr-ops-limit*  # Remove GCC-only flag
+    - -fconstexpr-loop-limit* # Remove GCC-only flag
+
+If:
+  PathMatch: .*\.(cpp|h|hpp|cc|cxx)$

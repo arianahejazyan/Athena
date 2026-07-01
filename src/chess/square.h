@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <string>
 #include <string_view>
 #include <cstdint>
@@ -55,7 +56,7 @@ public:
             rank--;
             file--;
         }
-        *this = Square(file, rank);
+        *this = Square(static_cast<uint8_t>(file), static_cast<uint8_t>(rank));
     }
 
     std::string uci(bool board16x16 = false) const noexcept {
@@ -236,7 +237,7 @@ Square::Offset Square::push(Color::ID color, int idx) noexcept { // make functio
         Square::Offset::South , Square::Offset::South + Square::Offset::South,
         Square::Offset::West  , Square::Offset::West  + Square::Offset::West ,
     };
-    return offsets[static_cast<uint8_t>(color) * PUSH_NB + idx];
+    return offsets[static_cast<std::size_t>(static_cast<uint8_t>(color) * PUSH_NB + idx)];
 }
 
 inline constexpr 
@@ -247,7 +248,7 @@ Square::Offset Square::take(Color::ID color, int idx) noexcept {
         Square::Offset::South + Square::Offset::West, Square::Offset::South + Square::Offset::East,
         Square::Offset::North + Square::Offset::West, Square::Offset::South + Square::Offset::West,
     };
-    return offsets[static_cast<uint8_t>(color) * TAKE_NB + idx];
+    return offsets[static_cast<std::size_t>(static_cast<uint8_t>(color) * TAKE_NB + idx)];
 }
 
 } // namespace athena 

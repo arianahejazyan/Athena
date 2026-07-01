@@ -93,13 +93,13 @@ Move* generate_enpass_moves(const Position& pos, Move* moves) noexcept {
 template<Color::ID color, Castle::Setup setup, Castle::Side side>
 Move* generate_castle_moves(const Position& pos, Move* moves) noexcept {
 
-    if (pos.state().castle.has(Castle(color, side)))
+    if (!pos.state().castle.has(Castle(color, side)))
         return moves;
 
     if (
-    pos.board(Castle::path_square(setup, color, side, 0)) == PieceColor::empty() &&
-    pos.board(Castle::path_square(setup, color, side, 1)) == PieceColor::empty() &&
-    pos.board(Castle::path_square(setup, color, side, 2)) == PieceColor::empty()) 
+    pos.board(Castle::path_square(setup, color, side, 0)) != PieceColor::empty() ||
+    pos.board(Castle::path_square(setup, color, side, 1)) != PieceColor::empty() ||
+    pos.board(Castle::path_square(setup, color, side, 2)) != PieceColor::empty()) 
         return moves;
 
     if ((

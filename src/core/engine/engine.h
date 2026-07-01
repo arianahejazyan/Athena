@@ -16,6 +16,8 @@ public:
     void setSetup(const std::string& setup);
     void applyMove(const std::string& move);
 
+    void print(bool board16x16 = false) { pos_.print(board16x16); }
+
 private:
     chess::Position pos_;
     std::map<std::string, std::unique_ptr<Option>> options_;

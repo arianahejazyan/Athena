@@ -81,8 +81,8 @@ Move* generate_enpass_moves(const Position& pos, Move* moves) noexcept {
     if (target == Square::offboard()) 
         return moves;
 
-    moves = generate_enpass_moves<color, enemy, Square::take(enemy, 0)>(pos, moves, target);
-    moves = generate_enpass_moves<color, enemy, Square::take(enemy, 1)>(pos, moves, target);
+    moves = generate_enpass_moves<color, enemy, Square::take(color, 0)>(pos, moves, target);
+    moves = generate_enpass_moves<color, enemy, Square::take(color, 1)>(pos, moves, target);
 
     return moves;
 }

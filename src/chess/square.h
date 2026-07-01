@@ -92,7 +92,7 @@ public:
     constexpr inline Square flip_both() { return static_cast<ID>(static_cast<uint8_t>(id_) ^ 0xFF); }
 
     constexpr ID id() const noexcept { return id_; }
-    constexpr auto compact() const noexcept { return static_cast<uint8_t>(id_) - 20; }
+    constexpr std::size_t compact() const noexcept { return static_cast<std::size_t>(static_cast<uint8_t>(id_) - 20); }
     
 private:
     ID id_;

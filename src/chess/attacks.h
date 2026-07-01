@@ -100,17 +100,18 @@ Bitboard get_slide_attacks<Piece::ID::Rook>(
     v1 &= vert;
     v2 &= vert;
 
-    Bitboard h{0ULL};
     const auto index = 1ULL << sq.index();
     const auto chunk = sq.chunk();
-    auto& c = h.chunk(chunk);
-    const auto lower = occupied.chunk(chunk) & (index - 1);
-    const auto upper = occupied.chunk(chunk) & ~lower;
+
+    const auto lower = (occupied.chunk(chunk)) & ( (index - 1)        );
+    const auto upper = (occupied.chunk(chunk)) & (~(index - 1) - index);
+
     const auto lsb = 1  + __builtin_ctzll(upper | (1ULL << 63));
     const auto msb = 63 - __builtin_clzll(lower | (1ULL << 0 ));
-    c = (1ULL << lsb) - (1ULL << msb) - index;
-
-    return ((v1 ^ v2) & vert) | (h & hori);
+    
+    Bitboard attacks = (v1 ^ v2) & vert;
+    attacks.chunk(chunk) |= ((1ULL << lsb) - (1ULL << msb) - index) & hori.chunk(chunk);
+    return attacks;
 }
 
 alignas(64)

@@ -87,9 +87,12 @@ public:
     constexpr Rank  rank()  const noexcept { return static_cast<uint8_t>(id_) >> 4; } 
     constexpr File  file()  const noexcept { return static_cast<uint8_t>(id_) & 15; } 
 
-    constexpr inline Square flip_file() { return static_cast<ID>(static_cast<uint8_t>(id_) ^ 0x0F); }
-    constexpr inline Square flip_rank() { return static_cast<ID>(static_cast<uint8_t>(id_) ^ 0xF0); }
-    constexpr inline Square flip_both() { return static_cast<ID>(static_cast<uint8_t>(id_) ^ 0xFF); }
+    constexpr Square flip_file() { return static_cast<ID>(static_cast<uint8_t>(id_) ^ 0x0F); }
+    constexpr Square flip_rank() { return static_cast<ID>(static_cast<uint8_t>(id_) ^ 0xF0); }
+    constexpr Square flip_both() { return static_cast<ID>(static_cast<uint8_t>(id_) ^ 0xFF); }
+
+    constexpr bool homerank(Color::ID color) const noexcept;
+    constexpr bool promotes(Color::ID color) const noexcept;
 
     constexpr ID id() const noexcept { return id_; }
     constexpr std::size_t compact() const noexcept { return static_cast<std::size_t>(static_cast<uint8_t>(id_) - 20); }
@@ -114,6 +117,26 @@ public:
 
     static constexpr Square::ID offboard() { return Square::ID::A1; }
 };
+
+inline constexpr bool Square::homerank(Color::ID color) const noexcept {
+    switch (color) {
+        case Color::ID::Red   : return (rank()               == HOMERANK) || (          rank()     == HOMERANK - 1);
+        case Color::ID::Blue  : return (file()               == HOMERANK) || (          file()     == HOMERANK - 1);
+        case Color::ID::Yellow: return (RANK_NB - rank() - 1 == HOMERANK) || (RANK_NB - rank() - 1 == HOMERANK - 1);
+        case Color::ID::Green : return (FILE_NB - file() - 1 == HOMERANK) || (FILE_NB - file() - 1 == HOMERANK - 1);
+        default: return false;
+    }
+}
+
+inline constexpr bool Square::promotes(Color::ID color) const noexcept {
+    switch (color) {
+        case Color::ID::Red   : return (rank()               == PROMOTES);
+        case Color::ID::Blue  : return (file()               == PROMOTES);
+        case Color::ID::Yellow: return (RANK_NB - rank() - 1 == PROMOTES);
+        case Color::ID::Green : return (FILE_NB - file() - 1 == PROMOTES);
+        default: return false;
+    }
+}
 
 inline constexpr bool operator==(Square lhs, Square rhs) noexcept { return lhs.id() == rhs.id(); }
 inline constexpr bool operator!=(Square lhs, Square rhs) noexcept { return lhs.id() != rhs.id(); }

@@ -55,17 +55,8 @@ Move* generate_enpass_moves(const Position& pos, Move* moves, Square target) noe
     if (pos.board(source.id()) != PieceColor(color, Piece::ID::Pawn)) 
         return moves;
 
-    if constexpr (
-        color == Color::ID::Red || 
-        color == Color::ID::Yellow)
-        if (source.rank() + 1 == PROMOTES)
-            return add_evolve_moves(pos, moves, source, target, enemy);
-
-    if constexpr (
-        color == Color::ID::Blue ||
-        color == Color::ID::Green )
-        if (source.file() + 1 == PROMOTES)
-            return add_evolve_moves(pos, moves, source, target, enemy);
+    if (target.promotes(color))
+        return add_evolve_moves(pos, moves, source, target, enemy);
 
     auto occ = pos.occupied();
     occ.set_bit(target);

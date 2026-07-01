@@ -51,24 +51,29 @@ Move* generate_evolve_moves(const Position& pos, Move* moves, Bitboard& pawn) no
 template<Color::ID color, Color::ID enemy, Square::Offset offset>
 Move* generate_enpass_moves(const Position& pos, Move* moves, Square target) noexcept {
 
-    const auto source = target - offset;
+    const auto source = target - offset; 
     if (pos.board(source.id()) != PieceColor(color, Piece::ID::Pawn)) 
         return moves;
 
-    if constexpr (color == Color::ID::Red || color == Color::ID::Yellow)
-        if (source.rank() == PROMOTES)
+    if constexpr (
+        color == Color::ID::Red || 
+        color == Color::ID::Yellow)
+        if (source.rank() + 1 == PROMOTES)
             return add_evolve_moves(pos, moves, source, target, enemy);
 
-    if constexpr (color == Color::ID::Blue || color == Color::ID::Green )
-        if (source.file() == PROMOTES)
+    if constexpr (
+        color == Color::ID::Blue ||
+        color == Color::ID::Green )
+        if (source.file() + 1 == PROMOTES)
             return add_evolve_moves(pos, moves, source, target, enemy);
 
     auto occ = pos.occupied();
+    occ.set_bit(target);
     occ.pop_bit(source);
     occ.pop_bit(source + Square::push(color, 0));
-    if (pos.get_attackers_bitboard(target, color, occ).any())
+    if (pos.get_attackers_bitboard(pos.royal(color), color, occ).any())
         return moves;
-
+        
     *(moves++) = Move(source.id(), target.id(), Piece::ID::Empty, enemy, Castle::Side(0b10), Move::Policy::Enpass);
     
     return moves;
@@ -77,7 +82,7 @@ Move* generate_enpass_moves(const Position& pos, Move* moves, Square target) noe
 template<Color::ID color, Color::ID enemy>
 Move* generate_enpass_moves(const Position& pos, Move* moves) noexcept {
 
-    const auto target = pos.enpass(enemy);
+    const auto target = pos.enpass(enemy); 
     if (target == Square::offboard()) 
         return moves;
 

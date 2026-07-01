@@ -199,9 +199,9 @@ void CLI::perft(std::istream& args) {
         for (int i = 0; i < num_moves; ++i) {
             const auto& move = moves[i];
 
-            pos_.make_move(move);
+            pos.make_move(move);
             uint64_t count = chess::perft(pos, depth - 1);
-            pos_.undo_move(move);
+            pos.undo_move(move);
 
             nodes += count;
             std::cout << move.uci() << ": " << count << '\n';

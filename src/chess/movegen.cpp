@@ -3,6 +3,7 @@
 #include "bitboard.h"
 #include "castle.h"
 #include "chess/constants.h"
+#include "chess/square.h"
 #include "move.h"
 #include "piece.h"
 #include "piececolor.h"
@@ -14,6 +15,7 @@ Move* add_evolve_moves(const Position& pos, Move* moves, Square source, Square t
     
     auto occ = pos.occupied();
     occ.pop_bit(source);
+    occ.set_bit(target);
     if (enpass != Color::ID::None) occ.pop_bit(source + Square::push(color, 0));
     if (pos.get_attackers_bitboard(target, pos.turn().id(), occ).any())
         return moves;
@@ -276,28 +278,15 @@ Move* generate_take_moves(Move* moves, const Bitboard& pawn, const Bitboard& mas
     return moves;
 }
 
-template<Bitboard::ChunkID chunk_id>
-Move* add_pin_moves(const Position& pos, Move* moves, Bitboard& targets, Square::Offset offset, Move::Policy policy) noexcept {
-    auto& chunk = targets.chunk(chunk_id);
-    while(chunk) {
-        const auto target = Bitboard::pop_lsb(chunk, chunk_id);
-        const auto source = target - offset;
+Move* add_pin_moves(const Position& pos, Move* moves, Square source, Square target, Move::Policy policy) noexcept {
 
-        auto occ = pos.occupied();
-        occ.pop_bit(source);
-        if (pos.get_attackers_bitboard(target, pos.turn().id(), occ).any())
-            continue;
-    
-        *(moves++) = Move(source.id(), target.id(), Piece::ID::Empty, Color::ID::None, Castle::Side(0b10), policy);
-    }
-    return moves;
-}
+    auto occ = pos.occupied();
+    occ.pop_bit(source);
+    occ.set_bit(target);
+    if (pos.get_attackers_bitboard(pos.royal(pos.turn().id()), pos.turn().id(), occ).pop_bit(target).any())
+        return moves;
 
-Move* add_pin_moves(const Position& pos, Move* moves, Bitboard& targets, Square::Offset offset, Move::Policy policy) noexcept {
-    moves = add_pin_moves<Bitboard::ChunkID(0)>(pos, moves, targets, offset, policy);
-    moves = add_pin_moves<Bitboard::ChunkID(1)>(pos, moves, targets, offset, policy);
-    moves = add_pin_moves<Bitboard::ChunkID(2)>(pos, moves, targets, offset, policy);
-    moves = add_pin_moves<Bitboard::ChunkID(3)>(pos, moves, targets, offset, policy);
+    *(moves++) = Move(source.id(), target.id(), Piece::ID::Empty, Color::ID::None, Castle::Side(0b10), policy);
     return moves;
 }
 
@@ -309,7 +298,8 @@ Move* add_pin_moves(const Position& pos, Move* moves, Square source, Bitboard& t
 
         auto occ = pos.occupied();
         occ.pop_bit(source);
-        if (pos.get_attackers_bitboard(target, pos.turn().id(), occ).any())
+        occ.set_bit(target);
+        if (pos.get_attackers_bitboard(pos.royal(pos.turn().id()), pos.turn().id(), occ).pop_bit(target).any())
                 continue;
 
         *(moves++) = Move(source.id(), target.id(), Piece::ID::Empty, Color::ID::None, Castle::Side(0b10), Move::Policy::Normal);
@@ -364,30 +354,42 @@ Move* generate_pin_moves(const Position& pos, Move* moves, Bitboard& sources, co
             }
             case Piece::ID::Pawn:
             {
-                Bitboard pawn = pos.bitboard(Piece::ID::Pawn) & pos.bitboard(color);
-                Bitboard push = pawn;
-                Bitboard east = pawn;
-                Bitboard west = pawn;
+                Square push = source + Square::push(color, 0);
+                Square east = source + Square::take(color, 0);
+                Square west = source + Square::take(color, 1);
 
-                pawn.shift<Square::push(color, 0)>();
-                push.shift<Square::push(color, 0)>();
-                east.shift<Square::take(color, 0)>();
-                west.shift<Square::take(color, 1)>();
+                if constexpr (flag != Move::Flag::Noisy) {
+                    if (pos.board(push.id()) == PieceColor::empty()) {
+                        if (checks.has_bit(push)) {
+                            moves = add_pin_moves(pos, moves, source, push, Move::Policy::Normal);
+                        }
 
-                pawn &= Bitboard::homerank(color);
-                pawn &= flag == Move::Flag::Legal ? ~pos.occupied() & checks : mask;
-                push &= flag == Move::Flag::Legal ? ~pos.occupied() & checks : mask;
-                east &= flag == Move::Flag::Legal ?  pos.opponent() & checks : mask;
-                west &= flag == Move::Flag::Legal ?  pos.opponent() & checks : mask;
+                        if (source.homerank(color)) {
+                            push += Square::push(color, 0);
+                            if (pos.board(push.id()) == PieceColor::empty()) {
+                                if (checks.has_bit(push)) {
+                                    moves = add_pin_moves(pos, moves, source, push, Move::Policy::Stride);
+                                } 
+                            }                              
+                        }
+                    }                    
+                }
 
-                pawn.shift<Square::push(color, 0)>();
-                pawn &= flag == Move::Flag::Legal ? ~pos.occupied() & checks : mask;
+                if constexpr (flag != Move::Flag::Quiet) {
+                    const auto p1 = pos.board(east.id());
+                    if (p1 != PieceColor::empty() && p1.color().diff(color)) {
+                        if (checks.has_bit(east)) {
+                            moves = add_pin_moves(pos, moves, source, east, Move::Policy::Normal);
+                        } 
+                    }
 
-                if constexpr (flag != Move::Flag::Noisy) moves = add_pin_moves(pos, moves, pawn, Square::push(color, 0), Move::Policy::Normal);
-                if constexpr (flag != Move::Flag::Noisy) moves = add_pin_moves(pos, moves, push, Square::push(color, 1), Move::Policy::Stride);
-                if constexpr (flag != Move::Flag::Quiet) moves = add_pin_moves(pos, moves, east, Square::take(color, 0), Move::Policy::Normal);
-                if constexpr (flag != Move::Flag::Quiet) moves = add_pin_moves(pos, moves, west, Square::take(color, 1), Move::Policy::Normal);
-                
+                    const auto p2 = pos.board(west.id());
+                    if (p2 != PieceColor::empty() && p2.color().diff(color)) {
+                        if (checks.has_bit(west)) {
+                            moves = add_pin_moves(pos, moves, source, west, Move::Policy::Normal);
+                        } 
+                    }
+                }
                 break;
             }
             default: break;
@@ -398,7 +400,7 @@ Move* generate_pin_moves(const Position& pos, Move* moves, Bitboard& sources, co
 
 template<Move::Flag flag, Color::ID color>
 Move* generate_pin_moves(const Position& pos, Move* moves, const Bitboard& pinned, const Bitboard& mask, const Bitboard& checks) noexcept {
-    if (pinned.any()) return moves;
+    if (pinned.empty()) return moves;
     Bitboard sources = pinned;
     moves = generate_pin_moves<flag, color, Bitboard::ChunkID(0)>(pos, moves, sources, mask, checks);
     moves = generate_pin_moves<flag, color, Bitboard::ChunkID(1)>(pos, moves, sources, mask, checks);

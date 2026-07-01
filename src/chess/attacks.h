@@ -113,57 +113,6 @@ Bitboard get_slide_attacks<Piece::ID::Rook>(
     return ((v1 ^ v2) & vert) | (h & hori);
 }
 
-// template<Piece::ID piece, Bitboard::ChunkID chunk_id>
-// inline const 
-// Bitboard get_slide_attacks(
-//     Square sq, const Bitboard& __restrict__ occupied) noexcept {
-//         if constexpr (piece == Piece::ID::Bishop) return get_slide_diagonal<chunk_id>(sq, occupied);
-//         if constexpr (piece == Piece::ID::Rook  ) return get_slide_straight<chunk_id>(sq, occupied);
-//         return Bitboard();
-//     }
-
-// template<Bitboard::ChunkID chunk_id>
-// inline const 
-// Bitboard get_slide_diagonal(
-//     Square sq, const Bitboard& __restrict__ occupied) noexcept {
-//     const auto& [diag, anti] = PRECOMPUTED_TABLE_DIAGONAL[sq.compact()];
-
-//     auto d1 = diag & occupied;
-//     auto a1 = anti & occupied;
-
-//     auto d2 = d1;
-//     auto a2 = a1;
-
-//     d1.ray_attacks_cross<chunk_id>(sq.index());
-//     a1.ray_attacks_cross<chunk_id>(sq.index());
-
-//     d1 &= diag;
-//     d2 &= anti;
-
-//     d1 ^= a2;
-//     a1 ^= a2;
-
-//     return d1 | d2;
-// }
-
-// template<Bitboard::ChunkID chunk_id>
-// inline const 
-// Bitboard get_slide_straight(
-//     Square sq, const Bitboard& __restrict__ occupied) noexcept {
-//     const auto& [vert, hori] = PRECOMPUTED_TABLE_STRAIGHT[sq.compact()];
-
-//     auto d1 = vert & occupied;
-//     auto d2 = hori & occupied;
-
-//     d1.ray_attacks_cross<chunk_id>(sq.index());
-//     d2.ray_attacks_chunk<chunk_id>(sq.index());
-
-//     d1 &= vert;
-//     d2 &= hori;
-
-//     return d1 | d2;
-// }
-
 alignas(64)
 extern const 
 std::array<std::array<std::pair<Bitboard, Bitboard>, VALID_NB>, VALID_NB> PRECOMPUTED_TABLE_THROUGH_BETWEEN;

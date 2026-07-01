@@ -189,12 +189,6 @@ public:
         if constexpr (offset < 0) shift_east<Square::Offset(-static_cast<int>(offset))>();
     }
 
-    template<ChunkID chunk_id>
-    void ray_attacks_cross(Square::Index idx) noexcept;
-
-    template<ChunkID chunk_id>
-    void ray_attacks_chunk(Square::Index idx) noexcept;
-
     void print(bool board16x16 = true) const;
 
 private:
@@ -309,126 +303,6 @@ inline Bitboard& operator-=(
              __builtin_sub_overflow(bitboard.chunk(3), bb.chunk(3) + borrow, &bitboard.chunk(3));
     return bitboard;
 }
-
-// template<>
-// inline void Bitboard::ray_attacks_cross<static_cast<Bitboard::ChunkID>(0)>(Square::Index idx) noexcept {
-//     const uint64_t index = 1ULL << static_cast<uint8_t>(idx);
-//     const uint64_t lower = (index - 1);
-//     const uint64_t upper = ~lower;
-//     uint64_t bu = index;
-//     uint64_t bl = index;
-//     bl = __builtin_bswap64(bl);
-//     uint64_t u3, u2, u1, u0, l0;
-//     u3 = chunks_[3];
-//     u2 = chunks_[2];
-//     u1 = chunks_[1];
-//     u0 = chunks_[0] & upper;
-//     l0 = chunks_[0] & lower;
-//     l0 = __builtin_bswap64(l0);
-//     bl = __builtin_sub_overflow(l0, bl, &l0);
-//     bu = __builtin_sub_overflow(u0, bu, &chunks_[0]);
-//     bu = __builtin_sub_overflow(u1, bu, &chunks_[1]);
-//     bu = __builtin_sub_overflow(u2, bu, &chunks_[2]);
-//          __builtin_sub_overflow(u3, bu, &chunks_[3]);
-//     chunks_[0] |= __builtin_bswap64(l0);
-// }
-
-// template<>
-// inline void Bitboard::ray_attacks_cross<static_cast<Bitboard::ChunkID>(1)>(Square::Index idx) noexcept {
-//     const uint64_t index = 1ULL << static_cast<uint8_t>(idx);
-//     const uint64_t lower = (index - 1);
-//     const uint64_t upper = ~lower;
-//     uint64_t bu = index;
-//     uint64_t bl = index;
-//     bl = __builtin_bswap64(bl);
-//     uint64_t u3, u2, u1, l1, l0;
-//     u3 = chunks_[3];
-//     u2 = chunks_[2];
-//     u1 = chunks_[1] & upper;
-//     l1 = chunks_[1] & lower;
-//     l0 = chunks_[0];
-//     l1 = __builtin_bswap64(l1); 
-//     l0 = __builtin_bswap64(l0); 
-//     bl = __builtin_sub_overflow(l1, bl, &l1);
-//     bl = __builtin_sub_overflow(l0, bl, &l0);
-//     bu = __builtin_sub_overflow(u1, bu, &chunks_[1]);
-//     bu = __builtin_sub_overflow(u2, bu, &chunks_[2]);
-//          __builtin_sub_overflow(u3, bu, &chunks_[3]);
-//     chunks_[0]  = __builtin_bswap64(l0);
-//     chunks_[1] |= __builtin_bswap64(l1);
-// }
-
-// template<>
-// inline void Bitboard::ray_attacks_cross<static_cast<Bitboard::ChunkID>(2)>(Square::Index idx) noexcept {
-//     const uint64_t index = 1ULL << static_cast<uint8_t>(idx);
-//     const uint64_t lower = (index - 1);
-//     const uint64_t upper = ~lower;
-//     uint64_t bu = index;
-//     uint64_t bl = index;
-//     bl = __builtin_bswap64(bl);
-//     uint64_t u3, u2, l2, l1, l0;
-//     u3 = chunks_[3];
-//     u2 = chunks_[2] & upper;
-//     l2 = chunks_[2] & lower;
-//     l1 = chunks_[1];
-//     l0 = chunks_[0];
-//     l2 = __builtin_bswap64(l2);
-//     l1 = __builtin_bswap64(l1);
-//     l0 = __builtin_bswap64(l0);
-//     bl = __builtin_sub_overflow(l2, bl, &l2);
-//     bl = __builtin_sub_overflow(l1, bl, &l1); 
-//     bl = __builtin_sub_overflow(l0, bl, &l0);         
-//     bu = __builtin_sub_overflow(u2, bu, &chunks_[2]);
-//          __builtin_sub_overflow(u3, bu, &chunks_[3]);
-//     chunks_[0]  = __builtin_bswap64(l0);
-//     chunks_[1]  = __builtin_bswap64(l1);
-//     chunks_[2] |= __builtin_bswap64(l2);
-// }
-
-// template<>
-// inline void Bitboard::ray_attacks_cross<static_cast<Bitboard::ChunkID>(3)>(Square::Index idx) noexcept {
-//     const uint64_t index = 1ULL << static_cast<uint8_t>(idx);
-//     const uint64_t lower = (index - 1);
-//     const uint64_t upper = ~lower;
-//     uint64_t bu = index;
-//     uint64_t bl = index;
-//     bl = __builtin_bswap64(bl);
-//     uint64_t u3, l3, l2, l1, l0;
-//     u3 = chunks_[3] & upper;
-//     l3 = chunks_[3] & lower;
-//     l2 = chunks_[2];
-//     l1 = chunks_[1];
-//     l0 = chunks_[0];
-//     l3 = __builtin_bswap64(l3);
-//     l2 = __builtin_bswap64(l2);
-//     l1 = __builtin_bswap64(l1);
-//     l0 = __builtin_bswap64(l0);
-//     bl = __builtin_sub_overflow(l3, bl, &l3);
-//     bl = __builtin_sub_overflow(l2, bl, &l2);
-//     bl = __builtin_sub_overflow(l1, bl, &l1);
-//     bl = __builtin_sub_overflow(l0, bl, &l0);
-//          __builtin_sub_overflow(u3, bu, &chunks_[3]);
-//     chunks_[0]  = __builtin_bswap64(l0);
-//     chunks_[1]  = __builtin_bswap64(l1);
-//     chunks_[2]  = __builtin_bswap64(l2);
-//     chunks_[3] |= __builtin_bswap64(l3);
-// }
-
-// template<Bitboard::ChunkID chunk_id>
-// inline void Bitboard::ray_attacks_chunk(
-//     Square::Index idx) noexcept {
-//     constexpr int shift_lsb = (chunk_id == 0 || chunk_id == 3) ? 12 : 15;
-//     constexpr int shift_msb = (chunk_id == 0 || chunk_id == 3) ?  4 :  1;
-
-//     const uint64_t index = 1ULL << static_cast<uint8_t>(idx);
-//     const uint64_t lower = chunks_[chunk_id] & (index - 1);
-//     const uint64_t upper = chunks_[chunk_id] & ~lower;
-
-//     const auto lsb = 1  + __builtin_ctzll(upper | (1ULL << (shift_lsb + (static_cast<uint8_t>(idx) & ~0xFU))));
-//     const auto msb = 63 - __builtin_clzll(lower | (1ULL << (shift_msb + (static_cast<uint8_t>(idx) & ~0xFU))));
-
-//     chunks_[chunk_id] = (1ULL << lsb) - (1ULL << msb) - index;
-// }
 
 inline void Bitboard::print(bool board16x16) const {
     const int size   = board16x16 ? 16 : 14;

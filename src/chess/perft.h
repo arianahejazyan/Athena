@@ -13,7 +13,8 @@ inline uint64_t perft(chess::Position& pos, int depth) {
     chess::Move moves[chess::MOVE_NB];
     int num_moves = generate_legal_moves(pos, moves);
 
-    if (depth == 1) return num_moves;
+    if (depth == 1)
+        return static_cast<uint64_t>(num_moves);
 
     uint64_t nodes = 0;
     for (int i = 0; i < num_moves; i++) {

@@ -1,0 +1,14 @@
+#pragma once
+
+#define ATHENA_AUTHOR "@ATHENA_AUTHOR@"
+#define ATHENA_VERSION "@ATHENA_VERSION@"
+
+#include <string>
+
+namespace athena::misc {
+
+inline std::string author() { return ATHENA_AUTHOR; }   
+inline std::string version() { return ATHENA_VERSION; }
+inline std::string github_url() { return "https://github.com/arianahejazyan/Athena"; }
+
+} // namespace athena

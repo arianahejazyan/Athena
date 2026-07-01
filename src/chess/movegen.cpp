@@ -136,12 +136,10 @@ Move* add_royal_moves(const Position& pos, Move* moves, Square source, Bitboard&
     while(chunk) {
         const auto target = Bitboard::pop_lsb(chunk, chunk_id);
 
-       
         auto occ = pos.occupied();
         occ.pop_bit(source);
         if (pos.get_attackers_bitboard(target, pos.turn().id(), occ).any())
             continue;
-        
 
         *(moves++) = Move(source.id(), target.id(), Piece::ID::Empty, Color::ID::None, Castle::Side(0b10), Move::Policy::Normal);
     }
@@ -168,13 +166,6 @@ Move* add_normal_moves(Move* moves, Square source, Bitboard& targets) noexcept {
     auto& chunk = targets.chunk(chunk_id);
     while(chunk) {
         const auto target = Bitboard::pop_lsb(chunk, chunk_id);
-
-        // if constexpr (pin) {
-        //     auto occ = pos.occupied();
-        //     occ.pop_bit(source);
-        //     if (pos.get_attackers_bitboard(target, pos.turn().id(), occ).any())
-        //         continue;
-        // } 
 
         *(moves++) = Move(source.id(), target.id(), Piece::ID::Empty, Color::ID::None, Castle::Side(0b10), Move::Policy::Normal);
     }
@@ -238,13 +229,6 @@ Move* add_pawn_moves(Move* moves, Bitboard& targets, Square::Offset offset, Move
         const auto target = Bitboard::pop_lsb(chunk, chunk_id);
         const auto source = target - offset;
 
-        // if constexpr (pin) {
-        //     auto occ = pos.occupied();
-        //     occ.pop_bit(source);
-        //     if (pos.get_attackers_bitboard(target, pos.turn().id(), occ).any())
-        //         continue;
-        // } 
-
         *(moves++) = Move(source.id(), target.id(), Piece::ID::Empty, Color::ID::None, Castle::Side(0b10), policy);
     }
     return moves;
@@ -259,10 +243,10 @@ Move* add_pawn_moves(Move* moves, Bitboard& targets, Square::Offset offset, Move
 }
 
 template<Color::ID color>
-Move* generate_push_moves(Move* moves, Bitboard& pawn, const Bitboard& mask) noexcept {
+Move* generate_push_moves(Move* moves, Bitboard& pawn, const Bitboard& mask, const Bitboard& occ) noexcept {
 
     pawn.shift<Square::push(color, 0)>();
-    auto push = pawn & mask & Bitboard::homerank(color);
+    auto push = pawn & ~occ & Bitboard::homerank(color);
     push.shift<Square::push(color, 0)>();
 
     pawn &= mask;
@@ -476,7 +460,7 @@ int generate_all_moves(const Position& pos, Move* moves) noexcept {
     if constexpr (flag != Move::Flag::Quiet) 
         moves = generate_take_moves<color>(moves, pBB, flag == Move::Flag::Legal ?  opponent & checks : mask); 
     if constexpr (flag != Move::Flag::Noisy) 
-        moves = generate_push_moves<color>(moves, pBB, flag == Move::Flag::Legal ? ~occupied & checks : mask);
+        moves = generate_push_moves<color>(moves, pBB, flag == Move::Flag::Legal ? ~occupied & checks : mask, occupied);
 
     // Generate special moves
     if constexpr (flag != Move::Flag::Quiet) 

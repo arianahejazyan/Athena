@@ -356,7 +356,7 @@ void set_pinned_bitboard(
     auto& chunk = candidates.chunk(chunk_id);
     while(chunk) {
         auto sq = Bitboard::pop_lsb(chunk, chunk_id);
-        auto bb = get_line_between_mask(sq, ksq) & occupied;
+        auto bb = get_line_between_mask(sq, ksq) & occupied; 
         auto bt = bb & us;
         if (bb.count() == 1 && 
             bt.count() == 1) {
@@ -489,6 +489,7 @@ void Position::init(const FEN& fen) noexcept {
     }
 
     set_occupany_bitboards();
+    set_pinned_checks_bitboards();
 }
 
 auto Position::fen() const noexcept {

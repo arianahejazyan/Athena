@@ -222,9 +222,9 @@ void CLI::perft(std::istream& args) {
 void CLI::print(std::istream& args) {
     std::string arg;
     if (!(args >> arg)) {
-        engine_.print(false);
+        pos_.print(false);
     } else if (arg == "--board16x16") {
-        engine_.print(true);
+        pos_.print(true);
     } else {
         std::cout << " Usage: print [--board16x16]\n\n";
         return;

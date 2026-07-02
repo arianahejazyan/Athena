@@ -12,7 +12,12 @@
 </div>
 
 ## Table of Contents
-*coming soon*
+- [Introduction](#introduction)
+- [Getting Started](#getting-started)
+- [Commands](#commands)
+- [Features](#features)
+- [4PC Engines](#4pc-engines)
+- [Acknowledgements](#acknowledgements)
 ## Introduction
 *coming soon*
 ## Getting Started
@@ -32,8 +37,6 @@ Athena's move generator is highly optimized, achieving approximately 120 Mnps (m
 ```bash
 ./build/tests/perft_bench --benchmark_counters_tabular=true
 ```
-
-> See the [commands](#Commands) section for the full list of commands and options.
 
 ## Commands
 

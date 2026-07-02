@@ -33,7 +33,39 @@ Athena's move generator is highly optimized, achieving approximately 120 Mnps (m
 ./build/tests/perft_bench --benchmark_counters_tabular=true
 ```
 
-> See the [usage](./docs/manual.md) section for the full list of commands and options.
+> See the [commands](#Commands) section for the full list of commands and options.
+
+## Commands
+
+Athena is a UCI-compatible chess engine and supports all standard UCI commands.
+
+### UCI Commands
+
+| Command       | Description                                                                 |
+|---------------|-----------------------------------------------------------------------------|
+| `uci`         | Identifies the engine and returns its name, version, and supported options. |
+| `isready`     | Checks if the engine is ready; responds with `readyok` when synchronized.   |
+| `setoption`   | Sets a configuration option (e.g. `Hash`, `Threads`).                      |
+| `ucinewgame`  | Notifies the engine that a new game is about to begin.                      |
+| `position`    | Sets the board position, optionally followed by a sequence of moves.        |
+| `go`          | Starts the search on the current position.                                  |
+| `stop`        | Stops the current search as soon as possible.                               |
+| `quit`        | Shuts down the engine.                                                      |
+
+### UCI Options
+
+| Name    | Default  | Description                                                  |
+|---------|----------|--------------------------------------------------------------|
+| `Setup` | `modern` | Board setup variant to use (`modern` or `classic`).          |
+
+### Debug Commands
+
+Athena also provides additional commands for testing and debugging:
+
+| Command | Description                                                                      |
+|---------|----------------------------------------------------------------------------------|
+| `perft` | Runs a perft (performance test) to count legal moves at a given depth.           |
+| `print` | Displays the current board position in the console.
 
 ## Features
 ### Chess

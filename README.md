@@ -16,35 +16,24 @@
 ## Introduction
 *coming soon*
 ## Getting Started
-### 1. Clone the repository
+To build Athena from source, run the following commands:
 ```bash
 git clone https://github.com/arianahejazyan/Athena.git
 cd Athena
-```
-### 2. Build the project
-**Linux / WSL / macOS:**
-```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
-**Windows:**
-```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release
+Launch the interactive CLI with:
 ```
-### 3. Run Athena CLI
-After successful build, you can run the engine:
-
-**Linux / WSL / macOS:**
-```bash
-./build/athena
-```
-**Windows:**
-```bash
-.\build\Release\athena.exe
+./build/src/athena
 ```
 
-> See [manual](./docs/manual.md) for the full list of commands and options.
+Athena's move generator is highly optimized, achieving approximately 120 Mnps (million nodes per second) in benchmarks. You can verify this yourself:
+```bash
+./build/tests/perft_bench --benchmark_counters_tabular=true
+```
+
+> See the [usage](./docs/manual.md) section for the full list of commands and options.
 
 ## Features
 ### Chess

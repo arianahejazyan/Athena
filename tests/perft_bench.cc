@@ -7,11 +7,10 @@ using namespace athena;
 
 static void BM_Perft_Modern(benchmark::State& state) {
     const int depth = state.range(0);
-    const auto setup = chess::Castle::Setup::Modern;
 
     chess::Position base;
-    base.set_setup(setup);
-    base.init(chess::Position::startpos(setup));
+    base.set_setup(chess::Castle::Setup::Modern);
+    base.init(chess::Position::startpos());
 
     // Run one perft to get the node count (it's deterministic)
     chess::Position pos = base;

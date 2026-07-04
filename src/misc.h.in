@@ -9,6 +9,6 @@ namespace athena::misc {
 
 inline std::string author() { return ATHENA_AUTHOR; }   
 inline std::string version() { return ATHENA_VERSION; }
-inline std::string github_url() { return "https://github.com/arianahejazyan/Athena"; }
+inline std::string github() { return "https://github.com/arianahejazyan/Athena"; }
 
 } // namespace athena

@@ -72,11 +72,15 @@ Athena also provides additional commands for testing and debugging:
 
 ## Features
 ### Chess
-*coming soon*
+- UCI protocol
+- 256-bit bitboard board representation
+- Optimized legal move generator (~120 Mnps)
 ### Search
-*coming soon*
+- Negamax
+- Alpha-Beta pruning
+- Iterative deepening
 ### Evaluate
-*coming soon*
+- Material counting
 ## 4PC Engines
 This is a list of active four-player chess (4PC) engines. Feel free to add your own engine here or ask me to include it. You can also find a list of four-player chess tools in the [Colosseum](https://github.com/arianahejazyan/Colosseum).
  

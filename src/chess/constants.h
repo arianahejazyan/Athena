@@ -6,7 +6,7 @@ constexpr int
 MOVETYPE_NB = 5, 
 MOVEFLAG_NB = 4, 
 MOVE_NB     = 256,
-PLAY_NB     = 32,
+PLAY_NB     = 64,
 HOMERANK    = 2, 
 PROMOTES    = 11,
 CRAWL_NB    = 8,

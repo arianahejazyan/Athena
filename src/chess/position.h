@@ -74,6 +74,10 @@ public:
           auto& get_pinned_checks_bitboards()       noexcept { return pinned_checks_[play_]; }
     const auto& get_pinned_checks_bitboards() const noexcept { return pinned_checks_[play_]; }
 
+    bool incheck() noexcept {
+        return get_attackers_bitboard(royal(turn().id()), turn(), occupied()).any();
+    }
+
     Position::State& state() noexcept { return state_[play_]; }
     const Position::State& state() const noexcept { return state_[play_]; }
 
@@ -162,8 +166,8 @@ private:
     };
 
 public:
-    static std::string startpos(Castle::Setup setup) noexcept {
-        return STARTPOS[static_cast<uint8_t>(setup)];
+    static std::string startpos(const std::string& setup = "modern") noexcept {
+        return STARTPOS[setup == "modern" ? 0 : 1];
     }
 };
 

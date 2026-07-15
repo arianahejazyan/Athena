@@ -136,7 +136,7 @@ Search::Limits UCIEngine::parse_limits(std::istream& is) {
 
     while (is >> token)
         if (token == "depth")
-            is >> limits.depth;
+            is >> limits.maxDepth;
  
     return limits;
 }

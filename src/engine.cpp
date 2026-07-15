@@ -1,4 +1,3 @@
-#include <chrono>
 #include "engine.h"
 #include "chess/position.h"
 #include "chess/movegen.h"

@@ -23,4 +23,4 @@ inline int mateIn(Score score) noexcept {
     return SCORE_MATE - abs(score);
 }
 
-} // namespace athena::core
+} // namespace athena

@@ -94,7 +94,7 @@ This is a list of active four-player chess (4PC) engines. Feel free to add your 
 | Titan         | [obryanlouis/4pchess](https://github.com/obryanlouis/4pchess) | [TeamTitan](https://www.chess.com/member/teamtitan1) |
 | Terminator    | (private)                                   | [TeamTerminator](https://www.chess.com/member/teamterminator1) |
 
-- [Chess-Mele](https://chess-melee.com/en)
+- [Chess-Melee](https://chess-melee.com/en)
 
 ## Acknowledgements
 - **Special thanks** to Moxile for always supporting me and for the many hours of programming together.

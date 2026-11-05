@@ -43,10 +43,7 @@ Bitboard get_crawl_attacks(Square sq) noexcept {
 
 inline const 
 Bitboard get_pawn_attacks(Square sq, Color::ID color) noexcept {
-    auto reorder = 
-        ((static_cast<uint8_t>(color) & 0b10) >> 1) | 
-        ((static_cast<uint8_t>(color) & 0b01) << 1);
-    return PRECOMPUTED_TABLE_PAWN[sq.compact()][reorder];
+    return PRECOMPUTED_TABLE_PAWN[sq.compact()][Color(color).reorder().id()];
 }
 
 template<Piece::ID piece>

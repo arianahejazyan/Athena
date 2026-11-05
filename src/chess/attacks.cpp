@@ -74,7 +74,7 @@ PRECOMPUTED_TABLE_PAWN = []() consteval {
             Color::ID::Yellow,
             Color::ID::Green
         }) {
-            table[sq.compact()][static_cast<uint8_t>(color)] |= 
+            table[sq.compact()][Color(color).reorder().id()] |= 
                 bitboard(sq, Square::take(color, 0), false) | 
                 bitboard(sq, Square::take(color, 1), false);
         }

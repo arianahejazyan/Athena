@@ -50,6 +50,11 @@ public:
     }
 
     constexpr ID id() const noexcept { return id_; }
+
+    constexpr Color reorder() const noexcept { 
+        return Color(
+            static_cast<ID>(((static_cast<uint8_t>(id_) & 0b10) >> 1) | (static_cast<uint8_t>(id_) & 0b01) << 1)); 
+    }
     
 private:
     ID id_;
